@@ -98,8 +98,8 @@ const Register = () => {
           error={errors.email}
           required
         />
-        <FormInput label="Password" type="password" name="password" value={formData.password} onChange={handleChange} error={errors.password} required />
-        <FormInput label="Confirm Password" type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} error={errors.confirmPassword} required />
+        <FormInput label="Password" type="password" name="password" value={formData.password} onChange={handleChange} placeholder="At least 8 characters" error={errors.password} required />
+        <FormInput label="Confirm Password" type="password" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} placeholder="Re-enter your password" error={errors.confirmPassword} required />
 
         <button 
           type="submit" 
