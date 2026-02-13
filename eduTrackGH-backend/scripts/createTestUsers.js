@@ -85,7 +85,61 @@ const createTestUsers = async () => {
       );
     }
 
-    // Test Teacher
+    // Test Primary Teacher
+    const primaryTeacherExists = await User.findOne({
+      email: "teacher.primary@edutrack.test",
+    });
+    if (!primaryTeacherExists) {
+      const primaryTeacher = await User.create({
+        fullName: "Grace Osei",
+        email: "teacher.primary@edutrack.test",
+        phone: "0240000003",
+        password: "teacher123",
+        role: "teacher",
+        schoolLevel: "PRIMARY",
+        isVerified: true,
+        isActive: true,
+      });
+      console.log(
+        "✅ Primary Teacher created:",
+        primaryTeacher.email,
+        "| Password: teacher123",
+      );
+    } else {
+      console.log(
+        "ℹ️  Primary Teacher already exists:",
+        primaryTeacherExists.email,
+      );
+    }
+
+    // Test JHS Teacher
+    const jhsTeacherExists = await User.findOne({
+      email: "teacher.jhs@edutrack.test",
+    });
+    if (!jhsTeacherExists) {
+      const jhsTeacher = await User.create({
+        fullName: "David Boateng",
+        email: "teacher.jhs@edutrack.test",
+        phone: "0240000006",
+        password: "teacher123",
+        role: "teacher",
+        schoolLevel: "JHS",
+        isVerified: true,
+        isActive: true,
+      });
+      console.log(
+        "✅ JHS Teacher created:",
+        jhsTeacher.email,
+        "| Password: teacher123",
+      );
+    } else {
+      console.log(
+        "ℹ️  JHS Teacher already exists:",
+        jhsTeacherExists.email,
+      );
+    }
+
+    // Keep old single teacher for backward compatibility
     const teacherExists = await User.findOne({
       email: "teacher@edutrack.test",
     });
@@ -93,7 +147,7 @@ const createTestUsers = async () => {
       const teacher = await User.create({
         fullName: "John Mensah",
         email: "teacher@edutrack.test",
-        phone: "0240000003",
+        phone: "0240000007",
         password: "teacher123",
         role: "teacher",
         isVerified: true,
@@ -153,17 +207,20 @@ const createTestUsers = async () => {
 
     console.log("\n🎉 Test users created successfully!");
     console.log("\n📋 Login Credentials:");
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
-    console.log("Admin:              admin@edutrack.test / admin123");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+    console.log("Admin:                     admin@edutrack.test / admin123");
     console.log(
-      "Primary Headteacher: headteacher.primary@edutrack.test / headteacher123",
+      "Primary Headteacher:       headteacher.primary@edutrack.test / headteacher123",
     );
     console.log(
-      "JHS Headteacher:    headteacher.jhs@edutrack.test / headteacher123",
+      "JHS Headteacher:           headteacher.jhs@edutrack.test / headteacher123",
     );
-    console.log("Teacher:            teacher@edutrack.test / teacher123");
-    console.log("Parent:             parent@edutrack.test / parent123");
-    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
+    console.log("Primary Teacher:           teacher.primary@edutrack.test / teacher123");
+    console.log("JHS Teacher:               teacher.jhs@edutrack.test / teacher123");
+    console.log("Generic Teacher:           teacher@edutrack.test / teacher123");
+    console.log("Parent:                    parent@edutrack.test / parent123");
+    console.log("Custom Parent:             okashamach44@gmail.com / password123");
+    console.log("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n");
 
     process.exit(0);
   } catch (error) {
