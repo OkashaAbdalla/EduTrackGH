@@ -1,8 +1,11 @@
 ﻿# Dependencies
 node_modules/
 
-# Environment variables
+# Environment variables (NEVER commit actual .env files!)
 .env
+.env.local
+.env.*.local
+.env.prod
 
 # Logs
 logs/

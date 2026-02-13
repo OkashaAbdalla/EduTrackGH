@@ -69,8 +69,14 @@ cd eduTrackGH-backend
 # Install dependencies
 npm install
 
-# Create .env file with required variables
-# MONGODB_URI, JWT_SECRET, EMAIL_SERVICE, etc.
+# Create .env file from example
+cp .env.example .env
+
+# Edit .env with your actual values:
+# - MONGODB_URI: Your MongoDB connection string
+# - JWT_SECRET: A strong random secret
+# - EMAIL_USER / EMAIL_PASSWORD: Gmail app credentials
+# - Other environment-specific values
 
 # Start development server
 node server.js
@@ -115,18 +121,36 @@ Application runs on `http://localhost:5173`
 ## Environment Variables
 
 ### Backend (.env)
+
+Create a `.env` file in `eduTrackGH-backend/` with the following variables:
+
 ```
-MONGODB_URI=mongodb+srv://user:password@cluster.mongodb.net/edutrack
-JWT_SECRET=your_jwt_secret_key
+# Database
+MONGODB_URI=your_mongodb_connection_string_here
+
+# JWT
+JWT_SECRET=your_strong_random_jwt_secret_here
 JWT_EXPIRE=7d
+
+# Server
 PORT=5000
 NODE_ENV=development
+
+# Email (Gmail or other service)
 EMAIL_SERVICE=gmail
 EMAIL_USER=your_email@gmail.com
-EMAIL_PASSWORD=your_app_password
+EMAIL_PASSWORD=your_gmail_app_password
+
+# Frontend URL (for CORS)
+FRONTEND_URL=http://localhost:5173
 ```
 
+**Note:** Never commit the `.env` file. Use `.env.example` as a template. See `eduTrackGH-backend/.env.example` for reference.
+
 ### Frontend (.env.local)
+
+Create a `.env.local` file in `eduTrackGH-frontend/` with:
+
 ```
 VITE_API_URL=http://localhost:5000/api
 ```
