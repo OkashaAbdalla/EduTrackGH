@@ -15,7 +15,7 @@ const Card = ({ children, className = '', variant = 'default', hover = false }) 
   };
 
   const hoverStyles = hover 
-    ? 'hover:shadow-2xl hover:scale-[1.02] hover:border-green-500/50 dark:hover:border-green-400/50' 
+    ? 'hover:shadow-2xl hover:border-green-500/50 dark:hover:border-green-400/50' 
     : '';
 
   return (
