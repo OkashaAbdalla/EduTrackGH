@@ -12,10 +12,10 @@ export { default as AuthLayout } from './AuthLayout';
 export { default as ThemeSwitcher } from './ThemeSwitcher';
 export { default as ProtectedRoute } from './ProtectedRoute';
 
-// TODO: Add other common components as they are implemented
-// export { default as Button } from './Button';
+export { default as Button } from './Button';
 export { default as Card } from './Card';
-// export { default as Modal } from './Modal';
+export { default as Modal } from './Modal';
+export { default as Skeleton } from './Skeleton';
 // export { default as Alert } from './Alert';
 // export { default as Loader } from './Loader';
 export { default as Toast } from './Toast';
