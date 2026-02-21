@@ -25,10 +25,10 @@ export const validateLoginForm = (formData) => {
 };
 
 export const getRoleRedirectPath = (role) => {
-  if (role === ROLES.ADMIN) return ROUTES.ADMIN_DASHBOARD;
-  if (role === ROLES.HEADTEACHER) return ROUTES.HEADTEACHER_DASHBOARD;
-  if (role === ROLES.TEACHER) return ROUTES.TEACHER_DASHBOARD;
-  if (role === ROLES.PARENT) return ROUTES.PARENT_DASHBOARD;
-  // Fallback: send unknown roles to login
+  const r = typeof role === 'string' ? role.toLowerCase().trim() : '';
+  if (r === ROLES.ADMIN) return ROUTES.ADMIN_DASHBOARD;
+  if (r === ROLES.HEADTEACHER) return ROUTES.HEADTEACHER_DASHBOARD;
+  if (r === ROLES.TEACHER) return ROUTES.TEACHER_DASHBOARD;
+  if (r === ROLES.PARENT) return ROUTES.PARENT_DASHBOARD;
   return ROUTES.LOGIN;
 };

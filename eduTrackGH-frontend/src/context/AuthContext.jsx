@@ -29,11 +29,12 @@ export const AuthProvider = ({ children }) => {
     const userSchoolLevel = localStorage.getItem('user_schoolLevel');
 
     if (token && userRole) {
+      const role = String(userRole).toLowerCase().trim();
       setUser({
         email: userEmail,
-        role: userRole,
+        role,
         name: userName,
-        schoolLevel: userSchoolLevel, // PRIMARY or JHS for headteachers
+        schoolLevel: userSchoolLevel,
       });
       setIsAuthenticated(true);
     }
@@ -43,30 +44,41 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authService.login({ email, password });
-      
+      console.log('Login response:', response);
+
       if (response.success) {
         const { token, user: userData } = response;
-        
+        console.log('Login successful - User data:', userData);
+
+        if (!token || !userData) {
+          console.error('Missing token or userData in response');
+          return { success: false, message: 'Invalid response from server' };
+        }
+
+        const role = (userData.role && String(userData.role).toLowerCase().trim()) || 'parent';
         localStorage.setItem('auth_token', token);
-        localStorage.setItem('user_role', userData.role);
-        localStorage.setItem('user_email', userData.email);
-        localStorage.setItem('user_name', userData.fullName);
+        localStorage.setItem('user_role', role);
+        localStorage.setItem('user_email', userData.email || '');
+        localStorage.setItem('user_name', userData.fullName || '');
         if (userData.schoolLevel) {
           localStorage.setItem('user_schoolLevel', userData.schoolLevel);
         }
 
         setUser({
           email: userData.email,
-          role: userData.role,
+          role,
           name: userData.fullName,
-          schoolLevel: userData.schoolLevel, // PRIMARY or JHS for headteachers
+          schoolLevel: userData.schoolLevel,
         });
         setIsAuthenticated(true);
+        console.log('Auth state updated, isAuthenticated:', true);
 
-        return { success: true, user: userData };
+        return { success: true, user: { ...userData, role } };
       }
+      console.warn('Login failed:', response.message);
       return { success: false, message: response.message };
     } catch (error) {
+      console.error('Login error:', error);
       return { success: false, message: error.response?.data?.message || 'Login failed' };
     }
   };

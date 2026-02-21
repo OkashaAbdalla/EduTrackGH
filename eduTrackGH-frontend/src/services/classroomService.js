@@ -1,41 +1,48 @@
 /**
  * Classroom Service (EduTrack GH)
  * Purpose: API calls for classroom/class management
- * Endpoints (mocked for now):
- *   - getClassrooms(teacherId): GET /classrooms
- *   - getClassroomDetails(classroomId): GET /classrooms/:id
- *   - getStudentsInClass(classroomId): GET /classrooms/:id/students
- * Returns: Mock responses matching expected backend structure
+ * Endpoints:
+ *   - getTeacherClassrooms(): GET /api/classrooms
+ *   - getClassroomDetails(classroomId): GET /api/classrooms/:id
+ *   - getClassroomStudents(classroomId): GET /api/classrooms/:id/students
  */
 
-import apiClient from './api';
+import apiClient from "./api";
 
 const classroomService = {
-  // Get classrooms assigned to a teacher
-  getClassrooms: async (teacherId) => {
-    // Mock implementation
-    return { 
-      success: true, 
-      classrooms: [] 
-    };
+  // Get classrooms assigned to current teacher
+  getTeacherClassrooms: async () => {
+    try {
+      const response = await apiClient.get("/classrooms");
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching teacher classrooms:", error);
+      return { success: false, classrooms: [], message: error.message };
+    }
   },
 
   // Get classroom details
   getClassroomDetails: async (classroomId) => {
-    // Mock implementation
-    return { 
-      success: true, 
-      classroom: null 
-    };
+    try {
+      const response = await apiClient.get(`/classrooms/${classroomId}`);
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching classroom details:", error);
+      return { success: false, classroom: null, message: error.message };
+    }
   },
 
   // Get students in a classroom
-  getStudentsInClass: async (classroomId) => {
-    // Mock implementation
-    return { 
-      success: true, 
-      students: [] 
-    };
+  getClassroomStudents: async (classroomId) => {
+    try {
+      const response = await apiClient.get(
+        `/classrooms/${classroomId}/students`,
+      );
+      return response.data;
+    } catch (error) {
+      console.error("Error fetching classroom students:", error);
+      return { success: false, students: [], message: error.message };
+    }
   },
 };
 

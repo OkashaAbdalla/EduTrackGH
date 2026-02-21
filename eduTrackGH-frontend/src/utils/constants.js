@@ -49,6 +49,7 @@ export const ROUTES = {
   ADMIN_DASHBOARD: '/admin/dashboard',
   MANAGE_SCHOOLS: '/admin/schools',
   CREATE_HEADTEACHER: '/admin/create-headteacher',
+  MANAGE_TEACHERS: '/admin/teachers',
   SYSTEM_SETTINGS: '/admin/settings',
 };
 

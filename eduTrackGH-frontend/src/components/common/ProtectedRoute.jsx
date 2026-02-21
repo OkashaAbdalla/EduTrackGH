@@ -1,12 +1,13 @@
 /**
  * Protected Route Component
  * Purpose: Wrapper for routes that require authentication
- * Redirects to login if user is not authenticated
+ * Redirects to login if user is not authenticated; to role dashboard if wrong role
  */
 
 import { Navigate } from 'react-router-dom';
 import { useAuthContext } from '../../context';
-import { ROUTES, ROLES } from '../../utils/constants';
+import { ROUTES } from '../../utils/constants';
+import { getRoleRedirectPath } from '../../utils/loginHelpers';
 
 const ProtectedRoute = ({ children, requiredRole = null }) => {
   const { isAuthenticated, user, loading } = useAuthContext();
@@ -24,18 +25,7 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
   }
 
   if (requiredRole && user?.role !== requiredRole) {
-    let dashboardRoute = ROUTES.LOGIN;
-
-    if (user?.role === ROLES.TEACHER) {
-      dashboardRoute = ROUTES.TEACHER_DASHBOARD;
-    } else if (user?.role === ROLES.HEADTEACHER) {
-      dashboardRoute = ROUTES.HEADTEACHER_DASHBOARD;
-    } else if (user?.role === ROLES.PARENT) {
-      dashboardRoute = ROUTES.PARENT_DASHBOARD;
-    } else if (user?.role === ROLES.ADMIN) {
-      dashboardRoute = ROUTES.ADMIN_DASHBOARD;
-    }
-
+    const dashboardRoute = getRoleRedirectPath(user?.role);
     return <Navigate to={dashboardRoute} replace />;
   }
 

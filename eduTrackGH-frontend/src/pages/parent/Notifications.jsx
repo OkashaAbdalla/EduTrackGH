@@ -6,23 +6,33 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
+import notificationService from '../../services/notificationService';
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  // Mock notifications
-  const mockNotifications = [
-    { id: 1, type: 'absence', child: 'Kofi Mensah', message: 'Kofi was absent from school today', date: '2024-02-03', read: false },
-    { id: 2, type: 'late', child: 'Ama Mensah', message: 'Ama arrived late to school today', date: '2024-02-02', read: true },
-    { id: 3, type: 'absence', child: 'Kofi Mensah', message: 'Kofi was absent from school today', date: '2024-02-01', read: true },
-  ];
+  const [error, setError] = useState(null);
 
   useEffect(() => {
-    setTimeout(() => {
-      setNotifications(mockNotifications);
-      setLoading(false);
-    }, 800);
+    const fetchNotifications = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await notificationService.getMyNotifications();
+        if (response.success && Array.isArray(response.notifications)) {
+          setNotifications(response.notifications);
+        } else {
+          setNotifications([]);
+          if (!response.success) setError(response.message || 'Failed to load notifications');
+        }
+      } catch (err) {
+        setNotifications([]);
+        setError('Failed to load notifications');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchNotifications();
   }, []);
 
   const getTypeIcon = (type) => {
@@ -52,6 +62,11 @@ const Notifications = () => {
           <p className="text-gray-600 dark:text-gray-400 mt-1">SMS and email alerts about your children</p>
         </div>
 
+        {error && (
+          <Card className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+            <p className="text-red-700 dark:text-red-400">{error}</p>
+          </Card>
+        )}
         {loading ? (
           <Card className="p-12">
             <div className="flex items-center justify-center">
