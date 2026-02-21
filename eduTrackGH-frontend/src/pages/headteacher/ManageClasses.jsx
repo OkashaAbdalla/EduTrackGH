@@ -29,7 +29,7 @@ const ManageClasses = () => {
       setLoading(true);
       // Simulate API delay
       await new Promise(resolve => setTimeout(resolve, 800));
-      
+
       // Mock teachers list
       const availableTeachers = [
         { id: '101', name: 'Grace Osei' },
@@ -53,9 +53,9 @@ const ManageClasses = () => {
         { id: '8', name: 'JHS 2', level: 'JHS', teacher: 'Kwame Asante', teacherId: '106', students: 50, attendanceRate: 87.8 },
         { id: '9', name: 'JHS 3', level: 'JHS', teacher: 'Kwame Asante', teacherId: '106', students: 60, attendanceRate: 82.1 },
       ];
-      
+
       // Filter classes based on headteacher's level
-      const filteredClasses = schoolLevel 
+      const filteredClasses = schoolLevel
         ? allClasses.filter(cls => cls.level === schoolLevel)
         : allClasses;
       setClasses(filteredClasses);
@@ -83,9 +83,9 @@ const ManageClasses = () => {
       await new Promise(resolve => setTimeout(resolve, 600));
 
       const selectedTeacherObj = teachers.find(t => t.id === selectedTeacher);
-      
-      setClasses(classes.map(cls => 
-        cls.id === editingClass.id 
+
+      setClasses(classes.map(cls =>
+        cls.id === editingClass.id
           ? { ...cls, teacher: selectedTeacherObj.name, teacherId: selectedTeacher }
           : cls
       ));
@@ -122,11 +122,11 @@ const ManageClasses = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Classes</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {schoolLevel === 'PRIMARY' 
+            {schoolLevel === 'PRIMARY'
               ? 'Manage Primary classes (P1-P6) and assign teachers'
               : schoolLevel === 'JHS'
-              ? 'Manage JHS classes (JHS 1-3) and assign teachers'
-              : 'Manage all classes and assign teachers'}
+                ? 'Manage JHS classes (JHS 1-3) and assign teachers'
+                : 'Manage all classes and assign teachers'}
           </p>
         </div>
 
@@ -195,19 +195,18 @@ const ManageClasses = () => {
                     </td>
                     <td className="py-3 px-4 text-center">
                       <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                          classItem.attendanceRate >= 90
+                        className={`inline-block px-2 py-1 rounded text-xs font-medium ${classItem.attendanceRate >= 90
                             ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
                             : classItem.attendanceRate >= 75
-                            ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                            : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                        }`}
+                              ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
+                              : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                          }`}
                       >
                         {classItem.attendanceRate >= 90
                           ? 'Excellent'
                           : classItem.attendanceRate >= 75
-                          ? 'Good'
-                          : 'Needs Attention'}
+                            ? 'Good'
+                            : 'Needs Attention'}
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">

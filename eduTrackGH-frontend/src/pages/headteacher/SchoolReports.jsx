@@ -3,33 +3,46 @@
  * Purpose: Comprehensive school-wide attendance reports
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import { useAuthContext } from '../../context';
+import reportsService from '../../services/reportsService';
 
 const SchoolReports = () => {
   const { user } = useAuthContext();
   const schoolLevel = user?.schoolLevel; // PRIMARY or JHS
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
+  const [reports, setReports] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Mock data - Filter by headteacher's schoolLevel (PRIMARY or JHS)
-  const allClassReports = [
-    { class: 'Primary 1', level: 'PRIMARY', students: 30, avgRate: 92, flagged: 1 },
-    { class: 'Primary 2', level: 'PRIMARY', students: 28, avgRate: 88, flagged: 2 },
-    { class: 'Primary 3', level: 'PRIMARY', students: 32, avgRate: 90, flagged: 1 },
-    { class: 'Primary 4', level: 'PRIMARY', students: 29, avgRate: 85, flagged: 3 },
-    { class: 'Primary 5', level: 'PRIMARY', students: 27, avgRate: 87, flagged: 2 },
-    { class: 'Primary 6', level: 'PRIMARY', students: 31, avgRate: 89, flagged: 1 },
-    { class: 'JHS 1', level: 'JHS', students: 35, avgRate: 87, flagged: 2 },
-    { class: 'JHS 2', level: 'JHS', students: 33, avgRate: 89, flagged: 1 },
-    { class: 'JHS 3', level: 'JHS', students: 38, avgRate: 82, flagged: 4 },
-  ];
+  useEffect(() => {
+    const fetchReports = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const response = await reportsService.getSchoolReports(selectedMonth);
+        if (response.success && Array.isArray(response.reports)) {
+          const filtered = schoolLevel
+            ? response.reports.filter((r) => r.level === schoolLevel)
+            : response.reports;
+          setReports(filtered);
+        } else {
+          setReports([]);
+          if (!response.success) setError(response.message || 'Failed to load reports');
+        }
+      } catch (err) {
+        setReports([]);
+        setError('Failed to load reports');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchReports();
+  }, [selectedMonth, schoolLevel]);
 
-  // Filter classes based on headteacher's level
-  const classReports = schoolLevel 
-    ? allClassReports.filter(report => report.level === schoolLevel)
-    : allClassReports;
+  const classReports = reports;
 
   const getRateColor = (rate) => {
     if (rate >= 90) return 'text-green-600 dark:text-green-400';
@@ -44,7 +57,7 @@ const SchoolReports = () => {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">School Reports</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
-              {schoolLevel === 'PRIMARY' 
+              {schoolLevel === 'PRIMARY'
                 ? 'Primary Section (P1-P6) - Comprehensive attendance analytics'
                 : schoolLevel === 'JHS'
                 ? 'JHS Section (JHS 1-3) - Comprehensive attendance analytics'
@@ -55,6 +68,12 @@ const SchoolReports = () => {
             Export Report
           </button>
         </div>
+
+        {error && (
+          <Card className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+            <p className="text-red-700 dark:text-red-400">{error}</p>
+          </Card>
+        )}
 
         <Card className="p-6">
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Month</label>
@@ -68,6 +87,11 @@ const SchoolReports = () => {
 
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Class Performance</h2>
+          {loading ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+            </div>
+          ) : (
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
@@ -96,6 +120,7 @@ const SchoolReports = () => {
               </tbody>
             </table>
           </div>
+          )}
         </Card>
       </div>
     </DashboardLayout>

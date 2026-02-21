@@ -11,27 +11,25 @@
 import apiClient from "./api";
 
 const attendanceService = {
-  // Get attendance history for a specific classroom
+  // Get daily attendance history for a classroom (teacher)
   getClassroomAttendanceHistory: async (classroomId, month) => {
     try {
-      const params = new URLSearchParams();
-      if (month) {
-        params.append("month", month);
-      }
+      const params = month ? { month } : {};
       const response = await apiClient.get(
-        `/attendance/classroom/${classroomId}?${params}`,
+        `/attendance/classroom/${classroomId}/daily`,
+        { params },
       );
       return response.data;
     } catch (error) {
       console.error("Error fetching classroom attendance history:", error);
-      return { success: false, records: [], message: error.message };
+      return { success: false, records: [], message: error.response?.data?.message || error.message };
     }
   },
 
-  // Mark daily attendance for a class
+  // Mark daily attendance for a class (teacher)
   markDailyAttendance: async (classroomId, date, attendanceData) => {
     try {
-      const response = await apiClient.post("/attendance/mark", {
+      const response = await apiClient.post("/attendance/daily", {
         classroomId,
         date,
         attendanceData,
@@ -39,36 +37,27 @@ const attendanceService = {
       return response.data;
     } catch (error) {
       console.error("Error marking attendance:", error);
-      return { success: false, message: error.message };
+      return { success: false, message: error.response?.data?.message || error.message };
     }
   },
 
-  // Get flagged students (chronic absenteeism)
+  // Get flagged students (chronic absenteeism). Backend endpoint TBD.
   getFlaggedStudents: async (classroomId) => {
     try {
-      // TODO: Implement backend endpoint
-      return {
-        success: true,
-        flagged: [],
-      };
+      const response = await apiClient.get(`/attendance/classroom/${classroomId}/flagged`).catch(() => ({ data: { success: false, flagged: [] } }));
+      return response?.data?.success ? response.data : { success: true, flagged: [] };
     } catch (error) {
-      console.error("Error fetching flagged students:", error);
-      return { success: false, flagged: [] };
+      return { success: false, flagged: [], message: error.message };
     }
   },
 
-  // Get child attendance (for parents)
+  // Get child attendance (for parents). Backend endpoint TBD.
   getChildAttendance: async (childId) => {
     try {
-      // TODO: Implement backend endpoint
-      return {
-        success: true,
-        records: [],
-        attendanceRate: 0,
-      };
+      const response = await apiClient.get(`/attendance/child/${childId}`).catch(() => ({ data: { success: false, records: [] } }));
+      return response?.data?.success ? response.data : { success: true, records: [], attendanceRate: 0 };
     } catch (error) {
-      console.error("Error fetching child attendance:", error);
-      return { success: false, records: [] };
+      return { success: false, records: [], attendanceRate: 0 };
     }
   },
 };

@@ -13,6 +13,7 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
+import { StudentAttendanceRow } from '../../components/teacher';
 import classroomService from '../../services/classroomService';
 import attendanceService from '../../services/attendanceService';
 import { useToast } from '../../context';
@@ -103,21 +104,22 @@ const MarkAttendance = () => {
 
     setSaving(true);
     try {
-      // Prepare attendance records
-      const attendanceRecords = students.map(student => ({
-        studentId: student._id,
-        classroomId: selectedClass,
-        status: student.status,
-        date: selectedDate,
+      const attendanceData = students.map((s) => ({
+        studentId: s._id,
+        status: s.status,
       }));
 
-      // TODO: Send to backend when attendance endpoint is ready
-      console.log('Saving attendance:', attendanceRecords);
+      const response = await attendanceService.markDailyAttendance(
+        selectedClass,
+        selectedDate,
+        attendanceData
+      );
 
-      // Mock save for now
-      await new Promise(resolve => setTimeout(resolve, 1000));
-
-      showToast('Attendance saved successfully!', 'success');
+      if (response.success) {
+        showToast(`Attendance saved for ${response.count ?? students.length} students.`, 'success');
+      } else {
+        showToast(response.message || 'Failed to save attendance', 'error');
+      }
     } catch (err) {
       console.error('Error saving attendance:', err);
       showToast('Failed to save attendance', 'error');
@@ -249,49 +251,11 @@ const MarkAttendance = () => {
             {students.length > 0 ? (
               <div className="space-y-3">
                 {students.map((student) => (
-                  <div key={student._id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gray-200 dark:bg-gray-600 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                          {student.fullName.split(' ').map(n => n[0]).join('').substring(0, 2)}
-                        </span>
-                      </div>
-                      <div>
-                        <p className="font-medium text-gray-900 dark:text-white">{student.fullName}</p>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">{student.studentIdNumber}</p>
-                      </div>
-                    </div>
-
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handleStatusChange(student._id, 'present')}
-                        className={`px-4 py-2 rounded-lg font-medium transition ${student.status === 'present'
-                            ? 'bg-green-600 text-white'
-                            : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-green-100 dark:hover:bg-green-900/30'
-                          }`}
-                      >
-                        Present
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(student._id, 'late')}
-                        className={`px-4 py-2 rounded-lg font-medium transition ${student.status === 'late'
-                            ? 'bg-orange-600 text-white'
-                            : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-orange-100 dark:hover:bg-orange-900/30'
-                          }`}
-                      >
-                        Late
-                      </button>
-                      <button
-                        onClick={() => handleStatusChange(student._id, 'absent')}
-                        className={`px-4 py-2 rounded-lg font-medium transition ${student.status === 'absent'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300 hover:bg-red-100 dark:hover:bg-red-900/30'
-                          }`}
-                      >
-                        Absent
-                      </button>
-                    </div>
-                  </div>
+                  <StudentAttendanceRow
+                    key={student._id}
+                    student={student}
+                    onStatusChange={handleStatusChange}
+                  />
                 ))}
               </div>
             ) : (

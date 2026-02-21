@@ -86,7 +86,7 @@ const getClassroomStudents = async (req, res) => {
     // Get students linked to this classroom
     const students = await require("../models/Student")
       .find({ classroomId })
-      .select("_id fullName studentIdNumber studentId gender isFlagged");
+      .select("_id fullName studentId gender isFlagged");
 
     res.json({
       success: true,

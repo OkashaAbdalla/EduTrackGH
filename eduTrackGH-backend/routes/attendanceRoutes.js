@@ -12,6 +12,8 @@ const {
   exportAttendance,
   enrollFace,
   getClassroomAttendanceHistory,
+  markDailyAttendance,
+  getClassroomDailyHistory,
 } = require("../controllers/attendanceController");
 const { protect } = require("../middleware/authMiddleware");
 const { authorize } = require("../middleware/roleMiddleware");
@@ -24,7 +26,13 @@ router.post("/mark", authorize("student"), markAttendance);
 router.get("/history", authorize("student"), getAttendanceHistory);
 router.post("/enroll-face", authorize("student"), enrollFace);
 
-// Teacher routes
+// Teacher routes (EduTrack GH daily attendance)
+router.post("/daily", authorize("teacher"), markDailyAttendance);
+router.get(
+  "/classroom/:classroomId/daily",
+  authorize("teacher"),
+  getClassroomDailyHistory,
+);
 router.get(
   "/classroom/:classroomId",
   authorize("teacher"),

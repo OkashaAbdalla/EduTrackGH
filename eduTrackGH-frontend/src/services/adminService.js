@@ -38,6 +38,16 @@ const adminService = {
     return response.data;
   },
 
+  updateTeacher: async (id, teacherData) => {
+    const response = await apiClient.put(`/admin/teachers/${id}`, teacherData);
+    return response.data;
+  },
+
+  toggleTeacherStatus: async (id) => {
+    const response = await apiClient.patch(`/admin/teachers/${id}/toggle-status`);
+    return response.data;
+  },
+
   getStats: async (useCache = true) => {
     // Check cache first
     if (useCache) {
