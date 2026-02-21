@@ -36,6 +36,20 @@ const dailyAttendanceSchema = new mongoose.Schema(
       ref: 'User',
       required: true,
     },
+    // --- Integrity & Verification (Phase 1) ---
+    photoUrl: { type: String, default: null },
+    verificationType: {
+      type: String,
+      enum: ['photo', 'manual'],
+      default: 'manual',
+    },
+    manualReason: { type: String, default: null },
+    markedAt: { type: Date, default: Date.now },
+    location: {
+      latitude: { type: Number },
+      longitude: { type: Number },
+    },
+    isLocked: { type: Boolean, default: false },
   },
   { timestamps: true }
 );
