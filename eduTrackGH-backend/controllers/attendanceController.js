@@ -277,6 +277,29 @@ const markDailyAttendance = async (req, res) => {
       const student = await Student.findById(studentId);
       if (!student || student.classroomId?.toString() !== classroomId) continue;
 
+      // Phase 2: Normalize verification fields (backward compat: legacy payload → manual + Legacy entry)
+      let verificationType = row.verificationType;
+      let manualReason = row.manualReason;
+      let photoUrl = row.photoUrl || null;
+      if (status === "present") {
+        if (!verificationType) {
+          verificationType = "manual";
+          manualReason = manualReason != null && String(manualReason).trim() ? manualReason : "Legacy entry";
+        }
+        if (verificationType === "photo" && photoUrl) {
+          manualReason = null;
+        }
+      } else {
+        verificationType = "manual";
+        manualReason = null;
+        photoUrl = null;
+      }
+      const markedAt = row.markedAt ? new Date(row.markedAt) : new Date();
+      const location =
+        row.location && (row.location.latitude != null || row.location.longitude != null)
+          ? { latitude: row.location.latitude, longitude: row.location.longitude }
+          : undefined;
+
       const existing = await DailyAttendance.findOne({
         classroomId,
         date: dateOnly,
@@ -284,6 +307,11 @@ const markDailyAttendance = async (req, res) => {
       });
       if (existing) {
         existing.status = status;
+        existing.photoUrl = photoUrl;
+        existing.verificationType = verificationType;
+        existing.manualReason = manualReason;
+        existing.markedAt = markedAt;
+        if (location) existing.location = location;
         await existing.save();
         savedRecords.push(existing);
       } else {
@@ -294,6 +322,11 @@ const markDailyAttendance = async (req, res) => {
           studentId,
           status,
           markedBy: teacherId,
+          photoUrl,
+          verificationType,
+          manualReason,
+          markedAt,
+          location,
         });
         savedRecords.push(record);
       }

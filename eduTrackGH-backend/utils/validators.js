@@ -50,4 +50,67 @@ const validate = (req, res, next) => {
   next();
 };
 
-module.exports = { validationRules, validate };
+/**
+ * Phase 2: Validate daily attendance payload.
+ * Rules: If status === "present" → verificationType must be "photo" or "manual".
+ * If "photo" → photoUrl required. If "manual" → manualReason required.
+ * Absent/late: no photo or verification required.
+ */
+const validateDailyAttendancePayload = (req, res, next) => {
+  const { classroomId, date, attendanceData } = req.body;
+  if (!classroomId || !date) {
+    return res.status(400).json({
+      success: false,
+      message: 'classroomId and date are required',
+    });
+  }
+  if (!Array.isArray(attendanceData) || attendanceData.length === 0) {
+    return res.status(400).json({
+      success: false,
+      message: 'attendanceData must be a non-empty array',
+    });
+  }
+  for (let i = 0; i < attendanceData.length; i++) {
+    const row = attendanceData[i];
+    const status = row?.status;
+    if (!row?.studentId || !['present', 'late', 'absent'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: `attendanceData[${i}]: valid studentId and status (present|late|absent) required`,
+      });
+    }
+    // When status is present, enforce verification: photo (photoUrl) or manual (manualReason)
+    if (status === 'present') {
+      const verificationType = row.verificationType;
+      // Legacy payload: no verificationType → controller will set manual + "Legacy entry"
+      if (verificationType === undefined || verificationType === null) {
+        continue;
+      }
+      if (!['photo', 'manual'].includes(verificationType)) {
+        return res.status(400).json({
+          success: false,
+          message: `attendanceData[${i}]: when status is present, verificationType must be "photo" or "manual"`,
+        });
+      }
+      if (verificationType === 'photo') {
+        if (!row.photoUrl || typeof row.photoUrl !== 'string' || !row.photoUrl.trim()) {
+          return res.status(400).json({
+            success: false,
+            message: `attendanceData[${i}]: photoUrl is required when verificationType is "photo"`,
+          });
+        }
+      }
+      if (verificationType === 'manual') {
+        if (row.manualReason === undefined || row.manualReason === null || (typeof row.manualReason === 'string' && !row.manualReason.trim())) {
+          return res.status(400).json({
+            success: false,
+            message: `attendanceData[${i}]: manualReason is required when verificationType is "manual"`,
+          });
+        }
+      }
+    }
+  }
+  next();
+};
+
+module.exports = { validationRules, validate, validateDailyAttendancePayload };

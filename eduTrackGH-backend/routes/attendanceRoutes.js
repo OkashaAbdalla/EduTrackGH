@@ -17,6 +17,7 @@ const {
 } = require("../controllers/attendanceController");
 const { protect } = require("../middleware/authMiddleware");
 const { authorize } = require("../middleware/roleMiddleware");
+const { validateDailyAttendancePayload } = require("../utils/validators");
 
 // All routes are protected
 router.use(protect);
@@ -26,8 +27,8 @@ router.post("/mark", authorize("student"), markAttendance);
 router.get("/history", authorize("student"), getAttendanceHistory);
 router.post("/enroll-face", authorize("student"), enrollFace);
 
-// Teacher routes (EduTrack GH daily attendance)
-router.post("/daily", authorize("teacher"), markDailyAttendance);
+// Teacher routes (EduTrack GH daily attendance) — Phase 2: validation + new payload fields
+router.post("/daily", authorize("teacher"), validateDailyAttendancePayload, markDailyAttendance);
 router.get(
   "/classroom/:classroomId/daily",
   authorize("teacher"),
