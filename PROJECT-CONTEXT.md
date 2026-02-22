@@ -1,4 +1,4 @@
-# PROJECT CONTEXT
+PROJECT CONTEXT
 
 You are assisting in building a production-grade MERN stack final year project.
 
@@ -55,7 +55,7 @@ Each role has a separate dashboard and controlled permissions.
 
 CRITICAL FEATURE: ATTENDANCE INTEGRITY SYSTEM
 
-Project concern raised:
+The lecturer raised a concern:
 
 Teachers may:
 
