@@ -8,7 +8,7 @@ import { ROUTES } from '../../utils/constants';
 
 const AuthLayout = ({ children }) => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-100 via-gray-50 to-gray-100 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-b from-slate-900/90 via-slate-900/75 to-slate-950/95 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">

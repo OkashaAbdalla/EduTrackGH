@@ -54,18 +54,18 @@ const DashboardLayout = ({ children }) => {
   const menuItems = navigationMenus[userRole] || navigationMenus[ROLES.TEACHER];
 
   return (
-    <div className="h-screen flex bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
+    <div className="h-screen flex bg-gradient-to-b from-[#e9edf2] via-[#e2e7ee] to-[#e9edf2] dark:from-slate-900/90 dark:via-slate-900/75 dark:to-slate-950/95 transition-colors duration-300">
       {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out flex flex-col`}>
+      <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 w-64 bg-[#eef2f6]/90 dark:bg-gray-800 border-r border-[#d6dde6]/80 dark:border-gray-700/60 backdrop-blur-xl transition-transform duration-300 ease-in-out flex flex-col`}>
         {/* Logo */}
-        <div className="h-16 flex items-center px-4 border-b border-gray-200 dark:border-gray-700">
+        <div className="h-16 flex items-center px-4 border-b border-[#d6dde6]/80 dark:border-gray-700/60">
           <Link to={menuItems[0].path} className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center shadow-[0_10px_24px_rgba(22,163,74,0.25)]">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-gray-900 dark:text-white">EduTrack<span className="text-green-600">GH</span></span>
+            <span className="text-lg font-bold text-slate-900 dark:text-white">EduTrack<span className="text-green-600">GH</span></span>
           </Link>
         </div>
 
@@ -80,8 +80,8 @@ const DashboardLayout = ({ children }) => {
                 onClick={() => setSidebarOpen(false)}
                 className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all ${
                   isActive
-                    ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'bg-green-50/80 text-green-700 font-semibold shadow-[0_8px_20px_rgba(22,163,74,0.12)] dark:bg-green-900/20 dark:text-green-400'
+                    : 'text-slate-700 hover:bg-[#e6ebf2]/80 dark:text-gray-300 dark:hover:bg-gray-700/70'
                 }`}
               >
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,19 +94,19 @@ const DashboardLayout = ({ children }) => {
         </nav>
 
         {/* User Info & Logout */}
-        <div className="p-3 border-t border-gray-200 dark:border-gray-700">
+        <div className="p-3 border-t border-[#d6dde6]/80 dark:border-gray-700/60">
           <div className="flex items-center justify-between px-3 py-2">
             <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+              <div className="w-8 h-8 bg-[#dfe5ed] dark:bg-gray-700 rounded-full flex items-center justify-center">
+                <svg className="w-5 h-5 text-slate-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                 </svg>
               </div>
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300 capitalize">{userRole}</span>
+              <span className="text-xs font-medium text-slate-700 dark:text-gray-300 capitalize">{userRole}</span>
             </div>
             <button
               onClick={handleLogout}
-              className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+              className="p-1.5 text-slate-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50/70 dark:hover:bg-red-900/20 rounded-lg transition"
               title="Logout"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -128,10 +128,10 @@ const DashboardLayout = ({ children }) => {
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col overflow-hidden">
         {/* Top Bar */}
-        <header className="h-16 bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4">
+        <header className="h-16 bg-[#eef2f6]/80 dark:bg-gray-800/50 backdrop-blur-md border-b border-[#d6dde6]/80 dark:border-gray-700/60 flex items-center justify-between px-4">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+            className="md:hidden p-2 text-slate-600 dark:text-gray-300 hover:bg-[#e6ebf2]/80 dark:hover:bg-gray-700/70 rounded-lg"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
