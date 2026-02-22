@@ -17,6 +17,10 @@ const {
   toggleSchoolStatus,
   getSystemSettings,
   updateSystemSettings,
+  getSchoolClassrooms,
+  getAttendanceAudit,
+  getAttendanceFlags,
+  unlockAttendance,
 } = require('../controllers/adminController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
@@ -46,5 +50,11 @@ router.patch('/schools/:id/toggle-status', toggleSchoolStatus);
 // System settings
 router.get('/settings', getSystemSettings);
 router.put('/settings', updateSystemSettings);
+
+// Phase 7: Attendance audit & flags; Phase 3: Unlock
+router.get('/schools/:schoolId/classrooms', getSchoolClassrooms);
+router.get('/attendance-audit', getAttendanceAudit);
+router.get('/attendance-flags', getAttendanceFlags);
+router.patch('/unlock-attendance/:classroomId/:date', unlockAttendance);
 
 module.exports = router;
