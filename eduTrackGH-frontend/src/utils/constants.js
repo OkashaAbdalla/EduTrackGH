@@ -51,6 +51,7 @@ export const ROUTES = {
   CREATE_HEADTEACHER: '/admin/create-headteacher',
   MANAGE_TEACHERS: '/admin/teachers',
   SYSTEM_SETTINGS: '/admin/settings',
+  ATTENDANCE_AUDIT: '/admin/attendance-audit',
 };
 
 // ========================================
