@@ -26,6 +26,17 @@ const attendanceService = {
     }
   },
 
+  // Phase 5: Upload photo for attendance verification
+  uploadPhoto: async (base64Image) => {
+    try {
+      const response = await apiClient.post('/attendance/upload-photo', { image: base64Image });
+      return response.data;
+    } catch (error) {
+      console.error('Error uploading photo:', error);
+      return { success: false, message: error.response?.data?.message || error.message };
+    }
+  },
+
   // Mark daily attendance for a class (teacher)
   markDailyAttendance: async (classroomId, date, attendanceData) => {
     try {
