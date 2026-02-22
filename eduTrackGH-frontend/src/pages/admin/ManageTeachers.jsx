@@ -80,7 +80,7 @@ const ManageTeachers = () => {
     if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email format';
-    if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
+    // Phone optional (email notifications only)
     if (!editingTeacher && !formData.password?.trim()) newErrors.password = 'Password is required';
     if (!editingTeacher && formData.assignedClasses.length === 0) newErrors.assignedClasses = 'Select at least one class';
     
@@ -446,7 +446,7 @@ const ManageTeachers = () => {
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Phone</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Phone (optional)</label>
                   <input
                     type="tel"
                     value={formData.phone}

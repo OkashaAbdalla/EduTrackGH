@@ -116,12 +116,11 @@ const CreateHeadteacher = () => {
             />
 
             <FormInput
-              label="Phone Number"
+              label="Phone Number (optional)"
               name="phone"
               value={formData.phone}
               onChange={handleChange}
               placeholder="0241234567 or +233241234567"
-              required
             />
 
             <FormInput
