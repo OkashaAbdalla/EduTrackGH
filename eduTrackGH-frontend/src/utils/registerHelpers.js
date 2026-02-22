@@ -12,9 +12,7 @@ export const validateRegisterForm = (formData) => {
     errors.fullName = 'Full name must be at least 3 characters';
   }
 
-  if (!formData.phone) {
-    errors.phone = 'Phone number is required';
-  } else if (!validatePhone(formData.phone)) {
+  if (formData.phone && formData.phone.trim() && !validatePhone(formData.phone)) {
     errors.phone = 'Enter a valid Ghana phone number (e.g. 024xxxxxxx or +23324xxxxxxx)';
   }
   

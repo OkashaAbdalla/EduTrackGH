@@ -80,13 +80,12 @@ const Register = () => {
           required
         />
         <FormInput
-          label="Phone Number"
+          label="Phone Number (optional)"
           name="phone"
           value={formData.phone}
           onChange={handleChange}
           placeholder="e.g. 0241234567 or +233241234567"
           error={errors.phone}
-          required
         />
         <FormInput
           label="Email"
