@@ -1,10 +1,10 @@
 /**
  * Create Headteacher Page (Admin)
  * Purpose: Admin form to create new headteacher accounts
- * Security: Only accessible by admin role
+ * Can optionally assign to a school during creation
  */
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { FormInput } from '../../components/common';
@@ -15,14 +15,23 @@ import { useToast } from '../../context';
 const CreateHeadteacher = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
+  const [schools, setSchools] = useState([]);
   const [formData, setFormData] = useState({
     fullName: '',
     email: '',
     phone: '',
-    school: '',
-    schoolLevel: 'PRIMARY', // PRIMARY or JHS
+    schoolId: '',
+    schoolLevel: 'PRIMARY',
     tempPassword: '',
   });
+
+  useEffect(() => {
+    adminService.getSchools(false).then((res) => {
+      if (res.success && res.schools) {
+        setSchools(res.schools || []);
+      }
+    }).catch(() => {});
+  }, []);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
@@ -53,7 +62,7 @@ const CreateHeadteacher = () => {
         fullName: formData.fullName,
         email: formData.email,
         phone: formData.phone,
-        school: formData.school,
+        schoolId: formData.schoolId || undefined,
         schoolLevel: formData.schoolLevel,
         tempPassword: formData.tempPassword,
       });
@@ -64,7 +73,7 @@ const CreateHeadteacher = () => {
         
         // Reset form
         setTimeout(() => {
-          setFormData({ fullName: '', email: '', phone: '', school: '', schoolLevel: 'PRIMARY', tempPassword: '' });
+          setFormData({ fullName: '', email: '', phone: '', schoolId: '', schoolLevel: 'PRIMARY', tempPassword: '' });
           setSuccess('');
         }, 3000);
       } else {
@@ -123,14 +132,29 @@ const CreateHeadteacher = () => {
               placeholder="0241234567 or +233241234567"
             />
 
-            <FormInput
-              label="School Name"
-              name="school"
-              value={formData.school}
-              onChange={handleChange}
-              placeholder="Tamale Central Primary School"
-              required
-            />
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Assign to School (Optional)
+              </label>
+              <select
+                name="schoolId"
+                value={formData.schoolId}
+                onChange={handleChange}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="">Select school (leave empty to assign later)</option>
+                {schools
+                  .filter(s => s.isActive && !s.headteacher)
+                  .map(s => (
+                    <option key={s._id} value={s._id}>
+                      {s.name} ({s.schoolLevel})
+                    </option>
+                  ))}
+              </select>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                Only schools without a headteacher are shown
+              </p>
+            </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

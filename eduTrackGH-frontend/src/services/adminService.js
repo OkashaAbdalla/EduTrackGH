@@ -9,6 +9,10 @@ import cacheService from '../utils/cache';
 const adminService = {
   createHeadteacher: async (headteacherData) => {
     const response = await apiClient.post('/admin/headteachers', headteacherData);
+    if (response.data?.success && headteacherData.schoolId) {
+      cacheService.invalidate('/admin/schools');
+      cacheService.invalidate('/admin/headteachers');
+    }
     return response.data;
   },
 

@@ -41,9 +41,13 @@ const SchoolCard = ({ school, onEdit, onToggleStatus }) => {
         </p>
       )}
 
-      {school.headteacher && (
+      {school.headteacher ? (
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
           👤 {school.headteacher.fullName}
+        </p>
+      ) : (
+        <p className="text-sm text-amber-600 dark:text-amber-400 mb-2">
+          ⚠️ No headteacher assigned
         </p>
       )}
 
@@ -52,7 +56,7 @@ const SchoolCard = ({ school, onEdit, onToggleStatus }) => {
           onClick={() => onEdit(school)}
           className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2"
         >
-          Edit
+          {school.headteacher ? 'Edit' : 'Assign Headteacher'}
         </Button>
         <Button
           onClick={() => onToggleStatus(school)}

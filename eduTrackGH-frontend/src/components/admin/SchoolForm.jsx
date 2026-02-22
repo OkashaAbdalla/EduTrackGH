@@ -99,13 +99,13 @@ const SchoolForm = ({ formData, onFormChange, onSubmit, onCancel, submitting, he
           Assign Headteacher (Optional)
         </label>
         <select
-          value={formData.headteacherId}
+          value={formData.headteacherId || ''}
           onChange={(e) => handleChange('headteacherId', e.target.value)}
           className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500"
         >
-          <option value="">Select headteacher...</option>
+          <option value="">No headteacher assigned</option>
           {headteachers
-            .filter(ht => ht.isActive && !ht.school)
+            .filter(ht => ht.isActive && (!ht.school || ht._id === formData.headteacherId))
             .map(ht => (
               <option key={ht._id} value={ht._id}>
                 {ht.fullName} ({ht.schoolLevel || 'N/A'})

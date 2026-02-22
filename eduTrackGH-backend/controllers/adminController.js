@@ -12,7 +12,7 @@ const { sendEmail, emailTemplates } = require('../utils/sendEmail');
 
 const createHeadteacher = async (req, res) => {
   try {
-    const { fullName, email, school, schoolLevel, tempPassword } = req.body;
+    const { fullName, email, school, schoolId, schoolLevel, tempPassword } = req.body;
     const phone = (req.body.phone && String(req.body.phone).trim()) || '';
 
     if (!schoolLevel || !['PRIMARY', 'JHS'].includes(schoolLevel)) {
@@ -27,15 +27,33 @@ const createHeadteacher = async (req, res) => {
       if (phoneExists) return res.status(400).json({ success: false, message: 'Phone number already registered' });
     }
 
-    const headteacher = await User.create({
+    const headteacherData = {
       fullName, email, phone,
       password: tempPassword,
       role: 'headteacher',
-      schoolLevel, // PRIMARY or JHS
-      // school field will be linked to School model later (optional for now)
+      schoolLevel,
       isVerified: true,
       isActive: true,
-    });
+    };
+
+    // If schoolId provided, validate and assign
+    if (schoolId) {
+      const schoolDoc = await School.findById(schoolId);
+      if (!schoolDoc) {
+        return res.status(400).json({ success: false, message: 'School not found' });
+      }
+      if (schoolDoc.headteacher) {
+        return res.status(400).json({ success: false, message: 'School already has a headteacher assigned' });
+      }
+      headteacherData.school = schoolId;
+    }
+
+    const headteacher = await User.create(headteacherData);
+
+    // If schoolId provided, link school to headteacher
+    if (schoolId) {
+      await School.findByIdAndUpdate(schoolId, { headteacher: headteacher._id });
+    }
 
     // Try to send email (don't fail if email fails)
     try {
@@ -182,10 +200,12 @@ const createSchool = async (req, res) => {
       await User.findByIdAndUpdate(headteacherId, { school: school._id });
     }
 
+    const populatedSchool = await School.findById(school._id).populate('headteacher', 'fullName email phone');
+
     res.status(201).json({ 
       success: true, 
       message: 'School created successfully', 
-      school 
+      school: populatedSchool 
     });
   } catch (error) {
     res.status(500).json({ 
@@ -198,25 +218,53 @@ const createSchool = async (req, res) => {
 const updateSchool = async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const { headteacherId, ...rest } = req.body;
 
-    const school = await School.findByIdAndUpdate(
-      id,
-      { $set: updateData },
-      { new: true, runValidators: true }
-    );
-
+    const school = await School.findById(id);
     if (!school) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'School not found' 
-      });
+      return res.status(404).json({ success: false, message: 'School not found' });
     }
+
+    // Handle headteacher assignment
+    const previousHeadteacherId = school.headteacher?.toString?.() || school.headteacher;
+
+    if (headteacherId !== undefined) {
+      const newHeadteacherId = headteacherId === '' || headteacherId === null ? null : headteacherId;
+
+      // Validate new headteacher if provided
+      if (newHeadteacherId) {
+        const headteacher = await User.findById(newHeadteacherId);
+        if (!headteacher || headteacher.role !== 'headteacher') {
+          return res.status(400).json({ success: false, message: 'Invalid headteacher' });
+        }
+        if (headteacher.school && headteacher.school.toString() !== id) {
+          return res.status(400).json({ success: false, message: 'Headteacher is already assigned to another school' });
+        }
+      }
+
+      // Remove school from previous headteacher
+      if (previousHeadteacherId) {
+        await User.findByIdAndUpdate(previousHeadteacherId, { $unset: { school: 1 } });
+      }
+
+      // Assign new headteacher to school and school to headteacher
+      if (newHeadteacherId) {
+        await User.findByIdAndUpdate(newHeadteacherId, { school: id });
+      }
+
+      school.headteacher = newHeadteacherId;
+    }
+
+    // Apply other updates
+    Object.assign(school, rest);
+    await school.save();
+
+    const updatedSchool = await School.findById(id).populate('headteacher', 'fullName email phone');
 
     res.json({ 
       success: true, 
       message: 'School updated successfully', 
-      school 
+      school: updatedSchool 
     });
   } catch (error) {
     res.status(500).json({ 

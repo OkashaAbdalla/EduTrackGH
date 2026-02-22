@@ -5,6 +5,7 @@
 
 import { useState, useEffect } from 'react';
 import adminService from '../services/adminService';
+import cacheService from '../utils/cache';
 import { useToast } from '../context';
 
 const useSchools = () => {
@@ -81,10 +82,19 @@ const useSchools = () => {
 
   const updateSchool = async (id, formData) => {
     try {
-      const response = await adminService.updateSchool(id, formData);
+      const payload = {
+        name: formData.name,
+        schoolLevel: formData.schoolLevel,
+        location: formData.location,
+        contact: formData.contact,
+        headteacherId: formData.headteacherId || null,
+      };
+      const response = await adminService.updateSchool(id, payload);
       if (response.success) {
         showToast('School updated successfully', 'success');
-        await fetchSchools();
+        cacheService.invalidate('/admin/schools');
+        cacheService.invalidate('/admin/headteachers');
+        await Promise.all([fetchSchools(), fetchHeadteachers()]);
         return { success: true };
       } else {
         showToast(response.message || 'Failed to update school', 'error');
