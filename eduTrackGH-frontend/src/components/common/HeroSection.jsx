@@ -5,21 +5,21 @@
 
 const HeroSection = () => {
   return (
-    <div className="space-y-6">
+    <div className="space-y-7 text-left lg:pr-6">
       {/* Badge */}
-      <div className="inline-flex items-center space-x-2 bg-green-100 dark:bg-green-900/30 border border-green-600 dark:border-green-700 rounded-full px-4 py-2">
+      <div className="inline-flex items-center space-x-2 bg-green-100/90 dark:bg-green-900/30 border border-green-600/70 dark:border-green-700 rounded-full px-4 py-2 shadow-sm">
         <div className="w-2 h-2 bg-green-500 dark:bg-green-400 rounded-full animate-pulse"></div>
         <span className="text-green-700 dark:text-green-400 text-sm font-medium">FOR BASIC SCHOOLS</span>
       </div>
 
       {/* Heading */}
-      <div>
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white leading-tight">Digital Presence</h1>
-        <h1 className="text-4xl md:text-5xl font-bold text-green-600 dark:text-green-400 leading-tight">Every Child Matters.</h1>
+      <div className="space-y-1">
+        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">Digital Presence</h1>
+        <h1 className="text-4xl md:text-5xl font-bold text-green-600 dark:text-green-400 leading-tight tracking-tight">Every Child Matters.</h1>
       </div>
 
       {/* Description */}
-      <p className="text-gray-700 dark:text-gray-300 text-base leading-relaxed max-w-lg">
+      <p className="text-gray-700 dark:text-gray-300 text-base leading-relaxed max-w-xl">
         Real-time attendance tracking. Parents always informed. Built for basic schools (P1–P6, JHS 1–3).
       </p>
 

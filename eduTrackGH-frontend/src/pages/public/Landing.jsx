@@ -16,7 +16,7 @@ import { Navbar, HeroSection, AuthCard, Footer } from '../../components/common';
 
 const Landing = () => {
   return (
-    <div className="min-h-screen lg:h-screen flex flex-col bg-gradient-to-b from-slate-900/90 via-slate-900/75 to-slate-950/95 transition-colors duration-300 lg:overflow-hidden">
+    <div className="min-h-screen lg:h-screen flex flex-col bg-gradient-to-b from-[#f6f8fc] via-[#eef2f8] to-[#e7edf4] dark:from-slate-900/90 dark:via-slate-900/75 dark:to-slate-950/95 transition-colors duration-300 lg:overflow-hidden">
       <Navbar />
       
       <div className="flex-1 flex items-center py-8 lg:py-0 overflow-y-auto lg:overflow-hidden">

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Login Page with Toast Notifications
  */
 
@@ -62,14 +62,37 @@ const Login = () => {
 
   return (
     <AuthLayout>
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Welcome Back</h2>
-        <p className="text-gray-600 dark:text-gray-400 text-base">
+      <div className="mb-3 flex items-center justify-start">
+        <Link
+          to={ROUTES.HOME}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:text-white/80"
+          aria-label="Back to landing page"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to home
+        </Link>
+      </div>
+
+      <div className="mb-3 rounded-3xl border border-slate-200/70 bg-white/80 px-4 py-3 text-center shadow-[0_16px_32px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-white/5">
+        <div className="mb-2 flex items-center justify-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-green-700 text-white shadow-[0_10px_20px_rgba(22,163,74,0.3)]">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <span className="text-lg font-bold text-slate-900 dark:text-white">
+            Edu<span className="text-green-600 dark:text-green-400">Track</span> GH
+          </span>
+        </div>
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-1.5">Welcome Back</h2>
+        <p className="text-[11px] text-gray-700 dark:text-gray-300 font-semibold tracking-wide uppercase">
           Sign in to access your EduTrack GH attendance dashboard.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3 rounded-3xl border border-slate-200/70 bg-white/80 p-4 shadow-[0_16px_32px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-white/5">
         <FormInput
           label="Email"
           type="email"
@@ -81,21 +104,21 @@ const Login = () => {
           required
         />
 
-        <FormInput
-          label="Password"
-          type="password"
-          name="password"
-          value={formData.password}
-          onChange={handleChange}
-          placeholder="••••••••"
-          error={errors.password}
-          required
-        />
+          <FormInput
+            label="Password"
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            placeholder="Enter your password"
+            error={errors.password}
+            required
+          />
 
         <button
           type="submit"
           disabled={loading}
-          className="w-full bg-gradient-to-r from-green-600 to-green-700 dark:from-green-600 dark:to-green-700 text-white py-3.5 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 dark:hover:from-green-700 dark:hover:to-green-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-green-500/30 hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group"
+          className="w-full bg-gradient-to-r from-green-600 to-green-700 dark:from-green-600 dark:to-green-700 text-white py-2.5 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 dark:hover:from-green-700 dark:hover:to-green-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-green-500/30 hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group"
         >
           <span className="relative z-10 flex items-center justify-center space-x-2">
             {loading ? (
@@ -119,7 +142,7 @@ const Login = () => {
         </button>
       </form>
 
-      <div className="mt-6 pt-6 border-t border-gray-200 dark:border-gray-700">
+      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
         <p className="text-center text-gray-600 dark:text-gray-400 text-sm">
           Don't have an account?{' '}
           <Link to={ROUTES.REGISTER} className="text-green-600 dark:text-green-400 hover:text-green-700 dark:hover:text-green-300 font-semibold transition-colors">
@@ -127,8 +150,6 @@ const Login = () => {
           </Link>
         </p>
       </div>
-
-
     </AuthLayout>
   );
 };

@@ -62,14 +62,36 @@ const Register = () => {
 
   return (
     <AuthLayout>
-      <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold text-gray-900 dark:text-white mb-3">Create Account</h2>
-        <p className="text-gray-600 dark:text-gray-400 text-base">
+      <div className="mb-6 flex items-center justify-start">
+        <Link
+          to={ROUTES.HOME}
+          className="inline-flex items-center gap-2 rounded-full border border-slate-200/80 bg-white/80 px-4 py-2 text-sm font-semibold text-slate-700 shadow-sm transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-md dark:border-white/10 dark:bg-white/5 dark:text-white/80"
+          aria-label="Back to landing page"
+        >
+          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+          </svg>
+          Back to home
+        </Link>
+      </div>
+      <div className="mb-5 rounded-3xl border border-slate-200/70 bg-white/80 px-5 py-5 text-center shadow-[0_18px_40px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-white/5">
+        <div className="mb-4 flex items-center justify-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-green-600 text-white shadow-[0_12px_24px_rgba(22,163,74,0.35)]">
+            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          </div>
+          <span className="text-xl font-bold text-slate-900 dark:text-white">
+            Edu<span className="text-green-600 dark:text-green-400">Track</span> GH
+          </span>
+        </div>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">Create Account</h2>
+        <p className="text-[11px] text-gray-700 dark:text-gray-300 font-semibold tracking-wide uppercase">
           Join EduTrack GH and help monitor attendance in your basic school.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4 rounded-3xl border border-slate-200/70 bg-white/80 p-5 shadow-[0_18px_40px_rgba(15,23,42,0.12)] dark:border-white/10 dark:bg-white/5">
         <FormInput
           label="Full Name"
           name="fullName"
@@ -103,7 +125,7 @@ const Register = () => {
         <button 
           type="submit" 
           disabled={loading} 
-          className="w-full bg-gradient-to-r from-green-600 to-green-700 dark:from-green-600 dark:to-green-700 text-white py-3.5 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 dark:hover:from-green-700 dark:hover:to-green-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-green-500/30 hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group"
+          className="w-full bg-gradient-to-r from-green-600 to-green-700 dark:from-green-600 dark:to-green-700 text-white py-3 rounded-xl font-semibold hover:from-green-700 hover:to-green-800 dark:hover:from-green-700 dark:hover:to-green-800 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg hover:shadow-green-500/30 hover:scale-[1.02] active:scale-[0.98] relative overflow-hidden group"
         >
           <span className="relative z-10 flex items-center justify-center space-x-2">
             {loading ? (

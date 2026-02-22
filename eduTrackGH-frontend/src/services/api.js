@@ -61,7 +61,15 @@ apiClient.interceptors.response.use(
     // Handle common errors
     if (error.response?.status === 401) {
       const wasAdmin = localStorage.getItem('user_role') === 'admin';
-      const wasAdminRequest = error.config?.url?.includes(import.meta.env.VITE_ADMIN_LOGIN_PATH || 'secure-admin');
+      const adminLoginPath = import.meta.env.VITE_ADMIN_LOGIN_PATH || 'secure-admin';
+      const wasAdminRequest = error.config?.url?.includes(adminLoginPath);
+      const isAuthLoginRequest =
+        error.config?.url?.includes('/auth/login') ||
+        error.config?.url?.includes(`/auth/${adminLoginPath}`);
+
+      if (isAuthLoginRequest) {
+        return Promise.reject(error);
+      }
       localStorage.removeItem('auth_token');
       localStorage.removeItem('user_role');
       localStorage.removeItem('user_email');
