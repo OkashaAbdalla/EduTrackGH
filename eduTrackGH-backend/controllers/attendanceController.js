@@ -8,8 +8,10 @@ const User = require("../models/User");
 const Classroom = require("../models/Classroom");
 const Student = require("../models/Student");
 const DailyAttendance = require("../models/DailyAttendance");
+const AttendanceFlag = require("../models/AttendanceFlag");
 const Notification = require("../models/Notification");
 const { sendSms } = require("../utils/sendSms");
+const { uploadAttendancePhoto } = require("../utils/cloudinary");
 
 const markAttendance = async (req, res) => {
   try {
@@ -306,6 +308,12 @@ const markDailyAttendance = async (req, res) => {
         studentId,
       });
       if (existing) {
+        if (existing.isLocked) {
+          return res.status(403).json({
+            success: false,
+            message: "Attendance is locked for this classroom and date. Contact admin to unlock.",
+          });
+        }
         existing.status = status;
         existing.photoUrl = photoUrl;
         existing.verificationType = verificationType;
@@ -348,14 +356,96 @@ const markDailyAttendance = async (req, res) => {
             date: dateOnly,
           });
           if (smsEnabled && student.parentPhone) {
-            const smsResult = await sendSms(student.parentPhone, msg);
-            if (!smsResult.success) {
-              console.warn("SMS failed for", student.parentPhone, smsResult.message);
-            }
+            sendSms(student.parentPhone, msg)
+              .then((smsResult) => {
+                if (!smsResult.success) {
+                  console.warn("SMS failed for", student.parentPhone, smsResult.message);
+                }
+              })
+              .catch((err) => {
+                console.warn("SMS error for", student.parentPhone, err.message);
+              });
           }
         }
       }
     }
+
+    // Phase 3: Lock attendance after submission
+    if (savedRecords.length > 0) {
+      await DailyAttendance.updateMany(
+        { classroomId, date: dateOnly },
+        { $set: { isLocked: true } }
+      );
+    }
+
+    // Phase 8: Suspicious pattern detection (fire-and-forget)
+    (async () => {
+      try {
+        const studentsInClass = await Student.find({ classroomId }).select("_id");
+        const studentIdsArr = studentsInClass.map((s) => s._id);
+        // Rule 1: All records marked within < 60 seconds
+        if (savedRecords.length >= 2) {
+          const times = savedRecords.map((r) => r.markedAt?.getTime?.() ?? 0).filter(Boolean);
+          if (times.length >= 2) {
+            const minT = Math.min(...times);
+            const maxT = Math.max(...times);
+            if (maxT - minT < 60000) {
+              await AttendanceFlag.findOneAndUpdate(
+                { classroomId, date: dateOnly, flagType: "rapid_marking" },
+                {
+                  $set: {
+                    classroomId,
+                    schoolId,
+                    date: dateOnly,
+                    flagType: "rapid_marking",
+                    details: `All ${savedRecords.length} records marked within ${Math.round((maxT - minT) / 1000)}s`,
+                    isResolved: false,
+                  },
+                },
+                { upsert: true, new: true }
+              );
+            }
+          }
+        }
+        // Rule 2: 100% present for 15 consecutive days
+        const today = new Date(dateOnly);
+        let consecutive100 = 0;
+        for (let d = 0; d < 15; d++) {
+          const checkDate = new Date(today);
+          checkDate.setDate(checkDate.getDate() - d);
+          checkDate.setHours(0, 0, 0, 0);
+          const dayRecords = await DailyAttendance.find({
+            classroomId,
+            date: checkDate,
+            studentId: { $in: studentIdsArr },
+          });
+          const presentCount = dayRecords.filter((r) => r.status === "present").length;
+          if (studentIdsArr.length > 0 && presentCount === studentIdsArr.length) {
+            consecutive100++;
+          } else {
+            break;
+          }
+        }
+        if (consecutive100 >= 15) {
+          await AttendanceFlag.findOneAndUpdate(
+            { classroomId, date: dateOnly, flagType: "consecutive_100_present" },
+            {
+              $set: {
+                classroomId,
+                schoolId,
+                date: dateOnly,
+                flagType: "consecutive_100_present",
+                details: `100% present for ${consecutive100} consecutive days`,
+                isResolved: false,
+              },
+            },
+            { upsert: true, new: true }
+          );
+        }
+      } catch (err) {
+        console.warn("AttendanceFlag check error:", err.message);
+      }
+    })();
 
     res.status(201).json({
       success: true,
@@ -421,6 +511,24 @@ const getClassroomDailyHistory = async (req, res) => {
   }
 };
 
+// Phase 5: Upload attendance photo (teacher); returns URL for photoUrl
+const uploadPhoto = async (req, res) => {
+  try {
+    const { image } = req.body;
+    if (!image) {
+      return res.status(400).json({ success: false, message: "image (base64) is required" });
+    }
+    const result = await uploadAttendancePhoto(image);
+    if (!result.success) {
+      return res.status(400).json({ success: false, message: result.message });
+    }
+    res.json({ success: true, photoUrl: result.url });
+  } catch (error) {
+    console.error("uploadPhoto error:", error);
+    res.status(500).json({ success: false, message: "Failed to upload photo" });
+  }
+};
+
 module.exports = {
   markAttendance,
   getAttendanceHistory,
@@ -430,4 +538,5 @@ module.exports = {
   getClassroomAttendanceHistory,
   markDailyAttendance,
   getClassroomDailyHistory,
+  uploadPhoto,
 };

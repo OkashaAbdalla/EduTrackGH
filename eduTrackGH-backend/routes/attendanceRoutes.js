@@ -14,6 +14,7 @@ const {
   getClassroomAttendanceHistory,
   markDailyAttendance,
   getClassroomDailyHistory,
+  uploadPhoto,
 } = require("../controllers/attendanceController");
 const { protect } = require("../middleware/authMiddleware");
 const { authorize } = require("../middleware/roleMiddleware");
@@ -28,6 +29,7 @@ router.get("/history", authorize("student"), getAttendanceHistory);
 router.post("/enroll-face", authorize("student"), enrollFace);
 
 // Teacher routes (EduTrack GH daily attendance) — Phase 2: validation + new payload fields
+router.post("/upload-photo", authorize("teacher"), uploadPhoto);
 router.post("/daily", authorize("teacher"), validateDailyAttendancePayload, markDailyAttendance);
 router.get(
   "/classroom/:classroomId/daily",
