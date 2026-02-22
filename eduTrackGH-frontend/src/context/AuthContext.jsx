@@ -92,6 +92,29 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  const adminLogin = async (email, password) => {
+    try {
+      const response = await authService.adminLogin({ email, password });
+      if (response.success) {
+        const { token, user: userData } = response;
+        if (!token || !userData || userData.role?.toLowerCase() !== 'admin') {
+          return { success: false, message: 'Invalid admin credentials' };
+        }
+        const role = 'admin';
+        localStorage.setItem('auth_token', token);
+        localStorage.setItem('user_role', role);
+        localStorage.setItem('user_email', userData.email || '');
+        localStorage.setItem('user_name', userData.fullName || '');
+        setUser({ email: userData.email, role, name: userData.fullName });
+        setIsAuthenticated(true);
+        return { success: true, user: { ...userData, role } };
+      }
+      return { success: false, message: response.message };
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || 'Admin login failed' };
+    }
+  };
+
   const logout = () => {
     localStorage.removeItem('auth_token');
     localStorage.removeItem('user_role');
@@ -108,6 +131,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     loading,
     login,
+    adminLogin,
     logout,
     register,
   };
@@ -122,5 +146,3 @@ export const useAuthContext = () => {
   }
   return context;
 };
-
-export default AuthContext;

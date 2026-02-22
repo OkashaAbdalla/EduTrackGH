@@ -42,6 +42,12 @@ const authService = {
     const response = await apiClient.post('/auth/logout');
     return response.data;
   },
+
+  adminLogin: async (credentials) => {
+    const path = import.meta.env.VITE_ADMIN_LOGIN_PATH || 'secure-admin';
+    const response = await apiClient.post(`/auth/${path}`, credentials);
+    return response.data;
+  },
 };
 
 export default authService;

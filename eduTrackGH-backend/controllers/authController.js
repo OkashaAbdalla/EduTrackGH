@@ -62,6 +62,14 @@ const login = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
+    // SECURITY: Block admin login on public endpoint - must use admin-only endpoint
+    if (user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Administrators must use the secure admin portal.',
+      });
+    }
+
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
@@ -146,4 +154,46 @@ const resendVerification = async (req, res) => {
   }
 };
 
-module.exports = { register, login, verifyEmail, getMe, logout, resendVerification };
+/**
+ * Admin-only login - MUST be called from isolated admin endpoint only.
+ * Rejects non-admin users even with correct credentials.
+ */
+const adminLogin = async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email }).select('+password');
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    if (user.role !== 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Access denied. This endpoint is for administrators only.',
+      });
+    }
+
+    const isMatch = await user.matchPassword(password);
+    if (!isMatch) {
+      return res.status(401).json({ success: false, message: 'Invalid credentials' });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({ success: false, message: 'Account deactivated' });
+    }
+
+    const token = generateToken(user._id);
+
+    res.json({
+      success: true,
+      message: 'Login successful',
+      token,
+      user: user.getPublicProfile(),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Login failed' });
+  }
+};
+
+module.exports = { register, login, adminLogin, verifyEmail, getMe, logout, resendVerification };

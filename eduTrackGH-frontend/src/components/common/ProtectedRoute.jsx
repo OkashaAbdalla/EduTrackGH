@@ -6,7 +6,7 @@
 
 import { Navigate } from 'react-router-dom';
 import { useAuthContext } from '../../context';
-import { ROUTES } from '../../utils/constants';
+import { ROUTES, ROLES } from '../../utils/constants';
 import { getRoleRedirectPath } from '../../utils/loginHelpers';
 
 const ProtectedRoute = ({ children, requiredRole = null }) => {
@@ -21,7 +21,7 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to={ROUTES.LOGIN} replace />;
+    return <Navigate to={requiredRole === ROLES.ADMIN ? ROUTES.ADMIN_LOGIN : ROUTES.LOGIN} replace />;
   }
 
   if (requiredRole && user?.role !== requiredRole) {

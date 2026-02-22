@@ -31,7 +31,7 @@ app.use(
 app.use(express.json({ limit: "10mb" })); // For base64 images
 app.use(express.urlencoded({ extended: true }));
 
-// Routes
+// Routes - Admin login is registered inside authRoutes at /api/auth/${ADMIN_LOGIN_PATH}
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/sessions", require("./routes/sessionRoutes"));
 app.use("/api/attendance", require("./routes/attendanceRoutes"));
@@ -65,7 +65,6 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
-  console.log(
-    `🌐 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`,
-  );
+  console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`);
+  console.log(`🔐 Admin login path: /api/auth/${process.env.ADMIN_LOGIN_PATH || "secure-admin-default"}`);
 });

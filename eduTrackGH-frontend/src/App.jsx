@@ -16,7 +16,7 @@ import { Landing, Login, Register, VerifyEmail } from './pages/public';
 import { TeacherDashboard, MarkAttendance, AttendanceHistory, FlaggedStudents } from './pages/teacher';
 import { HeadteacherDashboard, SchoolReports, TeacherCompliance, ManageClasses } from './pages/headteacher';
 import { ParentDashboard, ChildrenAttendance, Notifications } from './pages/parent';
-import { AdminDashboard, CreateHeadteacher, ManageSchools, ManageTeachers, SystemSettings, AttendanceAudit } from './pages/admin';
+import { AdminDashboard, AdminLogin, CreateHeadteacher, ManageSchools, ManageTeachers, SystemSettings, AttendanceAudit } from './pages/admin';
 import { ProtectedRoute } from './components/common';
 import { ROUTES, ROLES } from './utils/constants';
 
@@ -32,6 +32,7 @@ function App() {
           <Route path={ROUTES.LOGIN} element={<Login />} />
           <Route path={ROUTES.REGISTER} element={<Register />} />
           <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
+          <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLogin />} />
           
           {/* Teacher Routes - Protected */}
           <Route path={ROUTES.TEACHER_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><TeacherDashboard /></ProtectedRoute>} />

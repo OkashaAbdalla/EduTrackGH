@@ -27,7 +27,8 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   VERIFY_EMAIL: '/verify-email',
-  
+  ADMIN_LOGIN: `/${import.meta.env.VITE_ADMIN_LOGIN_PATH || 'secure-admin'}`,
+
   // Teacher routes
   TEACHER_DASHBOARD: '/teacher/dashboard',
   MARK_ATTENDANCE: '/teacher/mark-attendance',

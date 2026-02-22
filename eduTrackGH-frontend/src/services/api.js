@@ -13,6 +13,7 @@
  */
 
 import axios from 'axios';
+import { ROUTES } from '../utils/constants';
 
 // ========================================
 // BASE URL CONFIGURATION
@@ -59,11 +60,16 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle common errors
     if (error.response?.status === 401) {
-      // Token expired - could implement refresh logic here
+      const wasAdmin = localStorage.getItem('user_role') === 'admin';
+      const wasAdminRequest = error.config?.url?.includes(import.meta.env.VITE_ADMIN_LOGIN_PATH || 'secure-admin');
       localStorage.removeItem('auth_token');
-      window.location.href = '/login';
+      localStorage.removeItem('user_role');
+      localStorage.removeItem('user_email');
+      localStorage.removeItem('user_name');
+      localStorage.removeItem('user_schoolLevel');
+      window.location.href = wasAdmin || wasAdminRequest ? ROUTES.ADMIN_LOGIN : ROUTES.LOGIN;
     }
-    
+
     return Promise.reject(error);
   }
 );
