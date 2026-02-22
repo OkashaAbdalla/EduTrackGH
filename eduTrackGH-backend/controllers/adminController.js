@@ -6,11 +6,14 @@ const User = require('../models/User');
 const School = require('../models/School');
 const Student = require('../models/Student');
 const Classroom = require('../models/Classroom');
+const DailyAttendance = require('../models/DailyAttendance');
+const AttendanceFlag = require('../models/AttendanceFlag');
 const { sendEmail, emailTemplates } = require('../utils/sendEmail');
 
 const createHeadteacher = async (req, res) => {
   try {
-    const { fullName, email, phone, school, schoolLevel, tempPassword } = req.body;
+    const { fullName, email, school, schoolLevel, tempPassword } = req.body;
+    const phone = (req.body.phone && String(req.body.phone).trim()) || '';
 
     if (!schoolLevel || !['PRIMARY', 'JHS'].includes(schoolLevel)) {
       return res.status(400).json({ success: false, message: 'School level is required (PRIMARY or JHS)' });
@@ -19,8 +22,10 @@ const createHeadteacher = async (req, res) => {
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ success: false, message: 'Email already registered' });
 
-    const phoneExists = await User.findOne({ phone });
-    if (phoneExists) return res.status(400).json({ success: false, message: 'Phone number already registered' });
+    if (phone) {
+      const phoneExists = await User.findOne({ phone });
+      if (phoneExists) return res.status(400).json({ success: false, message: 'Phone number already registered' });
+    }
 
     const headteacher = await User.create({
       fullName, email, phone,
@@ -51,13 +56,16 @@ const createHeadteacher = async (req, res) => {
 
 const createTeacher = async (req, res) => {
   try {
-    const { fullName, email, phone, schoolId, tempPassword } = req.body;
+    const { fullName, email, schoolId, tempPassword } = req.body;
+    const phone = (req.body.phone && String(req.body.phone).trim()) || '';
 
     const userExists = await User.findOne({ email });
     if (userExists) return res.status(400).json({ success: false, message: 'Email already registered' });
 
-    const phoneExists = await User.findOne({ phone });
-    if (phoneExists) return res.status(400).json({ success: false, message: 'Phone number already registered' });
+    if (phone) {
+      const phoneExists = await User.findOne({ phone });
+      if (phoneExists) return res.status(400).json({ success: false, message: 'Phone number already registered' });
+    }
 
     const teacher = await User.create({
       fullName, email, phone,
@@ -299,6 +307,123 @@ const updateSystemSettings = async (req, res) => {
   }
 };
 
+// Phase 7: Get classrooms for a school (audit filters)
+const getSchoolClassrooms = async (req, res) => {
+  try {
+    const { schoolId } = req.params;
+    const classrooms = await Classroom.find({ schoolId, isActive: true })
+      .select('_id name grade')
+      .sort({ name: 1 });
+    res.json({ success: true, classrooms });
+  } catch (error) {
+    res.status(500).json({ success: false, message: 'Failed to get classrooms' });
+  }
+};
+
+// Phase 7: Admin attendance audit — filter by school, classroom, date
+const getAttendanceAudit = async (req, res) => {
+  try {
+    const { schoolId, classroomId, date } = req.query;
+    const query = {};
+    if (schoolId) query.schoolId = schoolId;
+    if (classroomId) query.classroomId = classroomId;
+    if (date) {
+      const d = new Date(date);
+      d.setHours(0, 0, 0, 0);
+      const dEnd = new Date(d);
+      dEnd.setHours(23, 59, 59, 999);
+      query.date = { $gte: d, $lte: dEnd };
+    }
+    const records = await DailyAttendance.find(query)
+      .populate('studentId', 'fullName studentIdNumber')
+      .populate('classroomId', 'name grade')
+      .populate('schoolId', 'name')
+      .sort({ date: -1, markedAt: -1 })
+      .limit(500)
+      .lean();
+    const presentRecords = records.filter((r) => r.status === 'present');
+    const photoVerified = presentRecords.filter((r) => r.verificationType === 'photo').length;
+    const manualVerified = presentRecords.filter((r) => r.verificationType === 'manual').length;
+    const totalPresent = presentRecords.length;
+    const byDate = {};
+    records.forEach((r) => {
+      const d = r.date?.toISOString?.()?.split?.('T')?.[0] || 'unknown';
+      if (!byDate[d]) byDate[d] = { present: 0, absent: 0, late: 0, total: 0 };
+      byDate[d][r.status]++;
+      byDate[d].total++;
+    });
+    const hundredPercentDays = Object.entries(byDate).filter(
+      ([_, v]) => v.total > 0 && v.present === v.total
+    ).length;
+    res.json({
+      success: true,
+      records,
+      summary: {
+        totalRecords: records.length,
+        photoVerifiedPct: totalPresent > 0 ? Math.round((photoVerified / totalPresent) * 100) : 0,
+        manualVerifiedPct: totalPresent > 0 ? Math.round((manualVerified / totalPresent) * 100) : 0,
+        hundredPercentPresentDays: hundredPercentDays,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get attendance audit',
+    });
+  }
+};
+
+// Phase 7 & 8: Admin attendance flags (suspicious patterns)
+const getAttendanceFlags = async (req, res) => {
+  try {
+    const { schoolId, resolved } = req.query;
+    const query = {};
+    if (schoolId) query.schoolId = schoolId;
+    if (resolved !== undefined) query.isResolved = resolved === 'true';
+    const flags = await AttendanceFlag.find(query)
+      .populate('classroomId', 'name grade')
+      .populate('schoolId', 'name')
+      .sort({ createdAt: -1 })
+      .limit(100)
+      .lean();
+    res.json({ success: true, count: flags.length, flags });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to get attendance flags',
+    });
+  }
+};
+
+// Phase 3: Admin unlock attendance for a classroom and date
+const unlockAttendance = async (req, res) => {
+  try {
+    const { classroomId, date } = req.params;
+    const dateOnly = new Date(date);
+    dateOnly.setHours(0, 0, 0, 0);
+    const result = await DailyAttendance.updateMany(
+      { classroomId, date: dateOnly },
+      { $set: { isLocked: false } }
+    );
+    if (result.matchedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: 'No attendance records found for this classroom and date',
+      });
+    }
+    res.json({
+      success: true,
+      message: `Unlocked ${result.modifiedCount} attendance record(s)`,
+      modifiedCount: result.modifiedCount,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to unlock attendance',
+    });
+  }
+};
+
 module.exports = { 
   createHeadteacher, 
   createTeacher, 
@@ -311,4 +436,8 @@ module.exports = {
   toggleSchoolStatus,
   getSystemSettings,
   updateSystemSettings,
+  getSchoolClassrooms,
+  getAttendanceAudit,
+  getAttendanceFlags,
+  unlockAttendance,
 };
