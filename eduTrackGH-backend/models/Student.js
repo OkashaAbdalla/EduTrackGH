@@ -39,10 +39,11 @@ const studentSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
-  // Parent/Guardian references (linked by phone number primarily)
+  // Parent/Guardian references (optional until SMS notification is implemented)
   parentPhone: {
     type: String,
-    required: [true, 'Parent phone number is required'],
+    required: false,
+    default: '',
     trim: true,
   },
   parentName: {
