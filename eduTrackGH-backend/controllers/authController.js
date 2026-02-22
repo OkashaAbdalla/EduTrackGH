@@ -9,22 +9,24 @@ const { sendEmail, emailTemplates } = require('../utils/sendEmail');
 
 const register = async (req, res) => {
   try {
-    const { fullName, email, phone, password } = req.body;
+    const { fullName, email, password } = req.body;
+    const phone = (req.body.phone && String(req.body.phone).trim()) || '';
 
     const userExists = await User.findOne({ email });
     if (userExists) {
       return res.status(400).json({ success: false, message: 'Email already registered' });
     }
 
-    const phoneExists = await User.findOne({ phone });
-    if (phoneExists) {
-      return res.status(400).json({ success: false, message: 'Phone number already registered' });
+    if (phone) {
+      const phoneExists = await User.findOne({ phone });
+      if (phoneExists) {
+        return res.status(400).json({ success: false, message: 'Phone number already registered' });
+      }
     }
 
     const verificationToken = crypto.randomBytes(32).toString('hex');
 
-    // Default role is 'parent' for public registration
-    // Teachers and headteachers are created by admin
+    // Default role is 'parent' for public registration. Phone optional (email notifications only).
     const user = await User.create({
       fullName, email, phone, password, role: 'parent', verificationToken,
     });

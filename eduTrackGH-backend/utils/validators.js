@@ -9,7 +9,11 @@ const validationRules = {
   register: [
     body('fullName').trim().notEmpty().withMessage('Full name is required'),
     body('email').isEmail().withMessage('Valid email is required'),
-    body('phone').matches(/^(0\d{9}|\+233\d{9})$/).withMessage('Invalid phone number format (e.g., 0241234567 or +233241234567)'),
+    body('phone')
+      .optional({ values: 'falsy' })
+      .trim()
+      .matches(/^(0\d{9}|\+233\d{9})$/)
+      .withMessage('Invalid phone number format (e.g., 0241234567 or +233241234567)'),
     body('password').isLength({ min: 8 }).withMessage('Password must be at least 8 characters'),
   ],
 
