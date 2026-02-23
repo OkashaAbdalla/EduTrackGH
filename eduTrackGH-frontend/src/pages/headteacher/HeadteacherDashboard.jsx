@@ -66,7 +66,7 @@ const HeadteacherDashboard = () => {
         showToast(res.message || 'Upload failed', 'error');
       }
     } catch (err) {
-      showToast('Failed to upload photo', 'error');
+      showToast(err?.message || 'Failed to upload photo', 'error');
     } finally {
       setAvatarLoading(false);
     }
@@ -85,7 +85,7 @@ const HeadteacherDashboard = () => {
         showToast(res.message || 'Failed to remove photo', 'error');
       }
     } catch (err) {
-      showToast('Failed to remove photo', 'error');
+      showToast(err?.message || 'Failed to remove photo', 'error');
     } finally {
       setAvatarLoading(false);
     }

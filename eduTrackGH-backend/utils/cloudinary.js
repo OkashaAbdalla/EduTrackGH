@@ -5,7 +5,23 @@
 
 const { cloudinary, isConfigured } = require('../config/cloudinary');
 
-const MAX_SIZE_BYTES = 1 * 1024 * 1024; // 1MB
+const MAX_SIZE_BYTES = 2 * 1024 * 1024; // 2MB (project requirement)
+
+const parseBase64Input = (base64Data) => {
+  const value = String(base64Data || '').trim();
+  if (!value) return { base64: '', mime: 'image/jpeg' };
+
+  if (value.startsWith('data:') && value.includes('base64,')) {
+    const [header, data] = value.split(',');
+    const mimeMatch = header.match(/^data:(.+);base64$/);
+    return {
+      base64: data || '',
+      mime: mimeMatch ? mimeMatch[1] : 'image/jpeg',
+    };
+  }
+
+  return { base64: value, mime: 'image/jpeg' };
+};
 
 /**
  * Upload base64 image (e.g. from canvas/data URL)
@@ -21,15 +37,15 @@ async function uploadAttendancePhoto(base64Data) {
     return { success: false, message: 'Invalid image data' };
   }
 
-  // Strip data URL prefix if present
-  const base64 = base64Data.includes(',') ? base64Data.split(',')[1] : base64Data;
+  // Strip data URL prefix if present and capture mime
+  const { base64, mime } = parseBase64Input(base64Data);
   const sizeEstimate = (base64.length * 3) / 4;
   if (sizeEstimate > MAX_SIZE_BYTES) {
-    return { success: false, message: 'Image too large (max 1MB). Compress before upload.' };
+    return { success: false, message: 'Image too large (max 2MB). Compress before upload.' };
   }
 
   try {
-    const result = await cloudinary.uploader.upload(`data:image/jpeg;base64,${base64}`, {
+    const result = await cloudinary.uploader.upload(`data:${mime};base64,${base64}`, {
       folder: 'edutrack-attendance',
       resource_type: 'image',
       transformation: [{ quality: 'auto:good', fetch_format: 'auto' }],
@@ -55,14 +71,14 @@ async function uploadProfilePhoto(base64Data) {
     return { success: false, message: 'Invalid image data' };
   }
 
-  const base64 = base64Data.includes(',') ? base64Data.split(',')[1] : base64Data;
+  const { base64, mime } = parseBase64Input(base64Data);
   const sizeEstimate = (base64.length * 3) / 4;
   if (sizeEstimate > MAX_SIZE_BYTES) {
-    return { success: false, message: 'Image too large (max 1MB). Compress before upload.' };
+    return { success: false, message: 'Image too large (max 2MB). Compress before upload.' };
   }
 
   try {
-    const result = await cloudinary.uploader.upload(`data:image/jpeg;base64,${base64}`, {
+    const result = await cloudinary.uploader.upload(`data:${mime};base64,${base64}`, {
       folder: 'edutrack-profiles',
       resource_type: 'image',
       transformation: [{ quality: 'auto:good', fetch_format: 'auto' }],
