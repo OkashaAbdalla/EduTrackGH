@@ -6,6 +6,7 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const { sendEmail, emailTemplates } = require('../utils/sendEmail');
+const { uploadProfilePhoto, deleteImage } = require('../utils/cloudinary');
 
 const register = async (req, res) => {
   try {
@@ -120,6 +121,53 @@ const getMe = async (req, res) => {
   }
 };
 
+const uploadProfilePhotoHandler = async (req, res) => {
+  try {
+    if (req.user.role !== 'headteacher') {
+      return res.status(403).json({ success: false, message: 'Only headteachers can update profile photo' });
+    }
+    const { image } = req.body || {};
+    const upload = await uploadProfilePhoto(image);
+    if (!upload.success) {
+      return res.status(400).json({ success: false, message: upload.message || 'Upload failed' });
+    }
+
+    if (req.user.avatarPublicId) {
+      await deleteImage(req.user.avatarPublicId);
+    }
+
+    req.user.avatarUrl = upload.url;
+    req.user.avatarPublicId = upload.publicId;
+    await req.user.save();
+
+    return res.json({ success: true, avatarUrl: upload.url });
+  } catch (error) {
+    console.error('uploadProfilePhoto error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to upload profile photo' });
+  }
+};
+
+const deleteProfilePhotoHandler = async (req, res) => {
+  try {
+    if (req.user.role !== 'headteacher') {
+      return res.status(403).json({ success: false, message: 'Only headteachers can update profile photo' });
+    }
+
+    if (req.user.avatarPublicId) {
+      await deleteImage(req.user.avatarPublicId);
+    }
+
+    req.user.avatarUrl = '';
+    req.user.avatarPublicId = '';
+    await req.user.save();
+
+    return res.json({ success: true });
+  } catch (error) {
+    console.error('deleteProfilePhoto error:', error);
+    return res.status(500).json({ success: false, message: 'Failed to delete profile photo' });
+  }
+};
+
 const logout = async (req, res) => {
   res.json({ success: true, message: 'Logged out successfully' });
 };
@@ -196,4 +244,14 @@ const adminLogin = async (req, res) => {
   }
 };
 
-module.exports = { register, login, adminLogin, verifyEmail, getMe, logout, resendVerification };
+module.exports = {
+  register,
+  login,
+  adminLogin,
+  verifyEmail,
+  getMe,
+  logout,
+  resendVerification,
+  uploadProfilePhotoHandler,
+  deleteProfilePhotoHandler,
+};

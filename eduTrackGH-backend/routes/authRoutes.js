@@ -5,7 +5,17 @@
 
 const express = require('express');
 const router = express.Router();
-const { register, login, adminLogin, verifyEmail, getMe, logout, resendVerification } = require('../controllers/authController');
+const {
+  register,
+  login,
+  adminLogin,
+  verifyEmail,
+  getMe,
+  logout,
+  resendVerification,
+  uploadProfilePhotoHandler,
+  deleteProfilePhotoHandler,
+} = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 const { validationRules, validate } = require('../utils/validators');
 const { loginLimiter, adminLoginLimiter } = require('../middleware/rateLimitMiddleware');
@@ -23,5 +33,7 @@ router.post('/resend-verification', resendVerification);
 // Protected routes
 router.get('/me', protect, getMe);
 router.post('/logout', protect, logout);
+router.post('/profile-photo', protect, uploadProfilePhotoHandler);
+router.delete('/profile-photo', protect, deleteProfilePhotoHandler);
 
 module.exports = router;

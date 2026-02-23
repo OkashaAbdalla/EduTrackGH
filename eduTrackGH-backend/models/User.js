@@ -76,6 +76,15 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Student',
   }],
+  // Profile photo (headteacher for now)
+  avatarUrl: {
+    type: String,
+    default: '',
+  },
+  avatarPublicId: {
+    type: String,
+    default: '',
+  },
 }, {
   timestamps: true, // Adds createdAt and updatedAt
 });
@@ -109,6 +118,7 @@ userSchema.methods.getPublicProfile = function() {
     school: this.school,
     isVerified: this.isVerified,
     isActive: this.isActive,
+    avatarUrl: this.avatarUrl,
   };
 };
 

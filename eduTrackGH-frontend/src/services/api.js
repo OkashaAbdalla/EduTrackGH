@@ -66,8 +66,9 @@ apiClient.interceptors.response.use(
       const isAuthLoginRequest =
         error.config?.url?.includes('/auth/login') ||
         error.config?.url?.includes(`/auth/${adminLoginPath}`);
+      const isProfilePhotoRequest = error.config?.url?.includes('/auth/profile-photo');
 
-      if (isAuthLoginRequest) {
+      if (isAuthLoginRequest || isProfilePhotoRequest) {
         return Promise.reject(error);
       }
       localStorage.removeItem('auth_token');

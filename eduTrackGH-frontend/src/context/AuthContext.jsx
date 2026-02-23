@@ -27,6 +27,7 @@ export const AuthProvider = ({ children }) => {
     const userEmail = localStorage.getItem('user_email');
     const userName = localStorage.getItem('user_name');
     const userSchoolLevel = localStorage.getItem('user_schoolLevel');
+    const userAvatar = localStorage.getItem('user_avatar');
 
     if (token && userRole) {
       const role = String(userRole).toLowerCase().trim();
@@ -35,6 +36,7 @@ export const AuthProvider = ({ children }) => {
         role,
         name: userName,
         schoolLevel: userSchoolLevel,
+        avatarUrl: userAvatar,
       });
       setIsAuthenticated(true);
     }
@@ -63,12 +65,16 @@ export const AuthProvider = ({ children }) => {
         if (userData.schoolLevel) {
           localStorage.setItem('user_schoolLevel', userData.schoolLevel);
         }
+        if (userData.avatarUrl) {
+          localStorage.setItem('user_avatar', userData.avatarUrl);
+        }
 
         setUser({
           email: userData.email,
           role,
           name: userData.fullName,
           schoolLevel: userData.schoolLevel,
+          avatarUrl: userData.avatarUrl,
         });
         setIsAuthenticated(true);
         console.log('Auth state updated, isAuthenticated:', true);
@@ -105,7 +111,10 @@ export const AuthProvider = ({ children }) => {
         localStorage.setItem('user_role', role);
         localStorage.setItem('user_email', userData.email || '');
         localStorage.setItem('user_name', userData.fullName || '');
-        setUser({ email: userData.email, role, name: userData.fullName });
+        if (userData.avatarUrl) {
+          localStorage.setItem('user_avatar', userData.avatarUrl);
+        }
+        setUser({ email: userData.email, role, name: userData.fullName, avatarUrl: userData.avatarUrl });
         setIsAuthenticated(true);
         return { success: true, user: { ...userData, role } };
       }
@@ -121,6 +130,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('user_email');
     localStorage.removeItem('user_name');
     localStorage.removeItem('user_schoolLevel');
+    localStorage.removeItem('user_avatar');
 
     setUser(null);
     setIsAuthenticated(false);

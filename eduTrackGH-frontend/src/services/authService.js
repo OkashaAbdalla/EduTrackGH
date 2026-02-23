@@ -48,6 +48,16 @@ const authService = {
     const response = await apiClient.post(`/auth/${path}`, credentials);
     return response.data;
   },
+
+  uploadProfilePhoto: async (base64Image) => {
+    const response = await apiClient.post('/auth/profile-photo', { image: base64Image });
+    return response.data;
+  },
+
+  deleteProfilePhoto: async () => {
+    const response = await apiClient.delete('/auth/profile-photo');
+    return response.data;
+  },
 };
 
 export default authService;

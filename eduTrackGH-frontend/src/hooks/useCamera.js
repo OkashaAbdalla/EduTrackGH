@@ -5,11 +5,18 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react';
 
-const useCamera = () => {
+const useCamera = (options = {}) => {
   const videoRef = useRef(null);
   const streamRef = useRef(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState(null);
+
+  const {
+    maxImageSize = 1024 * 1024, // 1MB
+    maxDimension = 1024,
+    startQuality = 0.82,
+    minQuality = 0.4,
+  } = options;
 
   const startCamera = useCallback(async () => {
     try {
@@ -61,6 +68,49 @@ const useCamera = () => {
     setError(null);
   }, []);
 
+  const compressCanvasToBase64 = useCallback((sourceCanvas) => {
+    return new Promise((resolve) => {
+      const targetCanvas = document.createElement('canvas');
+      let targetWidth = sourceCanvas.width;
+      let targetHeight = sourceCanvas.height;
+
+      if (targetWidth > maxDimension || targetHeight > maxDimension) {
+        const ratio = Math.min(maxDimension / targetWidth, maxDimension / targetHeight);
+        targetWidth = Math.round(targetWidth * ratio);
+        targetHeight = Math.round(targetHeight * ratio);
+      }
+
+      targetCanvas.width = targetWidth;
+      targetCanvas.height = targetHeight;
+      const ctx = targetCanvas.getContext('2d');
+      ctx.drawImage(sourceCanvas, 0, 0, targetWidth, targetHeight);
+
+      let quality = startQuality;
+      const tryExport = () => {
+        targetCanvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              resolve(sourceCanvas.toDataURL('image/jpeg', startQuality));
+              return;
+            }
+            if (blob.size <= maxImageSize || quality <= minQuality) {
+              const reader = new FileReader();
+              reader.onload = () => resolve(reader.result);
+              reader.onerror = () => resolve(sourceCanvas.toDataURL('image/jpeg', minQuality));
+              reader.readAsDataURL(blob);
+              return;
+            }
+            quality -= 0.1;
+            tryExport();
+          },
+          'image/jpeg',
+          quality
+        );
+      };
+      tryExport();
+    });
+  }, []);
+
   const captureImage = useCallback(() => {
     return new Promise((resolve, reject) => {
       if (!videoRef.current || !isStreaming) {
@@ -77,14 +127,13 @@ const useCamera = () => {
         
         const ctx = canvas.getContext('2d');
         ctx.drawImage(video, 0, 0);
-        
-        const base64Image = canvas.toDataURL('image/jpeg', 0.9);
-        resolve(base64Image);
+
+        compressCanvasToBase64(canvas).then(resolve);
       } catch (err) {
         reject(new Error('Failed to capture image'));
       }
     });
-  }, [isStreaming]);
+  }, [compressCanvasToBase64, isStreaming]);
 
   // Cleanup on unmount
   useEffect(() => {
