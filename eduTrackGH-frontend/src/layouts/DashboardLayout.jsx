@@ -102,7 +102,14 @@ const DashboardLayout = ({ children }) => {
                   <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                 </svg>
               </div>
-              <span className="text-xs font-medium text-slate-700 dark:text-gray-300 capitalize">{userRole}</span>
+              <div className="flex flex-col">
+                <span className="text-xs font-semibold text-slate-800 dark:text-gray-100">
+                  {user?.name || 'User'}
+                </span>
+                <span className="text-[11px] text-slate-600 dark:text-gray-300 capitalize">
+                  {userRole}
+                </span>
+              </div>
             </div>
             <button
               onClick={handleLogout}
