@@ -56,33 +56,6 @@ export const ROUTES = {
 };
 
 // ========================================
-// API ENDPOINTS
-// ========================================
-// Backend API endpoint structure (for reference)
-// Used in service layer for API calls
-export const API_ENDPOINTS = {
-  AUTH: {
-    REGISTER: '/auth/register',
-    LOGIN: '/auth/login',
-    VERIFY_EMAIL: '/auth/verify-email',
-    GOOGLE_AUTH: '/auth/google',
-    LOGOUT: '/auth/logout',
-  },
-  ATTENDANCE: {
-    MARK: '/attendance/mark',
-    HISTORY: '/attendance/history',
-    SESSIONS: '/attendance/sessions',
-  },
-  SESSIONS: {
-    CREATE: '/sessions/create',
-    ACTIVATE: '/sessions/:id/activate',
-    DEACTIVATE: '/sessions/:id/deactivate',
-    LIST: '/sessions',
-    ATTENDEES: '/sessions/:id/attendees',
-  },
-};
-
-// ========================================
 // EDUTRACK GH DESIGN SYSTEM
 // ========================================
 // EduTrack GH Branding

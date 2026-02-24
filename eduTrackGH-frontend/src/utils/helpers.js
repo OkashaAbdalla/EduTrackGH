@@ -20,30 +20,6 @@ export const formatTime = (date) => {
   });
 };
 
-// Calculate time remaining for session
-export const getTimeRemaining = (endTime) => {
-  const now = new Date();
-  const end = new Date(endTime);
-  const diff = end - now;
-  
-  if (diff <= 0) return 'Expired';
-  
-  const minutes = Math.floor(diff / 60000);
-  const hours = Math.floor(minutes / 60);
-  
-  if (hours > 0) return `${hours}h ${minutes % 60}m remaining`;
-  return `${minutes}m remaining`;
-};
-
-// Check if session is active
-export const isSessionActive = (startTime, endTime) => {
-  const now = new Date();
-  const start = new Date(startTime);
-  const end = new Date(endTime);
-  
-  return now >= start && now <= end;
-};
-
 // Convert image file to base64
 export const fileToBase64 = (file) => {
   return new Promise((resolve, reject) => {
