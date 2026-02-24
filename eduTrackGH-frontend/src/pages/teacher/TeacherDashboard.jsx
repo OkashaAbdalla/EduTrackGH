@@ -116,7 +116,7 @@ const TeacherDashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           <Link to={ROUTES.MARK_ATTENDANCE}>
             <Card variant="action" hover className="p-6 group cursor-pointer">
               <div className="flex items-center space-x-5">
@@ -130,6 +130,28 @@ const TeacherDashboard = () => {
                   <p className="text-sm text-gray-600 dark:text-gray-400">Record daily attendance for your classes</p>
                   <div className="mt-3 flex items-center text-green-600 dark:text-green-400 text-sm font-medium">
                     <span>Get started</span>
+                    <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+            </Card>
+          </Link>
+
+          <Link to={ROUTES.MANAGE_STUDENTS}>
+            <Card variant="action" hover className="p-6 group cursor-pointer">
+              <div className="flex items-center space-x-5">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                  <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Manage Students</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Propose new students for approval</p>
+                  <div className="mt-3 flex items-center text-blue-600 dark:text-blue-400 text-sm font-medium">
+                    <span>Add students</span>
                     <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>

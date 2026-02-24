@@ -34,12 +34,14 @@ export const ROUTES = {
   MARK_ATTENDANCE: '/teacher/mark-attendance',
   ATTENDANCE_HISTORY: '/teacher/history',
   FLAGGED_STUDENTS: '/teacher/flagged',
+  MANAGE_STUDENTS: '/teacher/students',
 
   // Headteacher (school admin) routes
   HEADTEACHER_DASHBOARD: '/headteacher/dashboard',
   SCHOOL_REPORTS: '/headteacher/reports',
   TEACHER_COMPLIANCE: '/headteacher/compliance',
   MANAGE_CLASSES: '/headteacher/classes',
+  HEADTEACHER_MANAGE_STUDENTS: '/headteacher/students',
 
   // Parent routes
   PARENT_DASHBOARD: '/parent/dashboard',
