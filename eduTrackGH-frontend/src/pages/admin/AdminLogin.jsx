@@ -1,23 +1,31 @@
-﻿/**
+/**
  * Admin Login Page
  * Isolated from public login. URL must not be linked from public pages.
  * Path: /{VITE_ADMIN_LOGIN_PATH} - e.g. /secure-admin-a1b2c3d4
  */
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { FormInput } from '../../components/common';
 import { useToast, useAuthContext } from '../../context';
 import { ROUTES } from '../../utils/constants';
-import { validateLoginForm } from '../../utils/loginHelpers';
+import { validateLoginForm, getRoleRedirectPath } from '../../utils/loginHelpers';
 
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { adminLogin } = useAuthContext();
+  const { adminLogin, user, isAuthenticated } = useAuthContext();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
+
+  // Security: if a non-admin is already logged in, never show admin login UI.
+  useEffect(() => {
+    if (isAuthenticated && user?.role && user.role !== 'admin') {
+      const redirect = getRoleRedirectPath(user.role);
+      navigate(redirect, { replace: true });
+    }
+  }, [isAuthenticated, user, navigate]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;

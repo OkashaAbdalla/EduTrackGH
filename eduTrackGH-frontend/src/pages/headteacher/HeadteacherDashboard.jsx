@@ -23,9 +23,10 @@ const HeadteacherDashboard = () => {
     flaggedStudents: 0,
   });
   const [loading, setLoading] = useState(true);
-  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || localStorage.getItem('user_avatar') || '');
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
   const [menuOpen, setMenuOpen] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
+  const [schoolName, setSchoolName] = useState('');
 
   useEffect(() => {
     // TODO: Replace with real API call
@@ -40,6 +41,23 @@ const HeadteacherDashboard = () => {
       setLoading(false);
     };
     fetchStats();
+  }, []);
+
+  // Fetch full profile (including schoolName) once so headteacher sees assigned school
+  useEffect(() => {
+    const loadProfile = async () => {
+      try {
+        const res = await authService.getMe();
+        if (res.success && res.user) {
+          if (res.user.schoolName) {
+            setSchoolName(res.user.schoolName);
+          }
+        }
+      } catch {
+        // Silent fail; dashboard still works without school name
+      }
+    };
+    loadProfile();
   }, []);
 
   const handleAvatarChange = async (event) => {
@@ -59,7 +77,6 @@ const HeadteacherDashboard = () => {
       const res = await authService.uploadProfilePhoto(base64);
       if (res.success && res.avatarUrl) {
         setAvatarUrl(res.avatarUrl);
-        localStorage.setItem('user_avatar', res.avatarUrl);
         setMenuOpen(false);
         showToast('Profile photo updated', 'success');
       } else {
@@ -77,7 +94,6 @@ const HeadteacherDashboard = () => {
     try {
       const res = await authService.deleteProfilePhoto();
       if (res.success) {
-        localStorage.removeItem('user_avatar');
         setAvatarUrl('');
         setMenuOpen(false);
         showToast('Profile photo removed', 'success');
@@ -108,8 +124,13 @@ const HeadteacherDashboard = () => {
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
-              Welcome{user?.name ? `, ${user.name}` : ''} 
+              Welcome{user?.name ? `, ${user.name}` : ''}
             </h1>
+            {schoolName && (
+              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mt-1">
+                {schoolName}
+              </p>
+            )}
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               {schoolLevel === 'PRIMARY'
                 ? 'Primary Section (P1-P6) - Attendance monitoring and reports'
