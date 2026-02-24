@@ -114,8 +114,16 @@ const verifyEmail = async (req, res) => {
 
 const getMe = async (req, res) => {
   try {
-    const user = await User.findById(req.user._id);
-    res.json({ success: true, user: user.getPublicProfile() });
+    const user = await User.findById(req.user._id).populate('school', 'name');
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+
+    const profile = user.getPublicProfile();
+    // Add schoolName for headteachers (or any user linked to a school)
+    profile.schoolName = user.school && user.school.name ? user.school.name : null;
+
+    res.json({ success: true, user: profile });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to get user data' });
   }

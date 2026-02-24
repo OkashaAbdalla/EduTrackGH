@@ -231,14 +231,22 @@ const updateSchool = async (req, res) => {
     if (headteacherId !== undefined) {
       const newHeadteacherId = headteacherId === '' || headteacherId === null ? null : headteacherId;
 
-      // Validate new headteacher if provided
+      // Validate new headteacher if provided and prepare for potential transfer
+      let headteacher;
       if (newHeadteacherId) {
-        const headteacher = await User.findById(newHeadteacherId);
+        headteacher = await User.findById(newHeadteacherId);
         if (!headteacher || headteacher.role !== 'headteacher') {
           return res.status(400).json({ success: false, message: 'Invalid headteacher' });
         }
+
+        // If this headteacher is currently assigned to a different school,
+        // detach them from that school so they can be posted to the new one.
         if (headteacher.school && headteacher.school.toString() !== id) {
-          return res.status(400).json({ success: false, message: 'Headteacher is already assigned to another school' });
+          const previousSchool = await School.findById(headteacher.school);
+          if (previousSchool && previousSchool.headteacher?.toString() === headteacher._id.toString()) {
+            previousSchool.headteacher = null;
+            await previousSchool.save();
+          }
         }
       }
 
