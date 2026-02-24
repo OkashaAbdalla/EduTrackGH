@@ -50,6 +50,29 @@ const studentSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  parentEmail: {
+    type: String,
+    trim: true,
+    lowercase: true,
+  },
+  // Registration workflow (teacher proposes, headteacher approves)
+  status: {
+    type: String,
+    enum: ['PENDING', 'ACTIVE', 'REJECTED'],
+    default: 'ACTIVE', // existing records remain active; new proposals will override
+    index: true,
+  },
+  createdBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User', // teacher who proposed
+  },
+  approvedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User', // headteacher who approved
+  },
+  approvedAt: {
+    type: Date,
+  },
   // Face recognition data (encrypted or stored securely)
   faceEncoding: {
     type: String, // Base64 encoded face encoding
