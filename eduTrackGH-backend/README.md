@@ -47,7 +47,7 @@ Creates admin, headteachers, teachers, parent (e.g. `admin@edutrack.test` / `adm
 
 ```
 config/       db, email
-models/       User, School, Student, Classroom, Attendance, DailyAttendance, Notification
+models/       User, School, Student, Classroom, DailyAttendance, Notification
 controllers/  auth, attendance, classroom, admin, notification, reports
 routes/       auth, attendance, classrooms, admin, notifications, reports
 middleware/   auth, role, error
