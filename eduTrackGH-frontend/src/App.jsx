@@ -14,7 +14,7 @@ import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-d
 import { ThemeProvider, ToastProvider, AuthProvider } from './context';
 import { Landing, Login, Register, VerifyEmail } from './pages/public';
 import { TeacherDashboard, MarkAttendance, AttendanceHistory, FlaggedStudents, ManageStudents } from './pages/teacher';
-import { HeadteacherDashboard, SchoolReports, TeacherCompliance, ManageClasses, ManageStudents as HeadteacherManageStudents } from './pages/headteacher';
+import { HeadteacherDashboard, SchoolReports, TeacherCompliance, ManageClasses, ManageStudents as HeadteacherManageStudents, ManageTeachers as HeadteacherManageTeachers } from './pages/headteacher';
 import { ParentDashboard, ChildrenAttendance, Notifications } from './pages/parent';
 import { AdminDashboard, AdminLogin, CreateHeadteacher, ManageSchools, ManageTeachers, SystemSettings, AttendanceAudit } from './pages/admin';
 import { ProtectedRoute } from './components/common';
@@ -47,6 +47,7 @@ function App() {
           <Route path={ROUTES.TEACHER_COMPLIANCE} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><TeacherCompliance /></ProtectedRoute>} />
           <Route path={ROUTES.MANAGE_CLASSES} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><ManageClasses /></ProtectedRoute>} />
           <Route path={ROUTES.HEADTEACHER_MANAGE_STUDENTS} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherManageStudents /></ProtectedRoute>} />
+          <Route path={ROUTES.HEADTEACHER_MANAGE_TEACHERS} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherManageTeachers /></ProtectedRoute>} />
           
           {/* Parent Routes - Protected */}
           <Route path={ROUTES.PARENT_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.PARENT}><ParentDashboard /></ProtectedRoute>} />

@@ -42,6 +42,7 @@ export const ROUTES = {
   TEACHER_COMPLIANCE: '/headteacher/compliance',
   MANAGE_CLASSES: '/headteacher/classes',
   HEADTEACHER_MANAGE_STUDENTS: '/headteacher/students',
+  HEADTEACHER_MANAGE_TEACHERS: '/headteacher/teachers',
 
   // Parent routes
   PARENT_DASHBOARD: '/parent/dashboard',

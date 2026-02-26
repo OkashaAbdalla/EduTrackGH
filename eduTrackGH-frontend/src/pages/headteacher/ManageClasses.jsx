@@ -8,6 +8,7 @@ import { useState, useEffect } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import { useToast, useAuthContext } from '../../context';
+import { headteacherService } from '../../services';
 
 const ManageClasses = () => {
   const { showToast } = useToast();
@@ -27,38 +28,30 @@ const ManageClasses = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 800));
+      const [teachersResult, classroomsResult] = await Promise.all([
+        headteacherService.getTeachers(),
+        headteacherService.getClassrooms(),
+      ]);
 
-      // Mock teachers list
-      const availableTeachers = [
-        { id: '101', name: 'Grace Osei' },
-        { id: '102', name: 'David Boateng' },
-        { id: '103', name: 'Fatima Alhassan' },
-        { id: '104', name: 'Amina Yakubu' },
-        { id: '105', name: 'Yaw Boateng' },
-        { id: '106', name: 'Kwame Asante' },
-      ];
-      setTeachers(availableTeachers);
+      if (teachersResult.success) {
+        setTeachers(teachersResult.teachers || []);
+      } else {
+        showToast(teachersResult.message || 'Failed to load teachers', 'error');
+      }
 
-      // Mock classes
-      const allClasses = [
-        { id: '1', name: 'Primary 1', level: 'PRIMARY', teacher: 'Fatima Alhassan', teacherId: '103', students: 45, attendanceRate: 92.3 },
-        { id: '2', name: 'Primary 2', level: 'PRIMARY', teacher: 'Amina Yakubu', teacherId: '104', students: 48, attendanceRate: 89.1 },
-        { id: '3', name: 'Primary 3', level: 'PRIMARY', teacher: 'Amina Yakubu', teacherId: '104', students: 42, attendanceRate: 88.5 },
-        { id: '4', name: 'Primary 4', level: 'PRIMARY', teacher: 'Grace Osei', teacherId: '101', students: 40, attendanceRate: 85.2 },
-        { id: '5', name: 'Primary 5', level: 'PRIMARY', teacher: 'Grace Osei', teacherId: '101', students: 38, attendanceRate: 86.7 },
-        { id: '6', name: 'Primary 6', level: 'PRIMARY', teacher: 'Yaw Boateng', teacherId: '105', students: 35, attendanceRate: 84.9 },
-        { id: '7', name: 'JHS 1', level: 'JHS', teacher: 'David Boateng', teacherId: '102', students: 52, attendanceRate: 88.2 },
-        { id: '8', name: 'JHS 2', level: 'JHS', teacher: 'Kwame Asante', teacherId: '106', students: 50, attendanceRate: 87.8 },
-        { id: '9', name: 'JHS 3', level: 'JHS', teacher: 'Kwame Asante', teacherId: '106', students: 60, attendanceRate: 82.1 },
-      ];
-
-      // Filter classes based on headteacher's level
-      const filteredClasses = schoolLevel
-        ? allClasses.filter(cls => cls.level === schoolLevel)
-        : allClasses;
-      setClasses(filteredClasses);
+      if (classroomsResult.success) {
+        const mapped = (classroomsResult.classrooms || []).map((cls) => ({
+          id: cls._id,
+          name: cls.name,
+          grade: cls.grade,
+          teacherId: cls.teacherId?._id || cls.teacherId || '',
+          teacherName: cls.teacherId?.fullName || 'Unassigned',
+          students: cls.studentCount || 0,
+        }));
+        setClasses(mapped);
+      } else {
+        showToast(classroomsResult.message || 'Failed to load classes', 'error');
+      }
     } catch (error) {
       showToast('Failed to load data', 'error');
     } finally {
@@ -68,7 +61,7 @@ const ManageClasses = () => {
 
   const handleEditTeacher = (classItem) => {
     setEditingClass(classItem);
-    setSelectedTeacher(classItem.teacherId);
+    setSelectedTeacher(classItem.teacherId || '');
   };
 
   const handleSaveAssignment = async () => {
@@ -79,22 +72,24 @@ const ManageClasses = () => {
 
     setSaving(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 600));
+      const result = await headteacherService.assignClassTeacher(editingClass.id, selectedTeacher);
+      if (result.success) {
+        const updated = result.classroom;
+        const teacherName = updated.teacherId?.fullName || 'Unassigned';
+        setClasses(classes.map(cls =>
+          cls.id === editingClass.id
+            ? { ...cls, teacherId: updated.teacherId?._id || updated.teacherId, teacherName }
+            : cls
+        ));
 
-      const selectedTeacherObj = teachers.find(t => t.id === selectedTeacher);
-
-      setClasses(classes.map(cls =>
-        cls.id === editingClass.id
-          ? { ...cls, teacher: selectedTeacherObj.name, teacherId: selectedTeacher }
-          : cls
-      ));
-
-      showToast(`${editingClass.name} assigned to ${selectedTeacherObj.name}`, 'success');
-      setEditingClass(null);
-      setSelectedTeacher('');
+        showToast(`${editingClass.name} assigned to ${teacherName}`, 'success');
+        setEditingClass(null);
+        setSelectedTeacher('');
+      } else {
+        showToast(result.message || 'Failed to save assignment', 'error');
+      }
     } catch (error) {
-      showToast('Failed to save assignment', 'error');
+      showToast(error.response?.data?.message || 'Failed to save assignment', 'error');
     } finally {
       setSaving(false);
     }
@@ -122,11 +117,7 @@ const ManageClasses = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Classes</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {schoolLevel === 'PRIMARY'
-              ? 'Manage Primary classes (P1-P6) and assign teachers'
-              : schoolLevel === 'JHS'
-                ? 'Manage JHS classes (JHS 1-3) and assign teachers'
-                : 'Manage all classes and assign teachers'}
+            Manage your school&apos;s classes and assign teachers
           </p>
         </div>
 
@@ -143,7 +134,7 @@ const ManageClasses = () => {
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Students</p>
               <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {classes.reduce((sum, c) => sum + c.students, 0)}
+                {classes.reduce((sum, c) => sum + (c.students || 0), 0)}
               </p>
             </div>
           </Card>
@@ -152,9 +143,7 @@ const ManageClasses = () => {
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Average Attendance</p>
               <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {(
-                  classes.reduce((sum, c) => sum + c.attendanceRate, 0) / classes.length || 0
-                ).toFixed(1)}%
+                —
               </p>
             </div>
           </Card>
@@ -184,29 +173,20 @@ const ManageClasses = () => {
                     <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white">
                       {classItem.name}
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-900 dark:text-white">{classItem.teacher}</td>
+                    <td className="py-3 px-4 text-sm text-gray-900 dark:text-white">
+                      {classItem.teacherName || 'Unassigned'}
+                    </td>
                     <td className="py-3 px-4 text-center text-sm text-gray-900 dark:text-white">
                       {classItem.students}
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <span className="text-sm font-semibold text-gray-900 dark:text-white">
-                        {classItem.attendanceRate}%
+                      <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+                        —
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
-                      <span
-                        className={`inline-block px-2 py-1 rounded text-xs font-medium ${classItem.attendanceRate >= 90
-                            ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-                            : classItem.attendanceRate >= 75
-                              ? 'bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400'
-                              : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
-                          }`}
-                      >
-                        {classItem.attendanceRate >= 90
-                          ? 'Excellent'
-                          : classItem.attendanceRate >= 75
-                            ? 'Good'
-                            : 'Needs Attention'}
+                      <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                        Not available
                       </span>
                     </td>
                     <td className="py-3 px-4 text-center">
@@ -247,7 +227,7 @@ const ManageClasses = () => {
               <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
                 <p className="text-xs text-gray-600 dark:text-gray-400 mb-1">Current Teacher</p>
                 <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                  {editingClass.teacher}
+                  {editingClass.teacherName || 'Unassigned'}
                 </p>
               </div>
 
@@ -263,8 +243,8 @@ const ManageClasses = () => {
                 >
                   <option value="">-- Select a teacher --</option>
                   {teachers.map(teacher => (
-                    <option key={teacher.id} value={teacher.id}>
-                      {teacher.name}
+                    <option key={teacher.id || teacher._id} value={teacher.id || teacher._id}>
+                      {teacher.fullName}
                     </option>
                   ))}
                 </select>
