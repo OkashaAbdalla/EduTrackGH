@@ -6,7 +6,7 @@
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { Card } from '../../components/common';
+import { Card, Button } from '../../components/common';
 import { useToast, useAuthContext } from '../../context';
 import { headteacherService } from '../../services';
 
@@ -20,6 +20,7 @@ const ManageClasses = () => {
   const [editingClass, setEditingClass] = useState(null);
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [saving, setSaving] = useState(false);
+  const [seeding, setSeeding] = useState(false);
 
   useEffect(() => {
     fetchData();
@@ -100,6 +101,42 @@ const ManageClasses = () => {
     setSelectedTeacher('');
   };
 
+  const handleSeedDefaultClasses = async () => {
+    setSeeding(true);
+    try {
+      const result = await headteacherService.seedDefaultClassrooms();
+      if (result.success) {
+        const mapped = (result.classrooms || []).map((cls) => ({
+          id: cls._id,
+          name: cls.name,
+          grade: cls.grade,
+          teacherId: cls.teacherId?._id || cls.teacherId || '',
+          teacherName: cls.teacherId?.fullName || 'Unassigned',
+          students: cls.studentCount || 0,
+        }));
+        setClasses(mapped);
+        const createdCount = result.createdCount || 0;
+        const label =
+          schoolLevel === 'JHS'
+            ? 'JHS 1–3'
+            : schoolLevel === 'PRIMARY'
+            ? 'P1–P6'
+            : 'default classrooms';
+        const msg =
+          createdCount > 0
+            ? `Created ${createdCount} ${label} for your school`
+            : `All ${label} already exist for your school`;
+        showToast(msg, 'success');
+      } else {
+        showToast(result.message || 'Failed to create default classes', 'error');
+      }
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Failed to create default classes', 'error');
+    } finally {
+      setSeeding(false);
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -149,63 +186,85 @@ const ManageClasses = () => {
           </Card>
         </div>
 
-        {/* Classes Table */}
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">All Classes</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Class</th>
-                  <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Teacher</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Students</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Attendance</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Status</th>
-                  <th className="text-center py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {classes.map(classItem => (
-                  <tr
-                    key={classItem.id}
-                    className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
-                  >
-                    <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white">
-                      {classItem.name}
-                    </td>
-                    <td className="py-3 px-4 text-sm text-gray-900 dark:text-white">
-                      {classItem.teacherName || 'Unassigned'}
-                    </td>
-                    <td className="py-3 px-4 text-center text-sm text-gray-900 dark:text-white">
-                      {classItem.students}
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
-                        —
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
-                        Not available
-                      </span>
-                    </td>
-                    <td className="py-3 px-4 text-center">
-                      <button
-                        onClick={() => handleEditTeacher(classItem)}
-                        className="inline-flex items-center px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition text-sm font-medium"
-                      >
-                        <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                        </svg>
-                        Assign
-                      </button>
-                    </td>
+        {/* Classes Table / Empty State */}
+        {classes.length === 0 ? (
+          <Card className="p-6 flex flex-col items-center text-center space-y-4">
+            <div>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-1">
+                No classes yet
+              </h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Quickly set up your school&apos;s classes so you can assign teachers.
+              </p>
+            </div>
+            <Button
+              variant="primary"
+              onClick={handleSeedDefaultClasses}
+              loading={seeding}
+            >
+              {schoolLevel === 'JHS'
+                ? 'Create JHS 1–3 Classes'
+                : 'Create P1–P6 Classes'}
+            </Button>
+          </Card>
+        ) : (
+          <Card className="p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">All Classes</h2>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Class</th>
+                    <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Teacher</th>
+                    <th className="text-center py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Students</th>
+                    <th className="text-center py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Attendance</th>
+                    <th className="text-center py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Status</th>
+                    <th className="text-center py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                </thead>
+                <tbody>
+                  {classes.map(classItem => (
+                    <tr
+                      key={classItem.id}
+                      className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                    >
+                      <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white">
+                        {classItem.name}
+                      </td>
+                      <td className="py-3 px-4 text-sm text-gray-900 dark:text-white">
+                        {classItem.teacherName || 'Unassigned'}
+                      </td>
+                      <td className="py-3 px-4 text-center text-sm text-gray-900 dark:text-white">
+                        {classItem.students}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">
+                          —
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
+                          Not available
+                        </span>
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        <button
+                          onClick={() => handleEditTeacher(classItem)}
+                          className="inline-flex items-center px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition text-sm font-medium"
+                        >
+                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                          Assign
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
       </div>
 
       {/* Edit Teacher Modal */}

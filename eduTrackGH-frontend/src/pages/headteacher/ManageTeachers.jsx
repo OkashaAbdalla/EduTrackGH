@@ -2,18 +2,22 @@
  * Manage Teachers Page (Headteacher)
  * Purpose: Headteacher creates and views teachers in their school
  * Scope: Only teachers belonging to the headteacher's school
+ * Privacy: Phone not displayed (no SMS); details in View Details modal
  */
 
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { Card, Button } from '../../components/common';
+import { Card, Button, Modal } from '../../components/common';
 import { useToast } from '../../context';
 import { headteacherService } from '../../services';
 
 const ManageTeachers = () => {
   const { showToast } = useToast();
   const [teachers, setTeachers] = useState([]);
+  const [classrooms, setClassrooms] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [formData, setFormData] = useState({
@@ -25,6 +29,10 @@ const ManageTeachers = () => {
   const [errors, setErrors] = useState({});
   const [generatedPassword, setGeneratedPassword] = useState('');
   const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [viewDetailsTeacher, setViewDetailsTeacher] = useState(null);
+  const [assignTeacher, setAssignTeacher] = useState(null);
+  const [assignClassroomId, setAssignClassroomId] = useState('');
+  const [assigning, setAssigning] = useState(false);
 
   // Generate secure random password (same approach as admin)
   const generateSecurePassword = () => {
@@ -51,12 +59,21 @@ const ManageTeachers = () => {
     const fetchTeachers = async () => {
       try {
         setLoading(true);
-        const result = await headteacherService.getTeachers();
-        if (result.success) {
-          setTeachers(result.teachers || []);
+        const [tRes, cRes] = await Promise.all([
+          headteacherService.getTeachers(),
+          headteacherService.getClassrooms(),
+        ]);
+        if (tRes.success) {
+          const raw = tRes.teachers || [];
+          const normalized = raw.map((t) => ({
+            ...t,
+            isActive: t.isActive !== undefined ? t.isActive : true,
+          }));
+          setTeachers(normalized);
         } else {
-          showToast(result.message || 'Failed to load teachers', 'error');
+          showToast(tRes.message || 'Failed to load teachers', 'error');
         }
+        if (cRes.success) setClassrooms(cRes.classrooms || []);
       } catch (error) {
         showToast(error.response?.data?.message || 'Failed to load teachers', 'error');
       } finally {
@@ -149,6 +166,69 @@ const ManageTeachers = () => {
     }
   };
 
+  const handleToggleStatus = async (id) => {
+    try {
+      const res = await headteacherService.toggleTeacherStatus(id);
+      if (res.success && res.teacher) {
+        const updated = res.teacher;
+        setTeachers((prev) =>
+          prev.map((t) =>
+            (t._id || t.id) === id ? { ...t, ...updated, isActive: updated.isActive } : t
+          )
+        );
+        showToast(res.message || 'Teacher status updated', 'success');
+      } else {
+        showToast(res.message || 'Failed to update teacher status', 'error');
+      }
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Failed to update teacher status', 'error');
+    }
+  };
+
+  const filteredTeachers = teachers.filter((t) => {
+    const status = t.isActive ? 'active' : 'inactive';
+    const matchesFilter = filter === 'all' || status === filter;
+    const q = searchTerm.toLowerCase();
+    const matchesSearch =
+      !q ||
+      t.fullName?.toLowerCase().includes(q) ||
+      t.email?.toLowerCase().includes(q);
+    return matchesFilter && matchesSearch;
+  });
+
+  const getAssignedClassrooms = (teacherId) =>
+    classrooms.filter(
+      (c) => c.teacherId && (String(c.teacherId._id || c.teacherId) === String(teacherId))
+    );
+
+  const handleAssignClassroom = async (e) => {
+    e.preventDefault();
+    if (!assignTeacher || !assignClassroomId) {
+      showToast('Please select a classroom', 'error');
+      return;
+    }
+    setAssigning(true);
+    try {
+      const result = await headteacherService.assignClassTeacher(assignClassroomId, assignTeacher._id || assignTeacher.id);
+      if (result.success && result.classroom) {
+        setClassrooms((prev) =>
+          prev.map((c) =>
+            String(c._id) === String(assignClassroomId) ? result.classroom : c
+          )
+        );
+        showToast('Teacher assigned to classroom successfully', 'success');
+        setAssignTeacher(null);
+        setAssignClassroomId('');
+      } else {
+        showToast(result.message || 'Failed to assign classroom', 'error');
+      }
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Failed to assign classroom', 'error');
+    } finally {
+      setAssigning(false);
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -170,7 +250,7 @@ const ManageTeachers = () => {
           </Button>
         </div>
 
-        {/* Summary Card */}
+        {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="p-6">
             <div className="text-center">
@@ -200,7 +280,40 @@ const ManageTeachers = () => {
               </div>
             </div>
           </Card>
+          <Card className="p-6">
+            <div className="text-center">
+              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Active Teachers</p>
+              <p className="text-3xl font-bold text-green-600 dark:text-green-400">
+                {teachers.filter((t) => t.isActive).length}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+                Currently active in your school
+              </p>
+            </div>
+          </Card>
         </div>
+
+        {/* Filters and Search */}
+        <Card className="p-4">
+          <div className="flex flex-col md:flex-row gap-4">
+            <input
+              type="text"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              placeholder="Search by name or email..."
+              className="flex-1 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white"
+            />
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+              className="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white"
+            >
+              <option value="all">All</option>
+              <option value="active">Active</option>
+              <option value="inactive">Inactive</option>
+            </select>
+          </div>
+        </Card>
 
         {/* Teachers Table */}
         <Card>
@@ -208,7 +321,7 @@ const ManageTeachers = () => {
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
             </div>
-          ) : teachers.length === 0 ? (
+          ) : filteredTeachers.length === 0 ? (
             <div className="text-center py-10 px-6">
               <svg
                 className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4"
@@ -245,15 +358,17 @@ const ManageTeachers = () => {
                       Email
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      Phone
+                      Status
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wider">
-                      Status
+                      Actions
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
-                  {teachers.map((teacher) => (
+                  {filteredTeachers.map((teacher) => {
+                    const status = teacher.isActive ? 'Active' : 'Inactive';
+                    return (
                     <tr key={teacher._id || teacher.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/70">
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
                         {teacher.fullName}
@@ -261,22 +376,40 @@ const ManageTeachers = () => {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
                         {teacher.email}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">
-                        {teacher.phone || '—'}
-                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm">
-                        <span
+                        <button
+                          type="button"
+                          onClick={() => handleToggleStatus(teacher._id || teacher.id)}
                           className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                             teacher.isActive
                               ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300'
                               : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
                           }`}
                         >
-                          {teacher.isActive ? 'Active' : 'Inactive'}
-                        </span>
+                          {status}
+                        </button>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-sm">
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            type="button"
+                            onClick={() => setViewDetailsTeacher(teacher)}
+                            className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600"
+                          >
+                            View Details
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => { setAssignTeacher(teacher); setAssignClassroomId(''); }}
+                            className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800/60"
+                          >
+                            Assign Classroom
+                          </button>
+                        </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -414,6 +547,97 @@ const ManageTeachers = () => {
           </div>
         </div>
       )}
+
+      {/* View Details Modal */}
+      <Modal
+        isOpen={!!viewDetailsTeacher}
+        onClose={() => setViewDetailsTeacher(null)}
+        title="Teacher Details"
+        size="md"
+      >
+        {viewDetailsTeacher && (
+          <div className="space-y-3 text-sm">
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Full Name</span>
+              <p className="font-medium text-gray-900 dark:text-white mt-0.5">{viewDetailsTeacher.fullName}</p>
+            </div>
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Email</span>
+              <p className="font-medium text-gray-900 dark:text-white mt-0.5">{viewDetailsTeacher.email}</p>
+            </div>
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Status</span>
+              <p className="font-medium text-gray-900 dark:text-white mt-0.5">
+                {viewDetailsTeacher.isActive ? 'Active' : 'Inactive'}
+              </p>
+            </div>
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Assigned Classroom(s)</span>
+              <p className="font-medium text-gray-900 dark:text-white mt-0.5">
+                {getAssignedClassrooms(viewDetailsTeacher._id || viewDetailsTeacher.id).length > 0
+                  ? getAssignedClassrooms(viewDetailsTeacher._id || viewDetailsTeacher.id)
+                      .map((c) => `${c.name} (${c.grade})`)
+                      .join(', ')
+                  : 'None'}
+              </p>
+            </div>
+            <div>
+              <span className="text-gray-500 dark:text-gray-400">Account Created</span>
+              <p className="font-medium text-gray-900 dark:text-white mt-0.5">
+                {viewDetailsTeacher.createdAt
+                  ? new Date(viewDetailsTeacher.createdAt).toLocaleDateString()
+                  : '—'}
+              </p>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Assign Classroom Modal */}
+      <Modal
+        isOpen={!!assignTeacher}
+        onClose={() => { setAssignTeacher(null); setAssignClassroomId(''); }}
+        title="Assign Classroom"
+        size="md"
+      >
+        {assignTeacher && (
+          <form onSubmit={handleAssignClassroom} className="space-y-4">
+            <p className="text-sm text-gray-600 dark:text-gray-400">
+              Assign <span className="font-medium text-gray-900 dark:text-white">{assignTeacher.fullName}</span> to a classroom.
+            </p>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                Classroom
+              </label>
+              <select
+                value={assignClassroomId}
+                onChange={(e) => setAssignClassroomId(e.target.value)}
+                className="w-full px-3 py-2 border rounded-lg border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
+              >
+                <option value="">Select a classroom</option>
+                {classrooms.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name} ({c.grade})
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                onClick={() => { setAssignTeacher(null); setAssignClassroomId(''); }}
+                disabled={assigning}
+              >
+                Cancel
+              </Button>
+              <Button type="submit" variant="primary" loading={assigning}>
+                Assign
+              </Button>
+            </div>
+          </form>
+        )}
+      </Modal>
 
       {/* Password Info Modal */}
       {showPasswordModal && (
