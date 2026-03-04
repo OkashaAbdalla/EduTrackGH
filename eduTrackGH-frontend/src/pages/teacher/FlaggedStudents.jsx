@@ -6,25 +6,57 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
+import classroomService from '../../services/classroomService';
+import attendanceService from '../../services/attendanceService';
+import { useToast } from '../../context';
 
 const FlaggedStudents = () => {
+  const { showToast } = useToast();
   const [students, setStudents] = useState([]);
+  const [classrooms, setClassrooms] = useState([]);
+  const [selectedClassroom, setSelectedClassroom] = useState('');
   const [loading, setLoading] = useState(true);
 
-  // Mock flagged students
-  const mockStudents = [
-    { id: 1, name: 'Kwame Boateng', class: 'Primary 4A', absences: 5, rate: 75, lastAbsent: '2024-02-03' },
-    { id: 2, name: 'Akosua Mensah', class: 'Primary 5B', absences: 4, rate: 80, lastAbsent: '2024-02-02' },
-    { id: 3, name: 'Yaw Agyeman', class: 'JHS 2A', absences: 6, rate: 70, lastAbsent: '2024-02-05' },
-  ];
+  useEffect(() => {
+    const fetchClassrooms = async () => {
+      try {
+        const res = await classroomService.getTeacherClassrooms();
+        if (res.success && res.classrooms?.length) {
+          setClassrooms(res.classrooms);
+          setSelectedClassroom(res.classrooms[0]._id);
+        } else {
+          showToast('No classrooms assigned. Contact your headteacher.', 'error');
+        }
+      } catch {
+        showToast('Failed to load classrooms', 'error');
+      }
+    };
+    fetchClassrooms();
+  }, [showToast]);
 
   useEffect(() => {
-    // TODO: Fetch flagged students from API
-    setTimeout(() => {
-      setStudents(mockStudents);
-      setLoading(false);
-    }, 800);
-  }, []);
+    const fetchFlagged = async () => {
+      if (!selectedClassroom) {
+        setStudents([]);
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      try {
+        const res = await attendanceService.getFlaggedStudents(selectedClassroom);
+        if (res.success) {
+          setStudents(res.flagged || []);
+        } else {
+          showToast(res.message || 'Failed to load flagged students', 'error');
+        }
+      } catch {
+        showToast('Failed to load flagged students', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFlagged();
+  }, [selectedClassroom, showToast]);
 
   const getSeverityColor = (absences) => {
     if (absences >= 6) return 'text-red-600 dark:text-red-400';
@@ -37,8 +69,31 @@ const FlaggedStudents = () => {
       <div className="space-y-6 max-w-5xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Flagged Students</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Students with chronic absenteeism</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Students with chronic absenteeism over the last month
+          </p>
         </div>
+
+        {classrooms.length > 0 && (
+          <Card className="p-4">
+            <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+              <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Classroom
+              </label>
+              <select
+                value={selectedClassroom}
+                onChange={(e) => setSelectedClassroom(e.target.value)}
+                className="sm:flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white"
+              >
+                {classrooms.map((c) => (
+                  <option key={c._id} value={c._id}>
+                    {c.name} {c.grade && `(${c.grade})`}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </Card>
+        )}
 
         {loading ? (
           <Card className="p-12">
@@ -58,8 +113,12 @@ const FlaggedStudents = () => {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-white text-lg">{student.name}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{student.class}</p>
+                      <h3 className="font-semibold text-gray-900 dark:text-white text-lg">
+                        {student.name}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">
+                        {student.studentId}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center space-x-6">
@@ -68,8 +127,10 @@ const FlaggedStudents = () => {
                       <p className={`text-2xl font-bold ${getSeverityColor(student.absences)}`}>{student.absences}</p>
                     </div>
                     <div className="text-center">
-                      <p className="text-xs text-gray-500 dark:text-gray-500">Rate</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-white">{student.rate}%</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-500">Attendance</p>
+                      <p className="text-2xl font-bold text-gray-900 dark:text-white">
+                        {student.rate}%
+                      </p>
                     </div>
                   </div>
                 </div>
