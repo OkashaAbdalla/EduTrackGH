@@ -122,10 +122,78 @@ const getHeadteachers = async (req, res) => {
 
 const getTeachers = async (req, res) => {
   try {
-    const teachers = await User.find({ role: 'teacher' }).select('-password').sort({ createdAt: -1 });
+    const teachers = await User.find({ role: 'teacher' })
+      .select('-password')
+      .sort({ createdAt: -1 });
+
     res.json({ success: true, count: teachers.length, teachers });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Failed to get teachers' });
+  }
+};
+
+const updateTeacher = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fullName, email, phone, schoolLevel, assignedClasses } = req.body;
+
+    const teacher = await User.findById(id);
+    if (!teacher || teacher.role !== 'teacher') {
+      return res.status(404).json({ success: false, message: 'Teacher not found' });
+    }
+
+    if (email && email !== teacher.email) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists) {
+        return res.status(400).json({ success: false, message: 'Email already registered' });
+      }
+      teacher.email = email;
+    }
+
+    if (phone && phone !== teacher.phone) {
+      const phoneExists = await User.findOne({ phone });
+      if (phoneExists) {
+        return res.status(400).json({ success: false, message: 'Phone number already registered' });
+      }
+      teacher.phone = phone;
+    }
+
+    if (fullName) teacher.fullName = fullName;
+    if (schoolLevel) teacher.schoolLevel = schoolLevel;
+    if (Array.isArray(assignedClasses)) {
+      teacher.classroomIds = assignedClasses;
+    }
+
+    await teacher.save();
+
+    res.json({
+      success: true,
+      message: 'Teacher updated successfully',
+      teacher: teacher.getPublicProfile(),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || 'Failed to update teacher' });
+  }
+};
+
+const toggleTeacherStatus = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const teacher = await User.findById(id);
+    if (!teacher || teacher.role !== 'teacher') {
+      return res.status(404).json({ success: false, message: 'Teacher not found' });
+    }
+
+    teacher.isActive = !teacher.isActive;
+    await teacher.save();
+
+    res.json({
+      success: true,
+      message: `Teacher ${teacher.isActive ? 'activated' : 'deactivated'} successfully`,
+      teacher: teacher.getPublicProfile(),
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message || 'Failed to toggle teacher status' });
   }
 };
 
@@ -484,7 +552,9 @@ module.exports = {
   createHeadteacher, 
   createTeacher, 
   getHeadteachers, 
-  getTeachers, 
+  getTeachers,
+  updateTeacher,
+  toggleTeacherStatus,
   getStats,
   getSchools,
   createSchool,

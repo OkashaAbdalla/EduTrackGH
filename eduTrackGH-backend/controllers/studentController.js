@@ -241,10 +241,122 @@ const rejectStudent = async (req, res) => {
   }
 };
 
+// Headteacher: directly register a student (current students) into their school
+const registerStudentByHeadteacher = async (req, res) => {
+  try {
+    const headteacher = await User.findById(req.user._id);
+    if (!headteacher || headteacher.role !== 'headteacher' || !headteacher.school) {
+      return res.status(403).json({
+        success: false,
+        message: 'Headteacher with assigned school required',
+      });
+    }
+
+    const {
+      studentId,
+      fullName,
+      dateOfBirth,
+      gender,
+      classroomId,
+      grade,
+      parentPhone,
+      parentName,
+      parentEmail,
+    } = req.body || {};
+
+    if (!studentId || !fullName || !classroomId) {
+      return res.status(400).json({
+        success: false,
+        message: 'studentId, fullName and classroomId are required',
+      });
+    }
+
+    // Ensure classroom belongs to this headteacher's school
+    const classroom = await Classroom.findById(classroomId);
+    if (!classroom) {
+      return res.status(404).json({ success: false, message: 'Classroom not found' });
+    }
+    if (classroom.schoolId.toString() !== headteacher.school.toString()) {
+      return res.status(403).json({
+        success: false,
+        message: 'Classroom does not belong to your school',
+      });
+    }
+
+    // Ensure studentId is unique
+    const existing = await Student.findOne({ studentId: studentId.toUpperCase().trim() });
+    if (existing) {
+      return res.status(400).json({
+        success: false,
+        message: 'A student with this ID already exists',
+      });
+    }
+
+    const student = await Student.create({
+      studentId: studentId.toUpperCase().trim(),
+      fullName: fullName.trim(),
+      dateOfBirth: dateOfBirth ? new Date(dateOfBirth) : undefined,
+      gender,
+      schoolId: headteacher.school,
+      classroomId: classroom._id,
+      grade: grade || classroom.grade,
+      parentPhone: parentPhone || '',
+      parentName: parentName || '',
+      parentEmail: parentEmail || '',
+      status: 'ACTIVE',
+      isActive: true,
+      createdBy: headteacher._id,
+      approvedBy: headteacher._id,
+      approvedAt: new Date(),
+    });
+
+    // Optionally link to parent account if exists (reuse approve logic)
+    if (student.parentEmail || student.parentPhone) {
+      const parentQuery = {
+        role: 'parent',
+        $or: [],
+      };
+      if (student.parentEmail) {
+        parentQuery.$or.push({ email: student.parentEmail.toLowerCase().trim() });
+      }
+      if (student.parentPhone) {
+        parentQuery.$or.push({ phone: student.parentPhone.trim() });
+      }
+
+      if (parentQuery.$or.length > 0) {
+        const parent = await User.findOne(parentQuery);
+        if (parent) {
+          const alreadyLinked = parent.children?.some(
+            (c) => c.toString() === student._id.toString()
+          );
+          if (!alreadyLinked) {
+            parent.children = parent.children || [];
+            parent.children.push(student._id);
+            await parent.save();
+          }
+        }
+      }
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Student registered successfully',
+      student,
+    });
+  } catch (error) {
+    console.error('registerStudentByHeadteacher error:', error);
+    res.status(500).json({
+      success: false,
+      message: error.message || 'Failed to register student',
+    });
+  }
+};
+
 module.exports = {
   proposeStudent,
   getPendingStudentsForHeadteacher,
   approveStudent,
   rejectStudent,
+  registerStudentByHeadteacher,
 };
 

@@ -278,6 +278,85 @@ const getClassroomDailyHistory = async (req, res) => {
   }
 };
 
+// Get flagged students for a classroom (teacher view)
+const getFlaggedStudentsForClassroom = async (req, res) => {
+  try {
+    const { classroomId } = req.params;
+    const teacherId = req.user._id;
+
+    const classroom = await Classroom.findById(classroomId);
+    if (!classroom) {
+      return res.status(404).json({ success: false, message: "Classroom not found" });
+    }
+    if (classroom.teacherId.toString() !== teacherId.toString()) {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    const students = await Student.find({ classroomId }).select("_id fullName studentId gender");
+    const studentIds = students.map((s) => s._id);
+
+    if (studentIds.length === 0) {
+      return res.json({ success: true, flagged: [] });
+    }
+
+    // Look at the last 30 days of attendance
+    const today = new Date();
+    const start = new Date(today);
+    start.setDate(start.getDate() - 30);
+    start.setHours(0, 0, 0, 0);
+
+    const records = await DailyAttendance.find({
+      classroomId,
+      studentId: { $in: studentIds },
+      date: { $gte: start, $lte: today },
+    }).lean();
+
+    const byStudent = {};
+    records.forEach((r) => {
+      const key = String(r.studentId);
+      if (!byStudent[key]) {
+        byStudent[key] = { total: 0, absences: 0, lastAbsent: null };
+      }
+      byStudent[key].total++;
+      if (r.status === "absent") {
+        byStudent[key].absences++;
+        const d = r.date instanceof Date ? r.date : new Date(r.date);
+        if (!byStudent[key].lastAbsent || d > byStudent[key].lastAbsent) {
+          byStudent[key].lastAbsent = d;
+        }
+      }
+    });
+
+    const threshold = 3; // could be pulled from settings later
+    const flagged = students
+      .map((s) => {
+        const agg = byStudent[String(s._id)] || { total: 0, absences: 0, lastAbsent: null };
+        if (agg.absences >= threshold && agg.total > 0) {
+          const rate = Math.round(((agg.total - agg.absences) / agg.total) * 100);
+          return {
+            id: s._id,
+            name: s.fullName,
+            studentId: s.studentId,
+            gender: s.gender,
+            absences: agg.absences,
+            rate,
+            lastAbsent: agg.lastAbsent,
+          };
+        }
+        return null;
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.absences - a.absences);
+
+    res.json({ success: true, flagged });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error.message || "Failed to get flagged students",
+    });
+  }
+};
+
 // Phase 5: Upload attendance photo (teacher); returns URL for photoUrl
 const uploadPhoto = async (req, res) => {
   try {
@@ -299,5 +378,6 @@ const uploadPhoto = async (req, res) => {
 module.exports = {
   markDailyAttendance,
   getClassroomDailyHistory,
+  getFlaggedStudentsForClassroom,
   uploadPhoto,
 };
