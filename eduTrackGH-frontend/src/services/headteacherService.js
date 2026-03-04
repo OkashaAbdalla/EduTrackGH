@@ -18,9 +18,21 @@ const headteacherService = {
     return response.data;
   },
 
+  // Toggle teacher active status within headteacher's school
+  toggleTeacherStatus: async (teacherId) => {
+    const response = await apiClient.patch(`/headteacher/teachers/${teacherId}/toggle-status`);
+    return response.data;
+  },
+
   // List classrooms in headteacher's school
   getClassrooms: async () => {
     const response = await apiClient.get('/headteacher/classrooms');
+    return response.data;
+  },
+
+  // Seed default classrooms (P1–P6 or JHS 1–3) for headteacher's school
+  seedDefaultClassrooms: async () => {
+    const response = await apiClient.post('/headteacher/classrooms/seed-default');
     return response.data;
   },
 

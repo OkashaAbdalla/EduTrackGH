@@ -29,6 +29,12 @@ const studentService = {
     const response = await apiClient.post(`/students/pending/${studentId}/reject`);
     return response.data;
   },
+
+  // Headteacher: Directly register a student into their school
+  registerStudentAsHeadteacher: async (studentData) => {
+    const response = await apiClient.post('/students/register', studentData);
+    return response.data;
+  },
 };
 
 export default studentService;
