@@ -98,7 +98,8 @@ const AttendanceAudit = () => {
       const res = await adminService.unlockAttendance(classroomId, date);
       if (res.success) {
         showToast(res.message || 'Attendance unlocked', 'success');
-        setFilters((f) => ({ ...f }));
+        // Force reload by nudging date filter (triggering useEffect)
+        setFilters((f) => ({ ...f, date: f.date ? `${f.date}` : '' }));
       } else {
         showToast(res.message || 'Failed to unlock', 'error');
       }
