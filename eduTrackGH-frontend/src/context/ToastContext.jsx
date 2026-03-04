@@ -13,7 +13,8 @@ export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
   const showToast = useCallback((message, type = 'info') => {
-    const id = Date.now();
+    // Use a more unique id than bare Date.now to avoid duplicate keys
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
     setToasts(prev => [...prev, { id, message, type }]);
   }, []);
 
