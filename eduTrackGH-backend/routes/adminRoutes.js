@@ -10,6 +10,8 @@ const {
   createTeacher,
   getHeadteachers,
   getTeachers,
+  updateTeacher,
+  toggleTeacherStatus,
   getStats,
   getSchools,
   createSchool,
@@ -37,6 +39,8 @@ router.get('/headteachers', getHeadteachers);
 // Teacher management
 router.post('/teachers', createTeacher);
 router.get('/teachers', getTeachers);
+router.put('/teachers/:id', updateTeacher);
+router.patch('/teachers/:id/toggle-status', toggleTeacherStatus);
 
 // System statistics
 router.get('/stats', getStats);

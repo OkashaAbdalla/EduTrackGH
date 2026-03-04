@@ -8,6 +8,7 @@ const router = express.Router();
 const {
   markDailyAttendance,
   getClassroomDailyHistory,
+  getFlaggedStudentsForClassroom,
   uploadPhoto,
 } = require("../controllers/attendanceController");
 const { protect } = require("../middleware/authMiddleware");
@@ -24,6 +25,11 @@ router.get(
   "/classroom/:classroomId/daily",
   authorize("teacher"),
   getClassroomDailyHistory,
+);
+router.get(
+  "/classroom/:classroomId/flagged",
+  authorize("teacher"),
+  getFlaggedStudentsForClassroom,
 );
 
 module.exports = router;

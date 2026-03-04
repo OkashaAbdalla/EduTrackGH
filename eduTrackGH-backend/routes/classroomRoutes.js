@@ -12,6 +12,7 @@ const {
   getClassroomStudents,
 } = require("../controllers/classroomController");
 const { protect } = require("../middleware/authMiddleware");
+const { authorize } = require("../middleware/roleMiddleware");
 
 const router = express.Router();
 
@@ -21,7 +22,7 @@ const router = express.Router();
  * Required: Auth token
  * Accessible by: Teachers only
  */
-router.get("/", protect, getTeacherClassrooms);
+router.get("/", protect, authorize("teacher"), getTeacherClassrooms);
 
 /**
  * GET /api/classrooms/:classroomId
@@ -29,7 +30,7 @@ router.get("/", protect, getTeacherClassrooms);
  * Required: Auth token, valid classroomId
  * Accessible by: Only the assigned teacher
  */
-router.get("/:classroomId", protect, getClassroomDetails);
+router.get("/:classroomId", protect, authorize("teacher"), getClassroomDetails);
 
 /**
  * GET /api/classrooms/:classroomId/students
@@ -37,6 +38,6 @@ router.get("/:classroomId", protect, getClassroomDetails);
  * Required: Auth token, valid classroomId
  * Accessible by: Only the assigned teacher
  */
-router.get("/:classroomId/students", protect, getClassroomStudents);
+router.get("/:classroomId/students", protect, authorize("teacher"), getClassroomStudents);
 
 module.exports = router;

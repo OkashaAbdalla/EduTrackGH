@@ -13,6 +13,7 @@ const {
   getPendingStudentsForHeadteacher,
   approveStudent,
   rejectStudent,
+  registerStudentByHeadteacher,
 } = require('../controllers/studentController');
 
 const { protect } = require('../middleware/authMiddleware');
@@ -20,6 +21,9 @@ const { authorize } = require('../middleware/roleMiddleware');
 
 // Teacher proposes a new student for their classroom
 router.post('/propose', protect, authorize('teacher'), proposeStudent);
+
+// Headteacher directly registers a student (current students in school)
+router.post('/register', protect, authorize('headteacher'), registerStudentByHeadteacher);
 
 // Headteacher views all pending students for their school
 router.get('/pending', protect, authorize('headteacher'), getPendingStudentsForHeadteacher);
