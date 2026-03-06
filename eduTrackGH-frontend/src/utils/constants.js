@@ -27,22 +27,18 @@ export const ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   VERIFY_EMAIL: '/verify-email',
-  ADMIN_LOGIN: `/${import.meta.env.VITE_ADMIN_LOGIN_PATH || 'secure-admin'}`,
-
+  
   // Teacher routes
   TEACHER_DASHBOARD: '/teacher/dashboard',
   MARK_ATTENDANCE: '/teacher/mark-attendance',
   ATTENDANCE_HISTORY: '/teacher/history',
   FLAGGED_STUDENTS: '/teacher/flagged',
-  MANAGE_STUDENTS: '/teacher/students',
 
   // Headteacher (school admin) routes
   HEADTEACHER_DASHBOARD: '/headteacher/dashboard',
   SCHOOL_REPORTS: '/headteacher/reports',
   TEACHER_COMPLIANCE: '/headteacher/compliance',
   MANAGE_CLASSES: '/headteacher/classes',
-  HEADTEACHER_MANAGE_STUDENTS: '/headteacher/students',
-  HEADTEACHER_MANAGE_TEACHERS: '/headteacher/teachers',
 
   // Parent routes
   PARENT_DASHBOARD: '/parent/dashboard',
@@ -55,7 +51,33 @@ export const ROUTES = {
   CREATE_HEADTEACHER: '/admin/create-headteacher',
   MANAGE_TEACHERS: '/admin/teachers',
   SYSTEM_SETTINGS: '/admin/settings',
-  ATTENDANCE_AUDIT: '/admin/attendance-audit',
+};
+
+// ========================================
+// API ENDPOINTS
+// ========================================
+// Backend API endpoint structure (for reference)
+// Used in service layer for API calls
+export const API_ENDPOINTS = {
+  AUTH: {
+    REGISTER: '/auth/register',
+    LOGIN: '/auth/login',
+    VERIFY_EMAIL: '/auth/verify-email',
+    GOOGLE_AUTH: '/auth/google',
+    LOGOUT: '/auth/logout',
+  },
+  ATTENDANCE: {
+    MARK: '/attendance/mark',
+    HISTORY: '/attendance/history',
+    SESSIONS: '/attendance/sessions',
+  },
+  SESSIONS: {
+    CREATE: '/sessions/create',
+    ACTIVATE: '/sessions/:id/activate',
+    DEACTIVATE: '/sessions/:id/deactivate',
+    LIST: '/sessions',
+    ATTENDEES: '/sessions/:id/attendees',
+  },
 };
 
 // ========================================

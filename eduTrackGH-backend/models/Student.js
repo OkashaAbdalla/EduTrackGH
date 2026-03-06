@@ -6,10 +6,9 @@
 const mongoose = require('mongoose');
 
 const studentSchema = new mongoose.Schema({
+  // Legacy/global student identifier (kept for compatibility)
   studentId: {
     type: String,
-    required: [true, 'Student ID is required'],
-    unique: true, // keeps a unique index automatically
     trim: true,
     uppercase: true,
   },
@@ -23,7 +22,26 @@ const studentSchema = new mongoose.Schema({
   },
   gender: {
     type: String,
-    enum: ['MALE', 'FEMALE', 'OTHER'],
+    enum: ['Male', 'Female', 'MALE', 'FEMALE', 'OTHER'],
+  },
+  // Parent (guardian) reference
+  parent: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Parent',
+  },
+  // Unique per school (e.g. admission number)
+  admissionNumber: {
+    type: String,
+    trim: true,
+  },
+  // Registration workflow
+  isApproved: {
+    type: Boolean,
+    default: true,
+  },
+  proposedBy: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
   },
   // School and classroom references
   schoolId: {
@@ -31,6 +49,12 @@ const studentSchema = new mongoose.Schema({
     ref: 'School',
     required: true,
   },
+  // New canonical classroom field
+  classroom: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Classroom',
+  },
+  // Legacy field (kept for compatibility)
   classroomId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Classroom',
@@ -58,8 +82,8 @@ const studentSchema = new mongoose.Schema({
   // Registration workflow (teacher proposes, headteacher approves)
   status: {
     type: String,
-    enum: ['PENDING', 'ACTIVE', 'REJECTED'],
-    default: 'ACTIVE', // existing records remain active; new proposals will override
+    enum: ['active', 'graduated', 'transferred', 'pending', 'rejected', 'PENDING', 'ACTIVE', 'REJECTED'],
+    default: 'active',
     index: true,
   },
   createdBy: {
@@ -117,10 +141,21 @@ const studentSchema = new mongoose.Schema({
   timestamps: true,
 });
 
-// Indexes for faster queries (no duplicate index on studentId)
+// Keep classroom and classroomId in sync for old/new code
+studentSchema.pre('validate', function syncClassroom(next) {
+  if (this.classroom && !this.classroomId) this.classroomId = this.classroom;
+  if (this.classroomId && !this.classroom) this.classroom = this.classroomId;
+  next();
+});
+
+// Indexes for faster queries
 studentSchema.index({ schoolId: 1 });
 studentSchema.index({ classroomId: 1 });
+studentSchema.index({ classroom: 1 });
+studentSchema.index({ parent: 1 });
 studentSchema.index({ parentPhone: 1 });
 studentSchema.index({ isFlagged: 1 });
+// admissionNumber unique per school
+studentSchema.index({ schoolId: 1, admissionNumber: 1 }, { unique: true, sparse: true });
 
 module.exports = mongoose.model('Student', studentSchema);

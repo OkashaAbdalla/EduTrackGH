@@ -13,10 +13,10 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, ToastProvider, AuthProvider } from './context';
 import { Landing, Login, Register, VerifyEmail } from './pages/public';
-import { TeacherDashboard, MarkAttendance, AttendanceHistory, FlaggedStudents, ManageStudents } from './pages/teacher';
-import { HeadteacherDashboard, SchoolReports, TeacherCompliance, ManageClasses, ManageStudents as HeadteacherManageStudents, ManageTeachers as HeadteacherManageTeachers } from './pages/headteacher';
+import { TeacherDashboard, MarkAttendance, AttendanceHistory, FlaggedStudents } from './pages/teacher';
+import { HeadteacherDashboard, SchoolReports, TeacherCompliance, ManageClasses } from './pages/headteacher';
 import { ParentDashboard, ChildrenAttendance, Notifications } from './pages/parent';
-import { AdminDashboard, AdminLogin, CreateHeadteacher, ManageSchools, SystemSettings, AttendanceAudit } from './pages/admin';
+import { AdminDashboard, CreateHeadteacher, ManageSchools, ManageTeachers, SystemSettings } from './pages/admin';
 import { ProtectedRoute } from './components/common';
 import { ROUTES, ROLES } from './utils/constants';
 
@@ -32,22 +32,18 @@ function App() {
           <Route path={ROUTES.LOGIN} element={<Login />} />
           <Route path={ROUTES.REGISTER} element={<Register />} />
           <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
-          <Route path={ROUTES.ADMIN_LOGIN} element={<AdminLogin />} />
           
           {/* Teacher Routes - Protected */}
           <Route path={ROUTES.TEACHER_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><TeacherDashboard /></ProtectedRoute>} />
           <Route path={ROUTES.MARK_ATTENDANCE} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><MarkAttendance /></ProtectedRoute>} />
           <Route path={ROUTES.ATTENDANCE_HISTORY} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><AttendanceHistory /></ProtectedRoute>} />
           <Route path={ROUTES.FLAGGED_STUDENTS} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><FlaggedStudents /></ProtectedRoute>} />
-          <Route path={ROUTES.MANAGE_STUDENTS} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><ManageStudents /></ProtectedRoute>} />
           
           {/* Headteacher Routes - Protected */}
           <Route path={ROUTES.HEADTEACHER_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherDashboard /></ProtectedRoute>} />
           <Route path={ROUTES.SCHOOL_REPORTS} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><SchoolReports /></ProtectedRoute>} />
           <Route path={ROUTES.TEACHER_COMPLIANCE} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><TeacherCompliance /></ProtectedRoute>} />
           <Route path={ROUTES.MANAGE_CLASSES} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><ManageClasses /></ProtectedRoute>} />
-          <Route path={ROUTES.HEADTEACHER_MANAGE_STUDENTS} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherManageStudents /></ProtectedRoute>} />
-          <Route path={ROUTES.HEADTEACHER_MANAGE_TEACHERS} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherManageTeachers /></ProtectedRoute>} />
           
           {/* Parent Routes - Protected */}
           <Route path={ROUTES.PARENT_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.PARENT}><ParentDashboard /></ProtectedRoute>} />
@@ -59,8 +55,8 @@ function App() {
           <Route path={ROUTES.ADMIN_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminDashboard /></ProtectedRoute>} />
           <Route path={ROUTES.MANAGE_SCHOOLS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><ManageSchools /></ProtectedRoute>} />
           <Route path={ROUTES.CREATE_HEADTEACHER} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><CreateHeadteacher /></ProtectedRoute>} />
+          <Route path={ROUTES.MANAGE_TEACHERS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><ManageTeachers /></ProtectedRoute>} />
           <Route path={ROUTES.SYSTEM_SETTINGS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><SystemSettings /></ProtectedRoute>} />
-          <Route path={ROUTES.ATTENDANCE_AUDIT} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AttendanceAudit /></ProtectedRoute>} />
           
           {/* Catch all - redirect to home */}
           <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />

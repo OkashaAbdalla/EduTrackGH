@@ -9,10 +9,6 @@ import cacheService from '../utils/cache';
 const adminService = {
   createHeadteacher: async (headteacherData) => {
     const response = await apiClient.post('/admin/headteachers', headteacherData);
-    if (response.data?.success && headteacherData.schoolId) {
-      cacheService.invalidate('/admin/schools');
-      cacheService.invalidate('/admin/headteachers');
-    }
     return response.data;
   },
 
@@ -130,26 +126,6 @@ const adminService = {
 
   updateSystemSettings: async (settings) => {
     const response = await apiClient.put('/admin/settings', { settings });
-    return response.data;
-  },
-
-  getSchoolClassrooms: async (schoolId) => {
-    const response = await apiClient.get(`/admin/schools/${schoolId}/classrooms`);
-    return response.data;
-  },
-
-  getAttendanceAudit: async (params = {}) => {
-    const response = await apiClient.get('/admin/attendance-audit', { params });
-    return response.data;
-  },
-
-  getAttendanceFlags: async (params = {}) => {
-    const response = await apiClient.get('/admin/attendance-flags', { params });
-    return response.data;
-  },
-
-  unlockAttendance: async (classroomId, date) => {
-    const response = await apiClient.patch(`/admin/unlock-attendance/${classroomId}/${date}`);
     return response.data;
   },
 };

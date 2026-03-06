@@ -18,6 +18,27 @@ const classroomSchema = new mongoose.Schema({
     trim: true,
   },
 
+  level: {
+    type: String,
+    enum: ['Primary', 'JHS'],
+    trim: true,
+  },
+
+  students: [
+    {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Student',
+    },
+  ],
+
+  // Optional: headteacher reference (for scoping in some flows)
+  headteacher: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    default: null,
+    index: true,
+  },
+
   schoolId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'School',

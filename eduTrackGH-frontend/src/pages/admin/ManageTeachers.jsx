@@ -16,7 +16,47 @@ const ManageTeachers = () => {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
   const [searchTerm, setSearchTerm] = useState('');
-  // Admin has read-only oversight; teacher CRUD is done by headteachers
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [editingTeacher, setEditingTeacher] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [generatedPassword, setGeneratedPassword] = useState(null);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [formData, setFormData] = useState({
+    fullName: '',
+    email: '',
+    phone: '',
+    schoolLevel: 'PRIMARY',
+    assignedClasses: [],
+    password: ''
+  });
+  const [errors, setErrors] = useState({});
+
+  // Available classes based on school level
+  const classOptions = {
+    PRIMARY: ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'],
+    JHS: ['JHS 1', 'JHS 2', 'JHS 3']
+  };
+
+  // Generate secure random password
+  const generateSecurePassword = () => {
+    const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    const lowercase = 'abcdefghijklmnopqrstuvwxyz';
+    const numbers = '0123456789';
+    const symbols = '!@#$%^&*';
+    const allChars = uppercase + lowercase + numbers + symbols;
+    
+    let password = '';
+    password += uppercase[Math.floor(Math.random() * uppercase.length)];
+    password += lowercase[Math.floor(Math.random() * lowercase.length)];
+    password += numbers[Math.floor(Math.random() * numbers.length)];
+    password += symbols[Math.floor(Math.random() * symbols.length)];
+    
+    for (let i = 4; i < 12; i++) {
+      password += allChars[Math.floor(Math.random() * allChars.length)];
+    }
+    
+    return password.split('').sort(() => Math.random() - 0.5).join('');
+  };
 
   useEffect(() => {
     fetchTeachers();
@@ -26,16 +66,7 @@ const ManageTeachers = () => {
     try {
       setLoading(true);
       const response = await adminService.getTeachers();
-      // adminService.getTeachers returns { success, count, teachers }
-      const raw = response.teachers || [];
-      // Normalize shape: derive status from isActive and ensure assignedClasses array
-      const normalized = raw.map((t) => ({
-        ...t,
-        status: t.isActive ? 'active' : 'inactive',
-        assignedClasses: t.assignedClasses || t.classroomIds || [],
-        phone: t.phone || '',
-      }));
-      setTeachers(normalized);
+      setTeachers(response.data || []);
     } catch (error) {
       console.error('Failed to load teachers:', error);
       showToast('Failed to load teachers', 'error');
@@ -44,13 +75,156 @@ const ManageTeachers = () => {
     }
   };
 
+  const validateForm = () => {
+    const newErrors = {};
+    if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required';
+    if (!formData.email.trim()) newErrors.email = 'Email is required';
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) newErrors.email = 'Invalid email format';
+    if (!formData.phone.trim()) newErrors.phone = 'Phone is required';
+    if (!editingTeacher && !formData.password?.trim()) newErrors.password = 'Password is required';
+    if (!editingTeacher && formData.assignedClasses.length === 0) newErrors.assignedClasses = 'Select at least one class';
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleCreateteacher = async (e) => {
+    e.preventDefault();
+    if (!validateForm()) {
+      showToast('Please fix the errors in the form', 'error');
+      return;
+    }
+
+    setSaving(true);
+    try {
+      if (editingTeacher) {
+        // Update existing teacher
+        const response = await adminService.updateTeacher(editingTeacher._id, formData);
+        setTeachers(teachers.map(t => 
+          t._id === editingTeacher._id 
+            ? response.data
+            : t
+        ));
+        showToast('Teacher updated successfully', 'success');
+        handleCloseModal();
+      } else {
+        // Create new teacher
+        const response = await adminService.createTeacher({
+          fullName: formData.fullName,
+          email: formData.email,
+          phone: formData.phone,
+          tempPassword: formData.password,  // Backend expects 'tempPassword'
+          schoolLevel: formData.schoolLevel,
+          assignedClasses: formData.assignedClasses
+        });
+
+        // Add new teacher to list
+        setTeachers([response.data, ...teachers]);
+        setGeneratedPassword(formData.password);
+        setShowPasswordModal(true);
+        handleCloseModal();
+        showToast('Teacher created successfully. Verification email sent.', 'success');
+      }
+    } catch (error) {
+      console.error('Failed to save teacher:', error);
+      showToast(error.response?.data?.message || 'Failed to save teacher', 'error');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleEditTeacher = (teacher) => {
+    setEditingTeacher(teacher);
+    setFormData({
+      fullName: teacher.fullName,
+      email: teacher.email,
+      phone: teacher.phone,
+      schoolLevel: teacher.schoolLevel,
+      assignedClasses: teacher.assignedClasses || [],
+      password: ''
+    });
+    setShowCreateModal(true);
+  };
+
+  const handleOpenCreateModal = () => {
+    setEditingTeacher(null);
+    const password = generateSecurePassword();
+    setFormData({
+      fullName: '',
+      email: '',
+      phone: '',
+      schoolLevel: 'PRIMARY',
+      assignedClasses: [],
+      password
+    });
+    setErrors({});
+    setShowCreateModal(true);
+  };
+
+  const handleToggleClass = (className) => {
+    setFormData(prev => ({
+      ...prev,
+      assignedClasses: prev.assignedClasses.includes(className)
+        ? prev.assignedClasses.filter(c => c !== className)
+        : [...prev.assignedClasses, className]
+    }));
+  };
+
+  const handleSchoolLevelChange = (level) => {
+    setFormData(prev => ({
+      ...prev,
+      schoolLevel: level,
+      assignedClasses: [] // Reset classes when changing level
+    }));
+  };
+
+  const handleCloseModal = () => {
+    setShowCreateModal(false);
+    setEditingTeacher(null);
+    setFormData({
+      fullName: '',
+      email: '',
+      phone: '',
+      schoolLevel: 'PRIMARY',
+      assignedClasses: [],
+      password: ''
+    });
+    setErrors({});
+  };
+
+  const handleCopyPassword = () => {
+    if (formData.password) {
+      navigator.clipboard.writeText(formData.password);
+      showToast('Password copied!', 'success');
+    }
+  };
+
+  const handleRegeneratePassword = () => {
+    const newPassword = generateSecurePassword();
+    setFormData({ ...formData, password: newPassword });
+    showToast('New password generated', 'success');
+  };
+
+  const handleToggleStatus = async (id) => {
+    try {
+      const response = await adminService.toggleTeacherStatus(id);
+      setTeachers(teachers.map(t => 
+        t._id === id ? response.data : t
+      ));
+      const teacher = teachers.find(t => t._id === id);
+      const newStatus = teacher?.status === 'active' ? 'inactive' : 'active';
+      showToast(`Teacher ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`, 'success');
+    } catch (error) {
+      console.error('Failed to update teacher status:', error);
+      showToast('Failed to update teacher status', 'error');
+    }
+  };
+
   const filteredTeachers = teachers.filter(t => {
-    const status = t.status || (t.isActive ? 'active' : 'inactive');
-    const matchFilter = filter === 'all' || status === filter;
-    const phone = t.phone || '';
+    const matchFilter = filter === 'all' || t.status === filter;
     const matchSearch = t.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
                        t.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                       phone.includes(searchTerm);
+                       t.phone.includes(searchTerm);
     return matchFilter && matchSearch;
   });
 
@@ -61,11 +235,17 @@ const ManageTeachers = () => {
         <div className="flex justify-between items-start">
           <div>
             <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Manage Teachers</h1>
-            <p className="text-gray-600 dark:text-gray-400">
-              View all teachers in the system. Creation and day-to-day management happens in each headteacher&apos;s dashboard.
-            </p>
+            <p className="text-gray-600 dark:text-gray-400">Create, view, and manage teacher accounts</p>
           </div>
-          {/* No create button here on purpose – admin is oversight only */}
+          <button
+            onClick={handleOpenCreateModal}
+            className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 transition font-medium flex items-center space-x-2"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+            </svg>
+            <span>Create Teacher</span>
+          </button>
         </div>
 
         {/* Stats Cards */}
@@ -82,7 +262,7 @@ const ManageTeachers = () => {
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Active Teachers</p>
               <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {teachers.filter(t => (t.status || (t.isActive ? 'active' : 'inactive')) === 'active').length}
+                {teachers.filter(t => t.status === 'active').length}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Currently active</p>
             </div>
@@ -92,7 +272,7 @@ const ManageTeachers = () => {
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Classes Assigned</p>
               <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {teachers.reduce((sum, t) => sum + (t.assignedClasses?.length || 0), 0)}
+                {teachers.reduce((sum, t) => sum + t.classesAssigned, 0)}
               </p>
               <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Total assignments</p>
             </div>
@@ -146,7 +326,7 @@ const ManageTeachers = () => {
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Level</th>
                     <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300">Classes</th>
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Status</th>
-                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300">Status</th>
+                    <th className="px-6 py-3 text-center text-xs font-semibold text-gray-700 dark:text-gray-300">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -173,7 +353,7 @@ const ManageTeachers = () => {
                       <td className="px-6 py-4 text-center text-sm font-medium text-gray-900 dark:text-white">
                         {teacher.assignedClasses?.length || 0}
                       </td>
-                      <td className="px-6 py-4 text-sm text-center">
+                      <td className="px-6 py-4 text-sm">
                         <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
                           teacher.status === 'active'
                             ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
@@ -181,6 +361,26 @@ const ManageTeachers = () => {
                         }`}>
                           {teacher.status.charAt(0).toUpperCase() + teacher.status.slice(1)}
                         </span>
+                      </td>
+                      <td className="px-6 py-4 text-center space-x-2 flex items-center justify-center">
+                        <button
+                          onClick={() => handleEditTeacher(teacher)}
+                          className="inline-flex items-center px-2.5 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition text-xs font-medium"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                          </svg>
+                        </button>
+                        <button
+                          onClick={() => handleToggleStatus(teacher._id)}
+                          className={`inline-flex items-center px-2.5 py-1.5 rounded-lg transition text-xs font-medium ${
+                            teacher.status === 'active'
+                              ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
+                              : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                          }`}
+                        >
+                          {teacher.status === 'active' ? 'Deactivate' : 'Activate'}
+                        </button>
                       </td>
                     </tr>
                   ))}
@@ -246,7 +446,7 @@ const ManageTeachers = () => {
 
                 {/* Phone */}
                 <div>
-                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Phone (optional)</label>
+                  <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Phone</label>
                   <input
                     type="tel"
                     value={formData.phone}

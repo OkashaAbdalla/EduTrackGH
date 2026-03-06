@@ -1,36 +1,41 @@
 /**
  * Student Routes
  * /api/students/*
- * Teacher: propose students
- * Headteacher: review & approve/reject students in their school
+ * Thin: route definitions + middleware only.
  */
 
 const express = require('express');
 const router = express.Router();
 
+const { registerStudentByHeadteacher, getStudentsForHeadteacher } = require('../controllers/student.controller');
+const { proposeStudent } = require('../controllers/student.proposal.controller');
 const {
-  proposeStudent,
   getPendingStudentsForHeadteacher,
   approveStudent,
   rejectStudent,
-  registerStudentByHeadteacher,
-} = require('../controllers/studentController');
+} = require('../controllers/student.approval.controller');
 
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
+const { validateRegisterBody, validateProposalBody } = require('../middleware/studentValidation');
 
-// Teacher proposes a new student for their classroom
-router.post('/propose', protect, authorize('teacher'), proposeStudent);
+// Teacher proposes a new student
+router.post('/propose', protect, authorize('teacher'), validateProposalBody, proposeStudent);
 
-// Headteacher directly registers a student (current students in school)
-router.post('/register', protect, authorize('headteacher'), registerStudentByHeadteacher);
+// Headteacher: register student
+router.post('/', protect, authorize('headteacher'), validateRegisterBody, registerStudentByHeadteacher);
+router.post('/register', protect, authorize('headteacher'), validateRegisterBody, registerStudentByHeadteacher);
 
-// Headteacher views all pending students for their school
+// Headteacher: list approved students (optional ?classroom=id)
+router.get('/', protect, authorize('headteacher'), getStudentsForHeadteacher);
+
+// Headteacher: list pending proposals
 router.get('/pending', protect, authorize('headteacher'), getPendingStudentsForHeadteacher);
 
-// Headteacher approves or rejects a pending student
+// Headteacher: approve / reject
+router.patch('/:id/approve', protect, authorize('headteacher'), approveStudent);
+router.patch('/:id/reject', protect, authorize('headteacher'), rejectStudent);
 router.post('/pending/:id/approve', protect, authorize('headteacher'), approveStudent);
 router.post('/pending/:id/reject', protect, authorize('headteacher'), rejectStudent);
 
 module.exports = router;
-

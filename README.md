@@ -1,42 +1,218 @@
-# EduTrack GH
+# EduTrackGH - Attendance Management System
 
-School absenteeism tracking and parent notification system for Primary and JHS schools in Ghana.
+A comprehensive attendance tracking system for educational institutions in Ghana with face recognition, multi-role support (Admin, Teachers, Parents, Students), and real-time notifications.
 
-## Structure
+## Project Structure
 
 ```
 EduTrackGH/
-├── eduTrackGH-backend/   # Node.js + Express + MongoDB API
-└── eduTrackGH-frontend/  # React + Vite frontend
+├── eduTrackGH-backend/          # Node.js/Express backend API
+│   ├── config/                  # Database and email configuration
+│   ├── controllers/             # Business logic
+│   ├── models/                  # MongoDB schemas
+│   ├── routes/                  # API endpoints
+│   ├── middleware/              # Auth and error handling
+│   ├── utils/                   # Helper functions
+│   ├── scripts/                 # Database migration scripts
+│   └── server.js               # Express server entry point
+│
+└── eduTrackGH-frontend/         # React/Vite frontend application
+    ├── src/
+    │   ├── components/          # Reusable UI components
+    │   ├── pages/              # Page components
+    │   ├── services/           # API client services
+    │   ├── context/            # React context (Auth, Theme, Toast)
+    │   ├── hooks/              # Custom React hooks
+    │   ├── routes/             # Route definitions
+    │   ├── layouts/            # Dashboard layouts
+    │   └── utils/              # Utility functions
+    └── vite.config.js          # Vite configuration
 ```
 
-## Quick Start
+## Key Features
 
-**Backend**
+- **Multi-Role System**: Admin, Teachers, Parents, Students with role-based access control
+- **Attendance Tracking**: Real-time attendance marking and history
+- **Security**: JWT authentication, encrypted passwords, role-based middleware
+- **Responsive Design**: Works on desktop, tablet, and mobile devices
+- **Dark Mode**: Automatic theme switching with user preferences
+- **API-First Architecture**: RESTful backend with proper authorization
+
+## Technology Stack
+
+### Backend
+- **Runtime**: Node.js
+- **Framework**: Express.js
+- **Database**: MongoDB
+- **Authentication**: JWT (JSON Web Tokens)
+- **Email**: Nodemailer
+
+### Frontend
+- **Framework**: React 18+
+- **Build Tool**: Vite
+- **Styling**: Tailwind CSS
+- **State Management**: React Context API
+- **HTTP Client**: Axios
+
+## Getting Started
+
+### Prerequisites
+- Node.js v16+
+- MongoDB (local or Atlas)
+- Git
+
+### Backend Setup
+
 ```bash
 cd eduTrackGH-backend
+
+# Install dependencies
 npm install
-cp .env.example .env   # set MONGODB_URI, JWT_SECRET, FRONTEND_URL
-npm run dev
+
+# Create .env file from example
+cp .env.example .env
+
+# Edit .env with your actual values:
+# - MONGODB_URI: Your MongoDB connection string
+# - JWT_SECRET: A strong random secret
+# - EMAIL_USER / EMAIL_PASSWORD: Gmail app credentials
+# - Other environment-specific values
+
+# Start development server
+node server.js
 ```
 
-**Frontend**
+Server runs on `http://localhost:5000`
+
+### Frontend Setup
+
 ```bash
 cd eduTrackGH-frontend
+
+# Install dependencies
 npm install
-npm install react-router-dom axios
+
+# Start development server
 npm run dev
 ```
 
-**Test users**
+Application runs on `http://localhost:5173`
+
+## API Endpoints
+
+### Authentication
+- `POST /api/auth/register` - Register new user
+- `POST /api/auth/login` - Login user
+- `POST /api/auth/logout` - Logout user
+
+### Classrooms
+- `GET /api/classrooms` - Get teacher's classrooms
+- `GET /api/classrooms/:id` - Get classroom details
+- `GET /api/classrooms/:id/students` - Get students in classroom
+
+### Attendance
+- `GET /api/attendance/classroom/:classroomId` - Get attendance history
+- `POST /api/attendance/mark` - Mark attendance
+
+### Admin
+- `GET /api/admin/schools` - Manage schools
+- `GET /api/admin/users` - Manage users
+
+## Environment Variables
+
+### Backend (.env)
+
+Create a `.env` file in `eduTrackGH-backend/` with the following variables:
+
+```
+# Database
+MONGODB_URI=your_mongodb_connection_string_here
+
+# JWT
+JWT_SECRET=your_strong_random_jwt_secret_here
+JWT_EXPIRE=7d
+
+# Server
+PORT=5000
+NODE_ENV=development
+
+# Email (Gmail or other service)
+EMAIL_SERVICE=gmail
+EMAIL_USER=your_email@gmail.com
+EMAIL_PASSWORD=your_gmail_app_password
+
+# Frontend URL (for CORS)
+FRONTEND_URL=http://localhost:5173
+```
+
+**Note:** Never commit the `.env` file. Use `.env.example` as a template. See `eduTrackGH-backend/.env.example` for reference.
+
+### Frontend (.env.local)
+
+Create a `.env.local` file in `eduTrackGH-frontend/` with:
+
+```
+VITE_API_URL=http://localhost:5000/api
+```
+
+## Project Status
+
+✅ **Completed**
+- Backend API with all CRUD operations
+- User authentication with JWT
+- Role-based access control
+- Attendance tracking system
+- Parent dashboard
+- Teacher classroom management
+- Admin system settings
+
+🔄 **In Progress**
+- Enhanced UI/UX improvements
+- Performance optimization
+
+## Testing the System
+
+### Test Users (created via script)
 ```bash
 cd eduTrackGH-backend
-npm run create-test-users
+node scripts/createTestUsers.js
 ```
-Then log in at `http://localhost:5173/login` with e.g. `admin@edutrack.test` / `admin123`. See script output for full list.
 
-## Docs
+**Available login credentials:**
+- Admin: admin@edutrack.com / password123
+- Teacher: teacher@edutrack.com / password123
+- Headteacher: headteacher@edutrack.com / password123
+- Parent: parent@edutrack.com / password123
+- Parent (Custom): okashamach44@gmail.com / password123
 
-- [eduTrackGH-frontend/README.md](./eduTrackGH-frontend/README.md) – Frontend setup and structure
-- [eduTrackGH-frontend/ARCHITECTURE.md](./eduTrackGH-frontend/ARCHITECTURE.md) – Frontend architecture
-- [eduTrackGH-backend/README.md](./eduTrackGH-backend/README.md) – Backend setup and API
+## Security Measures
+
+- JWT tokens with expiration
+- Password hashing with bcrypt
+- Role-based authorization on protected routes
+- Server-side validation on all API endpoints
+- CORS enabled for frontend only
+- Helmet.js for HTTP headers security
+
+## Contributing
+
+1. Create a feature branch (`git checkout -b feature/AmazingFeature`)
+2. Commit changes (`git commit -m 'Add AmazingFeature'`)
+3. Push to branch (`git push origin feature/AmazingFeature`)
+4. Open a Pull Request
+
+## License
+
+This project is proprietary and confidential.
+
+## Author
+
+**Okasha Abdalla** - EduTrackGH Developer
+
+## Support
+
+For issues, bugs, or feature requests, please create an issue on the repository.
+
+---
+
+**Last Updated**: February 13, 2026
