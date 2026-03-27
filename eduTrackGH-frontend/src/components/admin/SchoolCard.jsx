@@ -18,7 +18,7 @@ const SchoolCard = ({ school, onEdit, onToggleStatus }) => {
   };
 
   return (
-    <Card className="p-5 hover:shadow-lg transition-shadow">
+    <Card className="p-5 hover:shadow-lg transition-shadow h-full flex flex-col">
       <div className="flex justify-between items-start mb-3">
         <div className="flex-1">
           <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{school.name}</h3>
@@ -41,7 +41,12 @@ const SchoolCard = ({ school, onEdit, onToggleStatus }) => {
         </p>
       )}
 
-      {school.headteacher ? (
+      {school.schoolLevel === 'BOTH' ? (
+        <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1 mb-2">
+          <p>👤 Primary: {school.primaryHeadteacher?.fullName || 'Unassigned'}</p>
+          <p>👤 JHS: {school.jhsHeadteacher?.fullName || 'Unassigned'}</p>
+        </div>
+      ) : school.headteacher ? (
         <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
           👤 {school.headteacher.fullName}
         </p>
@@ -51,12 +56,16 @@ const SchoolCard = ({ school, onEdit, onToggleStatus }) => {
         </p>
       )}
 
-      <div className="flex gap-2 mt-4">
+      <div className="flex gap-2 mt-auto pt-4">
         <Button
           onClick={() => onEdit(school)}
           className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2"
         >
-          {school.headteacher ? 'Edit' : 'Assign Headteacher'}
+          {school.schoolLevel === 'BOTH'
+            ? 'Edit'
+            : school.headteacher
+              ? 'Edit'
+              : 'Assign Headteacher'}
         </Button>
         <Button
           onClick={() => onToggleStatus(school)}

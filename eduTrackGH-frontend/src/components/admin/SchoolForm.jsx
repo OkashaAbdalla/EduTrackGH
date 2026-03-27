@@ -98,20 +98,78 @@ const SchoolForm = ({ formData, onFormChange, onSubmit, onCancel, submitting, he
         <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
           Assign Headteacher (Optional)
         </label>
-        <select
-          value={formData.headteacherId || ''}
-          onChange={(e) => handleChange('headteacherId', e.target.value)}
-          className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500"
-        >
-          <option value="">No headteacher assigned</option>
-          {headteachers
-            .filter(ht => ht.isActive && (!ht.school || ht._id === formData.headteacherId))
-            .map(ht => (
-              <option key={ht._id} value={ht._id}>
-                {ht.fullName} ({ht.schoolLevel || 'N/A'})
-              </option>
-            ))}
-        </select>
+        {formData.schoolLevel === 'BOTH' ? (
+          <div className="space-y-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                Primary headteacher
+              </label>
+              <select
+                value={formData.primaryHeadteacherId || ''}
+                onChange={(e) => handleChange('primaryHeadteacherId', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">No primary headteacher assigned</option>
+                {headteachers
+                  .filter(
+                    (ht) =>
+                      ht.isActive &&
+                      ht.schoolLevel === 'PRIMARY' &&
+                      (!ht.school || ht._id === formData.primaryHeadteacherId),
+                  )
+                  .map((ht) => (
+                    <option key={ht._id} value={ht._id}>
+                      {ht.fullName} (PRIMARY)
+                    </option>
+                  ))}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 dark:text-gray-400 mb-1">
+                JHS headteacher
+              </label>
+              <select
+                value={formData.jhsHeadteacherId || ''}
+                onChange={(e) => handleChange('jhsHeadteacherId', e.target.value)}
+                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">No JHS headteacher assigned</option>
+                {headteachers
+                  .filter(
+                    (ht) =>
+                      ht.isActive &&
+                      ht.schoolLevel === 'JHS' &&
+                      (!ht.school || ht._id === formData.jhsHeadteacherId),
+                  )
+                  .map((ht) => (
+                    <option key={ht._id} value={ht._id}>
+                      {ht.fullName} (JHS)
+                    </option>
+                  ))}
+              </select>
+            </div>
+          </div>
+        ) : (
+          <select
+            value={formData.headteacherId || ''}
+            onChange={(e) => handleChange('headteacherId', e.target.value)}
+            className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500"
+          >
+            <option value="">No headteacher assigned</option>
+            {headteachers
+              .filter(
+                (ht) =>
+                  ht.isActive &&
+                  (!formData.schoolLevel || ht.schoolLevel === formData.schoolLevel) &&
+                  (!ht.school || ht._id === formData.headteacherId),
+              )
+              .map((ht) => (
+                <option key={ht._id} value={ht._id}>
+                  {ht.fullName} ({ht.schoolLevel || 'N/A'})
+                </option>
+              ))}
+          </select>
+        )}
       </div>
 
       <div className="flex gap-3 pt-4">
