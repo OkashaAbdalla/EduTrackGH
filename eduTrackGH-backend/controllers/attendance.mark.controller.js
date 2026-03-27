@@ -1,8 +1,9 @@
 /**
- * Attendance – mark daily (thin controller)
+ * Attendance – mark daily, lock status (thin controller)
  */
 
-const { markDailyAttendance: markDaily } = require("../services/attendanceService");
+const { markDailyAttendance: markDaily, getAttendanceLockStatus } = require("../services/attendanceService");
+const { emitAttendanceSubmitted, emitComplianceUpdated } = require("../utils/socketServer");
 
 const markDailyAttendance = async (req, res) => {
   try {
@@ -16,12 +17,18 @@ const markDailyAttendance = async (req, res) => {
       });
     }
 
-    const { savedRecords } = await markDaily({
+    const { savedRecords, schoolId } = await markDaily({
       classroomId,
       date,
       attendanceData,
       teacherId,
     });
+
+    const schoolIdStr = schoolId?.toString?.();
+    if (schoolIdStr) {
+      emitAttendanceSubmitted({ schoolId: schoolIdStr, date, classroomId, teacherId });
+      emitComplianceUpdated({ schoolId: schoolIdStr, date });
+    }
 
     return res.status(201).json({
       success: true,
@@ -36,4 +43,21 @@ const markDailyAttendance = async (req, res) => {
   }
 };
 
-module.exports = { markDailyAttendance };
+const getLockStatus = async (req, res) => {
+  try {
+    const { classroomId, date } = req.params;
+    const teacherId = req.user._id;
+    if (!classroomId || !date) {
+      return res.status(400).json({ success: false, message: "classroomId and date are required" });
+    }
+    const { locked } = await getAttendanceLockStatus({ classroomId, date, teacherId });
+    return res.json({ success: true, locked });
+  } catch (error) {
+    const status = error.status || 500;
+    const message = error.message || "Failed to check lock status";
+    if (status === 500) console.error("getLockStatus error:", error);
+    return res.status(status).json({ success: false, message });
+  }
+};
+
+module.exports = { markDailyAttendance, getLockStatus };

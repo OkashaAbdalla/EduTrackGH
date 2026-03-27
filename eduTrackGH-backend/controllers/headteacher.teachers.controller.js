@@ -3,10 +3,20 @@
  */
 
 const User = require('../models/User');
+const Classroom = require('../models/Classroom');
 const { sendEmail, emailTemplates } = require('../utils/sendEmail');
+const { getClassroomLevelFilter } = require('../services/headteacherService');
 
 function getSchoolId(req) {
   return req.user?.school || null;
+}
+
+function buildTeacherScopeQuery({ schoolId, userSchoolLevel, headteacherId }) {
+  // Primary/JHS headteachers are independent: teachers are scoped to the headteacher
+  // who created them (strict ownership).
+  const base = { role: 'teacher', schoolId, createdByHeadteacher: headteacherId };
+  if (!userSchoolLevel) return base;
+  return { ...base, schoolLevel: userSchoolLevel };
 }
 
 const getTeachersForSchool = async (req, res) => {
@@ -15,7 +25,12 @@ const getTeachersForSchool = async (req, res) => {
     if (!schoolId) {
       return res.status(400).json({ success: false, message: 'No school assigned to your account' });
     }
-    const teachers = await User.find({ role: 'teacher', schoolId }).select('-password').sort({ createdAt: -1 });
+    const scopeQuery = buildTeacherScopeQuery({
+      schoolId,
+      userSchoolLevel: req.user.schoolLevel,
+      headteacherId: req.user._id,
+    });
+    const teachers = await User.find(scopeQuery).select('-password').sort({ createdAt: -1 });
     res.json({ success: true, count: teachers.length, teachers });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || 'Failed to get teachers' });
@@ -48,17 +63,19 @@ const createTeacherForSchool = async (req, res) => {
       password: tempPassword,
       role: 'teacher',
       schoolId,
+      schoolLevel: req.user.schoolLevel || undefined,
+      createdByHeadteacher: req.user._id,
       isVerified: true,
       isActive: true,
     });
 
     try {
-      await sendEmail({ to: email, subject: 'Welcome to EduTrack GH', html: emailTemplates.lecturerWelcome(fullName, email, tempPassword) });
+      await sendEmail({ to: email, subject: 'Welcome to EduTrack GH', html: emailTemplates.lecturerWelcome(fullName, email, tempPassword, process.env.FRONTEND_URL || '') });
     } catch (emailError) {
       console.error('⚠️  Failed to send welcome email:', emailError.message);
     }
 
-    res.status(201).json({ success: true, message: 'Teacher created successfully', teacher: teacher.getPublicProfile() });
+    res.status(201).json({ success: true, message: 'Teacher created successfully', teacher: teacher.getPublicProfile(), emailSentTo: email });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || 'Failed to create teacher' });
   }
@@ -71,7 +88,12 @@ const toggleTeacherStatusForSchool = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No school assigned to your account' });
     }
     const { id } = req.params;
-    const teacher = await User.findOne({ _id: id, role: 'teacher', schoolId });
+    const scopeQuery = buildTeacherScopeQuery({
+      schoolId,
+      userSchoolLevel: req.user.schoolLevel,
+      headteacherId: req.user._id,
+    });
+    const teacher = await User.findOne({ ...scopeQuery, _id: id });
     if (!teacher) return res.status(404).json({ success: false, message: 'Teacher not found in your school' });
     teacher.isActive = !teacher.isActive;
     await teacher.save();
@@ -85,8 +107,41 @@ const toggleTeacherStatusForSchool = async (req, res) => {
   }
 };
 
+const deleteTeacherForSchool = async (req, res) => {
+  try {
+    const schoolId = getSchoolId(req);
+    if (!schoolId) {
+      return res.status(400).json({ success: false, message: 'No school assigned to your account' });
+    }
+
+    const { id } = req.params;
+    const scopeQuery = buildTeacherScopeQuery({
+      schoolId,
+      userSchoolLevel: req.user.schoolLevel,
+      headteacherId: req.user._id,
+    });
+    const teacher = await User.findOne({ ...scopeQuery, _id: id });
+    if (!teacher) {
+      return res.status(404).json({ success: false, message: 'Teacher not found in your school' });
+    }
+
+    // Unassign from any classrooms in this school
+    await Classroom.updateMany(
+      { schoolId, teacherId: teacher._id },
+      { $unset: { teacherId: 1 } }
+    );
+
+    await User.deleteOne({ _id: teacher._id });
+
+    return res.json({ success: true, message: 'Teacher deleted successfully' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to delete teacher' });
+  }
+};
+
 module.exports = {
   getTeachersForSchool,
   createTeacherForSchool,
   toggleTeacherStatusForSchool,
+  deleteTeacherForSchool,
 };

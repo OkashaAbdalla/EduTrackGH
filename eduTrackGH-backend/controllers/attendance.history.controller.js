@@ -32,10 +32,24 @@ const getClassroomDailyHistory = async (req, res) => {
 
     const records = await DailyAttendance.find(query)
       .populate("studentId", "fullName studentIdNumber")
-      .sort({ date: -1 });
+      .sort({ date: -1, markedAt: -1 });
+
+    // For each date+student, keep only the latest record (handles unlock + re-mark)
+    const latestPerStudentPerDate = {};
+    records.forEach((r) => {
+      const d = r.date.toISOString().split("T")[0];
+      const key = `${d}:${String(r.studentId?._id || r.studentId)}`;
+      const current = latestPerStudentPerDate[key];
+      const currentTime =
+        current?.markedAt instanceof Date ? current.markedAt.getTime() : current?.date?.getTime?.() ?? 0;
+      const thisTime = r.markedAt instanceof Date ? r.markedAt.getTime() : r.date.getTime();
+      if (!current || thisTime >= currentTime) {
+        latestPerStudentPerDate[key] = r;
+      }
+    });
 
     const byDate = {};
-    records.forEach((r) => {
+    Object.values(latestPerStudentPerDate).forEach((r) => {
       const d = r.date.toISOString().split("T")[0];
       if (!byDate[d]) byDate[d] = { date: d, present: 0, absent: 0, late: 0, total: studentIds.length };
       byDate[d][r.status]++;
@@ -126,8 +140,47 @@ const uploadPhoto = async (req, res) => {
   }
 };
 
+// Teacher: delete a whole week of attendance for their classroom (weekStartDate = YYYY-MM-DD)
+const deleteAttendanceWeek = async (req, res) => {
+  try {
+    const { classroomId, weekStartDate } = req.params;
+    const teacherId = req.user._id;
+
+    const classroom = await Classroom.findById(classroomId);
+    if (!classroom) return res.status(404).json({ success: false, message: "Classroom not found" });
+    if (classroom.teacherId.toString() !== teacherId.toString()) {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    if (!weekStartDate || !/^\d{4}-\d{2}-\d{2}$/.test(weekStartDate)) {
+      return res.status(400).json({ success: false, message: "weekStartDate (YYYY-MM-DD) is required" });
+    }
+
+    const [y, m, d] = weekStartDate.split("-").map((v) => parseInt(v, 10));
+    const start = new Date(Date.UTC(y, m - 1, d));
+    const end = new Date(start);
+    end.setUTCDate(end.getUTCDate() + 6);
+    end.setUTCHours(23, 59, 59, 999);
+
+    const result = await DailyAttendance.deleteMany({
+      classroomId,
+      date: { $gte: start, $lte: end },
+    });
+
+    return res.json({
+      success: true,
+      message: `Deleted ${result.deletedCount} attendance record(s) for the week`,
+      deletedCount: result.deletedCount,
+    });
+  } catch (error) {
+    console.error("deleteAttendanceWeek error:", error);
+    return res.status(500).json({ success: false, message: "Failed to delete attendance week" });
+  }
+};
+
 module.exports = {
   getClassroomDailyHistory,
   getFlaggedStudentsForClassroom,
   uploadPhoto,
+  deleteAttendanceWeek,
 };

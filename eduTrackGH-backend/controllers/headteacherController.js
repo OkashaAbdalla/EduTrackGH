@@ -5,12 +5,15 @@
 
 const teachers = require('./headteacher.teachers.controller');
 const classrooms = require('./headteacher.classrooms.controller');
+const compliance = require('./headteacher.compliance.controller');
 
 module.exports = {
   getTeachersForSchool: teachers.getTeachersForSchool,
   createTeacherForSchool: teachers.createTeacherForSchool,
   toggleTeacherStatusForSchool: teachers.toggleTeacherStatusForSchool,
+  deleteTeacherForSchool: teachers.deleteTeacherForSchool,
   getClassroomsForSchool: classrooms.getClassroomsForSchool,
   seedDefaultClassroomsForSchool: classrooms.seedDefaultClassroomsForSchool,
   assignClassTeacher: classrooms.assignClassTeacher,
+  getTeachersCompliance: compliance.getTeachersCompliance,
 };
