@@ -1,4 +1,4 @@
-f/**
+/**
  * Admin Dashboard Page
  * Purpose: Main admin control panel
  * Shows: System stats, recent activities, quick actions
