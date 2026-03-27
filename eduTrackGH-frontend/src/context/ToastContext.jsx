@@ -4,36 +4,46 @@
  * Provides toast functionality to entire app
  */
 
-import { createContext, useContext, useState, useCallback } from 'react';
+import { createContext, useContext, useRef, useState, useCallback } from 'react';
 import Toast from '../components/common/Toast';
 
 const ToastContext = createContext(null);
 
 export const ToastProvider = ({ children }) => {
-  const [toasts, setToasts] = useState([]);
+  // Single-toast system (prevents stacked spam).
+  const [toast, setToast] = useState(null);
+  const lastToastRef = useRef({ key: '', at: 0 });
 
   const showToast = useCallback((message, type = 'info') => {
-    // Use a more unique id than bare Date.now to avoid duplicate keys
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    setToasts(prev => [...prev, { id, message, type }]);
+    const safeMessage = String(message || '').trim();
+    if (!safeMessage) return;
+
+    const now = Date.now();
+    const key = `${type}:${safeMessage}`;
+    // Ignore exact duplicates fired repeatedly in a short window (common on multi-mount fetches).
+    if (lastToastRef.current.key === key && now - lastToastRef.current.at < 2500) return;
+    lastToastRef.current = { key, at: now };
+
+    const id = `${now}-${Math.random().toString(36).slice(2)}`;
+    setToast({ id, message: safeMessage, type });
   }, []);
 
   const hideToast = useCallback((id) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id));
+    setToast((prev) => (prev?.id === id ? null : prev));
   }, []);
 
   return (
     <ToastContext.Provider value={{ showToast }}>
       {children}
       <div className="fixed top-4 right-4 z-50 space-y-2">
-        {toasts.map(toast => (
+        {toast ? (
           <Toast
             key={toast.id}
             message={toast.message}
             type={toast.type}
             onClose={() => hideToast(toast.id)}
           />
-        ))}
+        ) : null}
       </div>
     </ToastContext.Provider>
   );

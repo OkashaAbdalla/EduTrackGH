@@ -20,7 +20,7 @@ export const AuthProvider = ({ children }) => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  // Check if user is already logged in on mount
+  // Check if user is already logged in on mount; fetch full profile (avatarUrl, schoolName) when token exists
   useEffect(() => {
     const token = localStorage.getItem('auth_token');
     const userRole = localStorage.getItem('user_role');
@@ -37,6 +37,16 @@ export const AuthProvider = ({ children }) => {
         schoolLevel: userSchoolLevel,
       });
       setIsAuthenticated(true);
+
+      authService.getMe().then((res) => {
+        if (res.success && res.user) {
+          setUser((prev) => ({
+            ...prev,
+            avatarUrl: res.user.avatarUrl || prev?.avatarUrl,
+            schoolName: res.user.schoolName || prev?.schoolName,
+          }));
+        }
+      }).catch(() => {});
     }
     setLoading(false);
   }, []);
