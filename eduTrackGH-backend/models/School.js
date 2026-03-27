@@ -41,7 +41,27 @@ const schoolSchema = new mongoose.Schema({
       lowercase: true,
     },
   },
-  // Headteacher reference
+  /**
+   * Headteacher references
+   *
+   * For schools with `schoolLevel: BOTH`, we support two headteachers:
+   * - `primaryHeadteacher` for PRIMARY section
+   * - `jhsHeadteacher` for JHS section
+   *
+   * The legacy `headteacher` field is retained for backward compatibility with
+   * existing data and older frontend code paths (typically single-level schools).
+   */
+  primaryHeadteacher: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    sparse: true,
+  },
+  jhsHeadteacher: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    sparse: true,
+  },
+  // Legacy single headteacher reference (backward compatibility)
   headteacher: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',

@@ -48,6 +48,13 @@ const userSchema = new mongoose.Schema({
     ref: 'School',
     sparse: true,
   },
+  // Teacher ownership: which headteacher created this teacher (for BOTH schools)
+  createdByHeadteacher: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    sparse: true,
+    index: true,
+  },
   classroomIds: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Classroom',
