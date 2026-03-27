@@ -44,7 +44,9 @@ const ManageTeachers = () => {
     handleCloseCreateModal,
     handleSaveTeacher,
     handleToggleStatus,
+    handleDeleteTeacher,
     handleAssignClassroom,
+    deletingId,
   } = useManageTeachers();
 
   const handleAssignOpen = (teacher) => {
@@ -122,6 +124,8 @@ const ManageTeachers = () => {
           onToggleStatus={handleToggleStatus}
           onViewDetails={setViewDetailsTeacher}
           onAssignClassroom={handleAssignOpen}
+          onDeleteTeacher={handleDeleteTeacher}
+          deletingId={deletingId}
         />
       </div>
 

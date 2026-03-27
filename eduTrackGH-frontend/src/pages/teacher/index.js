@@ -7,3 +7,4 @@ export { default as MarkAttendance } from './MarkAttendance';
 export { default as AttendanceHistory } from './AttendanceHistory';
 export { default as FlaggedStudents } from './FlaggedStudents';
 export { default as ManageStudents } from './ManageStudents';
+export { default as Chat } from './Chat';

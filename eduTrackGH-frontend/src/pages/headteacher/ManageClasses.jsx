@@ -6,6 +6,7 @@ import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card, Button } from '../../components/common';
 import { useManageClasses } from '../../hooks/useManageClasses';
 import AssignTeacherModal from '../../components/headteacher/AssignTeacherModal';
+import ClassViewDetailsModal from '../../components/headteacher/ClassViewDetailsModal';
 
 const ManageClasses = () => {
   const {
@@ -13,12 +14,15 @@ const ManageClasses = () => {
     teachers,
     loading,
     editingClass,
+    viewDetailsClass,
+    setViewDetailsClass,
     selectedTeacher,
     setSelectedTeacher,
     saving,
     seeding,
     schoolLevel,
     handleEditTeacher,
+    handleUnassignTeacher,
     handleSaveAssignment,
     handleCancel,
     handleSeedDefaultClasses,
@@ -100,18 +104,38 @@ const ManageClasses = () => {
                         <span className="text-sm font-semibold text-gray-500 dark:text-gray-400">—</span>
                       </td>
                       <td className="py-3 px-4 text-center">
-                        <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">Not available</span>
+                        <span
+                          className={`inline-block px-2 py-1 rounded text-xs font-medium ${
+                            classItem.teacherStatus === 'Available'
+                              ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                              : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300'
+                          }`}
+                        >
+                          {classItem.teacherStatus || 'Not available'}
+                        </span>
                       </td>
-                      <td className="py-3 px-4 text-center">
+                      <td className="py-3 px-4 text-center space-x-2">
+                        <button
+                          onClick={() => setViewDetailsClass(classItem)}
+                          className="inline-flex items-center px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition text-sm font-medium"
+                        >
+                          View Details
+                        </button>
                         <button
                           onClick={() => handleEditTeacher(classItem)}
                           className="inline-flex items-center px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition text-sm font-medium"
                         >
-                          <svg className="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                          </svg>
                           Assign
                         </button>
+                        {classItem.teacherId && (
+                          <button
+                            onClick={() => handleUnassignTeacher(classItem)}
+                            disabled={saving}
+                            className="inline-flex items-center px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition text-sm font-medium disabled:opacity-50"
+                          >
+                            Unassign
+                          </button>
+                        )}
                       </td>
                     </tr>
                   ))}
@@ -128,7 +152,12 @@ const ManageClasses = () => {
           setSelectedTeacher={setSelectedTeacher}
           saving={saving}
           onSave={handleSaveAssignment}
+          onUnassign={(c) => { handleUnassignTeacher(c); handleCancel(); }}
           onCancel={handleCancel}
+        />
+        <ClassViewDetailsModal
+          classItem={viewDetailsClass}
+          onClose={() => setViewDetailsClass(null)}
         />
       </div>
     </DashboardLayout>

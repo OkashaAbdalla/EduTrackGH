@@ -2,18 +2,24 @@
  * Mark Attendance Page – composes hook + MarkAttendanceStudentCard. Under 300 lines.
  */
 
+import { useState } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import { useMarkAttendance } from '../../hooks/useMarkAttendance';
 import MarkAttendanceStudentCard from '../../components/teacher/MarkAttendanceStudentCard';
+import { messageService } from '../../services';
+import { useToast } from '../../context';
 
 const MarkAttendance = () => {
+  const { showToast } = useToast();
   const {
     classrooms,
     selectedClass,
     setSelectedClass,
     selectedDate,
     setSelectedDate,
+    isDateLocked,
+    lockStatusLoading,
     students,
     initialLoading,
     classLoading,
@@ -44,6 +50,10 @@ const MarkAttendance = () => {
     allDone,
     handleSubmit,
   } = useMarkAttendance();
+
+  const [showUnlockForm, setShowUnlockForm] = useState(false);
+  const [unlockMessage, setUnlockMessage] = useState('');
+  const [sendingUnlock, setSendingUnlock] = useState(false);
 
   const currentStudent = students[currentIndex];
   const stats = {
@@ -117,7 +127,71 @@ const MarkAttendance = () => {
           </Card>
         )}
 
-        {!classLoading && students.length > 0 && (
+        {lockStatusLoading && selectedClass && selectedDate && (
+          <Card className="p-6">
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+            </div>
+            <p className="text-center text-sm text-gray-500 dark:text-gray-400">Checking if date is available...</p>
+          </Card>
+        )}
+
+        {!lockStatusLoading && isDateLocked && selectedClass && selectedDate && (
+          <Card className="p-6 bg-amber-50 dark:bg-amber-900/20 border-2 border-amber-200 dark:border-amber-800">
+            <h3 className="text-lg font-semibold text-amber-800 dark:text-amber-200 mb-2">Attendance locked</h3>
+            <p className="text-amber-700 dark:text-amber-300 mb-4">
+              Attendance for {selectedDate} has already been submitted and is locked. To make changes, contact your headteacher to request an unlock.
+            </p>
+            <button
+              type="button"
+              onClick={() => setShowUnlockForm((v) => !v)}
+              className="text-sm text-blue-600 dark:text-blue-400 underline"
+            >
+              Need to correct or unlock this day? Notify headteacher
+            </button>
+            {showUnlockForm && (
+              <div className="mt-4 space-y-2">
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                  Message to headteacher
+                </label>
+                <textarea
+                  rows={3}
+                  value={unlockMessage}
+                  onChange={(e) => setUnlockMessage(e.target.value)}
+                  placeholder="Explain what needs to be corrected and why you need this date unlocked..."
+                  className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                />
+                <button
+                  type="button"
+                  disabled={sendingUnlock || !unlockMessage.trim() || !selectedClass}
+                  onClick={async () => {
+                    if (!selectedClass) return;
+                    setSendingUnlock(true);
+                    try {
+                      await messageService.sendAttendanceUnlockRequest({
+                            classroomId: selectedClass,
+                            attendanceDate: selectedDate,
+                            message: unlockMessage.trim(),
+                          });
+                          setUnlockMessage('');
+                          setShowUnlockForm(false);
+                          showToast('Unlock request sent to headteacher', 'success');
+                        } catch (err) {
+                          showToast(err?.response?.data?.message || 'Failed to send unlock request', 'error');
+                        } finally {
+                          setSendingUnlock(false);
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                    >
+                      {sendingUnlock ? 'Sending...' : 'Send unlock request'}
+                </button>
+              </div>
+            )}
+          </Card>
+        )}
+
+        {!lockStatusLoading && !isDateLocked && !classLoading && students.length > 0 && (
           <>
             <div className="grid grid-cols-3 gap-4">
               <Card className="p-4 text-center">
@@ -163,11 +237,61 @@ const MarkAttendance = () => {
             )}
 
             {allDone && (
-              <Card className="p-6">
-                <p className="text-green-600 dark:text-green-400 font-medium mb-4">All students marked.</p>
-                <button onClick={handleSubmit} disabled={saving} className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg disabled:opacity-50">
+              <Card className="p-6 space-y-4">
+                <p className="text-green-600 dark:text-green-400 font-medium">All students marked.</p>
+                <button
+                  onClick={handleSubmit}
+                  disabled={saving}
+                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg disabled:opacity-50"
+                >
                   {saving ? 'Saving...' : 'Submit Attendance'}
                 </button>
+                <button
+                  type="button"
+                  onClick={() => setShowUnlockForm((v) => !v)}
+                  className="text-sm text-blue-600 dark:text-blue-400 underline mt-2"
+                >
+                  Need to correct or unlock this day? Notify headteacher
+                </button>
+                {showUnlockForm && (
+                  <div className="mt-3 space-y-2">
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      Message to headteacher
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={unlockMessage}
+                      onChange={(e) => setUnlockMessage(e.target.value)}
+                      placeholder="Explain what needs to be corrected and why you need this date unlocked..."
+                      className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                    />
+                    <button
+                      type="button"
+                      disabled={sendingUnlock || !unlockMessage.trim() || !selectedClass}
+                      onClick={async () => {
+                        if (!selectedClass) return;
+                        setSendingUnlock(true);
+                        try {
+                          await messageService.sendAttendanceUnlockRequest({
+                            classroomId: selectedClass,
+                            attendanceDate: selectedDate,
+                            message: unlockMessage.trim(),
+                          });
+                          setUnlockMessage('');
+                          setShowUnlockForm(false);
+                          showToast('Unlock request sent to headteacher', 'success');
+                        } catch (err) {
+                          showToast(err?.response?.data?.message || 'Failed to send unlock request', 'error');
+                        } finally {
+                          setSendingUnlock(false);
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                    >
+                      {sendingUnlock ? 'Sending...' : 'Send unlock request'}
+                    </button>
+                  </div>
+                )}
               </Card>
             )}
           </>

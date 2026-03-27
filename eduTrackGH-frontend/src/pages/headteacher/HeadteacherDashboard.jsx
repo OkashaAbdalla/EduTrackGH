@@ -3,18 +3,20 @@
  * Purpose: School-wide overview for headteachers
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import HeadteacherStatsCards from '../../components/headteacher/HeadteacherStatsCards';
 import HeadteacherQuickActions from '../../components/headteacher/HeadteacherQuickActions';
-import { useAuthContext, useToast } from '../../context';
+import { useAuthContext, useToast, useSocket } from '../../context';
 import authService from '../../services/authService';
+import { messageService, headteacherService } from '../../services';
 import { compressImageFile } from '../../utils/helpers';
 
 const HeadteacherDashboard = () => {
   const { user } = useAuthContext();
   const { showToast } = useToast();
+  const { socket } = useSocket();
   const schoolLevel = user?.schoolLevel; // PRIMARY or JHS
   const [stats, setStats] = useState({
     totalStudents: 0,
@@ -27,6 +29,8 @@ const HeadteacherDashboard = () => {
   const [menuOpen, setMenuOpen] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [schoolName, setSchoolName] = useState('');
+  const [unlockRequests, setUnlockRequests] = useState([]);
+  const [unlockingId, setUnlockingId] = useState(null);
 
   useEffect(() => {
     // TODO: Replace with real API call
@@ -43,22 +47,42 @@ const HeadteacherDashboard = () => {
     fetchStats();
   }, []);
 
-  // Fetch full profile (including schoolName) once so headteacher sees assigned school
+  const fetchUnlockRequests = useCallback(async () => {
+    try {
+      const res = await messageService.getAttendanceUnlockRequests();
+      if (res.success) {
+        setUnlockRequests(res.messages || []);
+      }
+    } catch (err) {
+      console.error('Failed to load unlock requests', err);
+    }
+  }, []);
+
   useEffect(() => {
     const loadProfile = async () => {
       try {
         const res = await authService.getMe();
         if (res.success && res.user) {
-          if (res.user.schoolName) {
-            setSchoolName(res.user.schoolName);
-          }
+          if (res.user.schoolName) setSchoolName(res.user.schoolName);
+          if (res.user.avatarUrl) setAvatarUrl(res.user.avatarUrl);
         }
       } catch {
-        // Silent fail; dashboard still works without school name
+        // Silent fail
       }
     };
     loadProfile();
   }, []);
+
+  useEffect(() => {
+    fetchUnlockRequests();
+  }, [fetchUnlockRequests]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handler = () => fetchUnlockRequests();
+    socket.on('unlock_request', handler);
+    return () => socket.off('unlock_request', handler);
+  }, [socket, fetchUnlockRequests]);
 
   const handleAvatarChange = async (event) => {
     const file = event.target.files?.[0];
@@ -187,6 +211,81 @@ const HeadteacherDashboard = () => {
         </div>
 
         <HeadteacherStatsCards stats={stats} />
+
+        {/* Attendance unlock requests from teachers */}
+        {unlockRequests.length > 0 && (
+          <Card className="p-6">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+              Attendance unlock requests
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              Teachers have requested unlocks for the following dates. Review and unlock attendance if appropriate.
+            </p>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-200 dark:border-gray-700">
+                    <th className="text-left py-2 px-3 text-gray-700 dark:text-gray-300">Date</th>
+                    <th className="text-left py-2 px-3 text-gray-700 dark:text-gray-300">Class</th>
+                    <th className="text-left py-2 px-3 text-gray-700 dark:text-gray-300">Teacher</th>
+                    <th className="text-left py-2 px-3 text-gray-700 dark:text-gray-300">Reason</th>
+                    <th className="text-left py-2 px-3 text-gray-700 dark:text-gray-300">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {unlockRequests.map((r) => (
+                    <tr key={r.id} className="border-b border-gray-100 dark:border-gray-800">
+                      <td className="py-2 px-3 text-gray-900 dark:text-white">
+                        {r.attendanceDate}
+                      </td>
+                      <td className="py-2 px-3 text-gray-900 dark:text-white">
+                        {r.classroom || '—'}
+                      </td>
+                      <td className="py-2 px-3 text-gray-900 dark:text-white">
+                        {r.teacher}
+                      </td>
+                      <td className="py-2 px-3 text-gray-700 dark:text-gray-300 max-w-xs">
+                        {r.message}
+                      </td>
+                      <td className="py-2 px-3">
+                        <button
+                          type="button"
+                          disabled={unlockingId === r.id}
+                          onClick={async () => {
+                            setUnlockingId(r.id);
+                            try {
+                              const res = await headteacherService.unlockAttendance(
+                                r.classroomId,
+                                r.attendanceDate
+                              );
+                              if (res.success) {
+                                setUnlockRequests((prev) =>
+                                  prev.filter((m) => m.id !== r.id)
+                                );
+                                showToast('Attendance unlocked for this date.', 'success');
+                              } else {
+                                showToast(res.message || 'Failed to unlock attendance', 'error');
+                              }
+                            } catch (err) {
+                              console.error('Failed to unlock attendance', err);
+                              showToast('Failed to unlock attendance', 'error');
+                            } finally {
+                              setUnlockingId(null);
+                            }
+                          }}
+                          className="px-3 py-1 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium disabled:opacity-50"
+                        >
+                          {unlockingId === r.id ? 'Unlocking...' : 'Unlock'}
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        )}
+
         <HeadteacherQuickActions />
       </div>
     </DashboardLayout>

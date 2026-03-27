@@ -8,8 +8,13 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { ROUTES } from '../../utils/constants';
 import { Card } from '../../components/common';
+import { useAuthContext } from '../../context';
+import authService from '../../services/authService';
+import classroomService from '../../services/classroomService';
 
 const TeacherDashboard = () => {
+  const { user } = useAuthContext();
+  const [profile, setProfile] = useState({ fullName: '', schoolName: '', classrooms: [] });
   const [stats, setStats] = useState({
     classesToday: 0,
     unmarkedClasses: 0,
@@ -19,19 +24,32 @@ const TeacherDashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // TODO: Replace with real API call
-    const fetchStats = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setStats({
-        classesToday: 3,
-        unmarkedClasses: 1,
-        flaggedStudents: 2,
-        totalStudents: 85,
-      });
-      setLoading(false);
+    const fetchData = async () => {
+      try {
+        const [meRes, classRes] = await Promise.all([
+          authService.getMe(),
+          classroomService.getTeacherClassrooms(),
+        ]);
+        if (meRes.success && meRes.user) {
+          setProfile((p) => ({
+            ...p,
+            fullName: meRes.user.fullName || user?.name || '',
+            schoolName: meRes.user.schoolName || '',
+          }));
+        }
+        if (classRes.success && classRes.classrooms?.length) {
+          setProfile((p) => ({ ...p, classrooms: classRes.classrooms }));
+          const total = classRes.classrooms.reduce((s, c) => s + (c.studentCount || 0), 0);
+          setStats((prev) => ({ ...prev, classesToday: classRes.classrooms.length, totalStudents: total }));
+        }
+      } catch {
+        setProfile((p) => ({ ...p, fullName: user?.name || '' }));
+      } finally {
+        setLoading(false);
+      }
     };
-    fetchStats();
-  }, []);
+    fetchData();
+  }, [user?.name]);
 
   if (loading) {
     return (
@@ -46,9 +64,19 @@ const TeacherDashboard = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
+        {/* Header – teacher name, school, assigned class */}
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Teacher Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            Welcome{profile.fullName ? `, ${profile.fullName}` : ''}
+          </h1>
+          {profile.schoolName && (
+            <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mt-1">{profile.schoolName}</p>
+          )}
+          {profile.classrooms?.length > 0 && (
+            <p className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">
+              Assigned class{profile.classrooms.length > 1 ? 'es' : ''}: {profile.classrooms.map((c) => c.name).join(', ')}
+            </p>
+          )}
           <p className="text-gray-600 dark:text-gray-400 mt-1">Monitor attendance and track student progress</p>
         </div>
 

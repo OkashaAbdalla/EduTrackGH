@@ -24,6 +24,7 @@ const AttendanceHistory = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [deletingWeek, setDeletingWeek] = useState(false);
 
   // Fetch teacher's classrooms on mount
   useEffect(() => {
@@ -92,6 +93,38 @@ const AttendanceHistory = () => {
     return ((record.present / record.total) * 100).toFixed(1);
   };
 
+  const exportCsv = () => {
+    if (!records.length) return;
+    const headers = ['Date', 'Present', 'Absent', 'Late', 'Attendance Rate (%)'];
+    const rows = records.map((r) => [r.date, r.present, r.absent, r.late, getAttendanceRate(r)]);
+    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `attendance-history-${selectedMonth}-${selectedClass}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
+
+  const deleteWeek = async (weekStartDate) => {
+    if (!selectedClass || !weekStartDate) return;
+    if (!window.confirm(`Delete ALL attendance records for the week starting ${weekStartDate}? This cannot be undone.`)) return;
+    setDeletingWeek(true);
+    try {
+      const res = await attendanceService.deleteAttendanceWeek(selectedClass, weekStartDate);
+      if (res.success) {
+        showToast(res.message || 'Week deleted', 'success');
+        fetchAttendanceRecords();
+      } else {
+        showToast(res.message || 'Failed to delete week', 'error');
+      }
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Failed to delete week', 'error');
+    } finally {
+      setDeletingWeek(false);
+    }
+  };
+
   if (initialLoading) {
     return (
       <DashboardLayout>
@@ -157,6 +190,26 @@ const AttendanceHistory = () => {
                   className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
                 />
               </div>
+            </div>
+            <div className="mt-4 flex flex-wrap gap-2 justify-end">
+              <button
+                type="button"
+                onClick={exportCsv}
+                disabled={!records.length}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
+              >
+                Export CSV
+              </button>
+              {records.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => deleteWeek(records[records.length - 1].date)}
+                  disabled={deletingWeek}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
+                >
+                  {deletingWeek ? 'Deleting...' : 'Delete Oldest Week'}
+                </button>
+              )}
             </div>
           </Card>
         )}

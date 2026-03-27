@@ -18,31 +18,49 @@ const SchoolReports = () => {
   const [error, setError] = useState(null);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchReports = async () => {
       try {
         setLoading(true);
         setError(null);
         const response = await reportsService.getSchoolReports(selectedMonth);
+        if (cancelled) return;
         if (response.success && Array.isArray(response.reports)) {
           const filtered = schoolLevel
             ? response.reports.filter((r) => r.level === schoolLevel)
             : response.reports;
           setReports(filtered);
         } else {
-          setReports([]);
           if (!response.success) setError(response.message || 'Failed to load reports');
+          setReports([]);
         }
       } catch (err) {
-        setReports([]);
-        setError('Failed to load reports');
+        if (cancelled) return;
+        setError(err?.response?.data?.message || err?.message || 'Failed to load reports');
+        // Keep previous reports visible on error; only clear if we had no data yet
+        setReports((prev) => (prev.length ? prev : []));
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchReports();
+    return () => { cancelled = true; };
   }, [selectedMonth, schoolLevel]);
 
   const classReports = reports;
+
+  const handleExportReport = () => {
+    if (classReports.length === 0) return;
+    const headers = ['Class', 'Students', 'Avg Rate (%)', 'Flagged'];
+    const rows = classReports.map((r) => [r.class, r.students, r.avgRate, r.flagged]);
+    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `school-report-${selectedMonth}.csv`;
+    link.click();
+    URL.revokeObjectURL(link.href);
+  };
 
   const getRateColor = (rate) => {
     if (rate >= 90) return 'text-green-600 dark:text-green-400';
@@ -64,7 +82,11 @@ const SchoolReports = () => {
                 : 'Comprehensive attendance analytics'}
             </p>
           </div>
-          <button className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium transition">
+          <button
+            onClick={handleExportReport}
+            disabled={loading || classReports.length === 0}
+            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition"
+          >
             Export Report
           </button>
         </div>

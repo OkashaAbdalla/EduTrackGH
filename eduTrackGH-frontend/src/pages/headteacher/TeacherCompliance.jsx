@@ -1,82 +1,56 @@
 /**
  * Teacher Compliance Page (Headteacher)
- * Purpose: Monitor daily attendance marking compliance by teachers
+ * Monitor daily attendance marking compliance by teachers
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { Link } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
-import { useToast, useAuthContext } from '../../context';
+import { useToast, useAuthContext, useSocket } from '../../context';
+import headteacherService from '../../services/headteacherService';
+import { ROUTES } from '../../utils/constants';
 
 const TeacherCompliance = () => {
   const { showToast } = useToast();
   const { user } = useAuthContext();
-  const schoolLevel = user?.schoolLevel; // PRIMARY or JHS
+  const { socket } = useSocket();
+  const schoolLevel = user?.schoolLevel;
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchCompliance();
-  }, [date]);
-
-  const fetchCompliance = async () => {
+  const fetchCompliance = useCallback(async () => {
     try {
       setLoading(true);
-      // TODO: Replace with real API call
-      await new Promise(resolve => setTimeout(resolve, 800));
-      const mockTeachers = [
-        {
-          id: '1',
-          name: 'John Mensah',
-          classes: ['Primary 4', 'JHS 1'],
-          marked: true,
-          markedAt: '2024-01-15T08:30:00',
-          complianceRate: 98.5,
-        },
-        {
-          id: '2',
-          name: 'Amina Yakubu',
-          classes: ['Primary 2', 'Primary 3'],
-          marked: true,
-          markedAt: '2024-01-15T08:45:00',
-          complianceRate: 95.2,
-        },
-        {
-          id: '3',
-          name: 'Kwame Asante',
-          classes: ['JHS 2', 'JHS 3'],
-          marked: false,
-          markedAt: null,
-          complianceRate: 87.3,
-        },
-        {
-          id: '4',
-          name: 'Fatima Alhassan',
-          classes: ['Primary 1'],
-          marked: true,
-          markedAt: '2024-01-15T09:00:00',
-          complianceRate: 100,
-        },
-      ];
-      setTeachers(mockTeachers);
+      const res = await headteacherService.getCompliance(date);
+      setTeachers(res.teachers || []);
     } catch (error) {
       showToast('Failed to load compliance data', 'error');
+      setTeachers([]);
     } finally {
       setLoading(false);
     }
+  }, [date, showToast]);
+
+  useEffect(() => {
+    fetchCompliance();
+  }, [fetchCompliance]);
+
+  useEffect(() => {
+    if (!socket) return;
+    const handler = (data) => {
+      if (data?.date === date) fetchCompliance();
+    };
+    socket.on('compliance_updated', handler);
+    return () => socket.off('compliance_updated', handler);
+  }, [socket, date, fetchCompliance]);
+
+  const stats = {
+    total: teachers.length,
+    marked: teachers.filter((t) => t.marked).length,
+    unmarked: teachers.filter((t) => !t.marked).length,
   };
-
-  const getComplianceStats = () => {
-    const total = teachers.length;
-    const marked = teachers.filter(t => t.marked).length;
-    const unmarked = total - marked;
-    const avgCompliance = teachers.reduce((sum, t) => sum + t.complianceRate, 0) / total || 0;
-
-    return { total, marked, unmarked, avgCompliance };
-  };
-
-  const stats = getComplianceStats();
 
   if (loading) {
     return (
@@ -91,19 +65,17 @@ const TeacherCompliance = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Teacher Compliance</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
-            {schoolLevel === 'PRIMARY' 
-              ? 'Monitor Primary section teachers\' daily attendance marking'
+            {schoolLevel === 'PRIMARY'
+              ? "Monitor Primary section teachers' daily attendance marking"
               : schoolLevel === 'JHS'
-              ? 'Monitor JHS section teachers\' daily attendance marking'
+              ? "Monitor JHS section teachers' daily attendance marking"
               : 'Monitor daily attendance marking compliance'}
           </p>
         </div>
 
-        {/* Date Filter */}
         <Card className="p-6">
           <div className="max-w-xs">
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
@@ -119,7 +91,6 @@ const TeacherCompliance = () => {
           </div>
         </Card>
 
-        {/* Compliance Stats */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="p-6">
             <div className="text-center">
@@ -127,14 +98,12 @@ const TeacherCompliance = () => {
               <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
             </div>
           </Card>
-
           <Card className="p-6">
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Marked Today</p>
               <p className="text-3xl font-bold text-green-600 dark:text-green-400">{stats.marked}</p>
             </div>
           </Card>
-
           <Card className="p-6">
             <div className="text-center">
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Not Marked</p>
@@ -143,13 +112,12 @@ const TeacherCompliance = () => {
           </Card>
         </div>
 
-        {/* Teachers List */}
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
-            Teacher Status for {new Date(date).toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            Teacher Status for {new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </h2>
           <div className="space-y-3">
-            {teachers.map(teacher => (
+            {teachers.map((teacher) => (
               <div
                 key={teacher.id}
                 className={`p-4 rounded-lg border ${
@@ -163,31 +131,22 @@ const TeacherCompliance = () => {
                     <div className="flex items-center space-x-3">
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                          teacher.marked
-                            ? 'bg-green-100 dark:bg-green-900/30'
-                            : 'bg-red-100 dark:bg-red-900/30'
+                          teacher.marked ? 'bg-green-100 dark:bg-green-900/30' : 'bg-red-100 dark:bg-red-900/30'
                         }`}
                       >
-                        <span
-                          className={`font-semibold ${
-                            teacher.marked
-                              ? 'text-green-600 dark:text-green-400'
-                              : 'text-red-600 dark:text-red-400'
-                          }`}
-                        >
-                          {teacher.name.charAt(0)}
+                        <span className={`font-semibold ${teacher.marked ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400'}`}>
+                          {(teacher.fullName || teacher.name || 'T').charAt(0)}
                         </span>
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{teacher.name}</h3>
+                        <h3 className="font-semibold text-gray-900 dark:text-white">{teacher.fullName || teacher.name}</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          {teacher.classes.join(', ')}
+                          {(teacher.assignedClasses || teacher.classes || []).join(', ') || '—'}
                         </p>
                       </div>
                     </div>
                   </div>
-
-                  <div className="text-right">
+                  <div className="text-right flex items-center gap-3">
                     {teacher.marked ? (
                       <div>
                         <span className="inline-block px-3 py-1 bg-green-600 text-white rounded text-sm font-medium mb-1">
@@ -195,10 +154,7 @@ const TeacherCompliance = () => {
                         </span>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
                           {teacher.markedAt &&
-                            new Date(teacher.markedAt).toLocaleTimeString('en-GB', {
-                              hour: '2-digit',
-                              minute: '2-digit',
-                            })}
+                            new Date(teacher.markedAt).toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
                         </p>
                       </div>
                     ) : (
@@ -206,9 +162,12 @@ const TeacherCompliance = () => {
                         Not Marked
                       </span>
                     )}
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {teacher.complianceRate.toFixed(1)}% compliance
-                    </p>
+                    <Link
+                      to={`${ROUTES.HEADTEACHER_CHAT}?teacher=${teacher.id}&name=${encodeURIComponent(teacher.fullName || '')}`}
+                      className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium"
+                    >
+                      Message
+                    </Link>
                   </div>
                 </div>
               </div>
