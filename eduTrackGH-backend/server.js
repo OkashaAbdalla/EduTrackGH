@@ -3,11 +3,13 @@
  * Entry point for Express application
  */
 
+const http = require("http");
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const errorMiddleware = require("./middleware/errorMiddleware");
+const { setupSocketServer } = require("./utils/socketServer");
 
 // Load environment variables
 dotenv.config();
@@ -41,6 +43,8 @@ app.use("/api/headteacher", require("./routes/headteacherRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));
 app.use("/api/reports", require("./routes/reportsRoutes"));
+app.use("/api/messages", require("./routes/teacherMessageRoutes"));
+app.use("/api/chat", require("./routes/chatRoutes"));
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -62,9 +66,13 @@ app.use((req, res) => {
 // Error handling middleware (must be last)
 app.use(errorMiddleware);
 
+// Create HTTP server and attach Socket.IO
+const server = http.createServer(app);
+setupSocketServer(server);
+
 // Start server
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`);
