@@ -11,10 +11,10 @@
  */
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, ToastProvider, AuthProvider } from './context';
+import { ThemeProvider, ToastProvider, AuthProvider, SocketProvider } from './context';
 import { Landing, Login, Register, VerifyEmail } from './pages/public';
-import { TeacherDashboard, MarkAttendance, AttendanceHistory, FlaggedStudents } from './pages/teacher';
-import { HeadteacherDashboard, SchoolReports, TeacherCompliance, ManageClasses, ManageStudents } from './pages/headteacher';
+import { TeacherDashboard, MarkAttendance, AttendanceHistory, FlaggedStudents, Chat as TeacherChat } from './pages/teacher';
+import { HeadteacherDashboard, SchoolReports, TeacherCompliance, ManageClasses, ManageStudents, ManageTeachers as HeadteacherManageTeachers, Chat as HeadteacherChat } from './pages/headteacher';
 import { ParentDashboard, ChildrenAttendance, Notifications } from './pages/parent';
 import { AdminLogin, AdminDashboard, CreateHeadteacher, ManageSchools, ManageHeadteachers, AttendanceAudit, SystemSettings } from './pages/admin';
 import { ProtectedRoute } from './components/common';
@@ -25,6 +25,7 @@ function App() {
     <ThemeProvider>
       <ToastProvider>
         <AuthProvider>
+          <SocketProvider>
           <Router>
         <Routes>
           {/* Public Routes */}
@@ -41,6 +42,7 @@ function App() {
           <Route path={ROUTES.MARK_ATTENDANCE} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><MarkAttendance /></ProtectedRoute>} />
           <Route path={ROUTES.ATTENDANCE_HISTORY} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><AttendanceHistory /></ProtectedRoute>} />
           <Route path={ROUTES.FLAGGED_STUDENTS} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><FlaggedStudents /></ProtectedRoute>} />
+          <Route path={ROUTES.TEACHER_CHAT} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><TeacherChat /></ProtectedRoute>} />
           
           {/* Headteacher Routes - Protected */}
           <Route path={ROUTES.HEADTEACHER_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherDashboard /></ProtectedRoute>} />
@@ -48,6 +50,8 @@ function App() {
           <Route path={ROUTES.TEACHER_COMPLIANCE} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><TeacherCompliance /></ProtectedRoute>} />
           <Route path={ROUTES.MANAGE_CLASSES} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><ManageClasses /></ProtectedRoute>} />
           <Route path={ROUTES.HEADTEACHER_MANAGE_STUDENTS} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><ManageStudents /></ProtectedRoute>} />
+          <Route path={ROUTES.HEADTEACHER_MANAGE_TEACHERS} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherManageTeachers /></ProtectedRoute>} />
+          <Route path={ROUTES.HEADTEACHER_CHAT} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherChat /></ProtectedRoute>} />
           
           {/* Parent Routes - Protected */}
           <Route path={ROUTES.PARENT_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.PARENT}><ParentDashboard /></ProtectedRoute>} />
@@ -67,6 +71,7 @@ function App() {
           <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
         </Routes>
       </Router>
+      </SocketProvider>
         </AuthProvider>
       </ToastProvider>
     </ThemeProvider>

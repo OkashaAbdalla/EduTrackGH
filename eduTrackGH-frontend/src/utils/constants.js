@@ -33,6 +33,7 @@ export const ROUTES = {
   MARK_ATTENDANCE: '/teacher/mark-attendance',
   ATTENDANCE_HISTORY: '/teacher/history',
   FLAGGED_STUDENTS: '/teacher/flagged',
+  TEACHER_CHAT: '/teacher/messages',
 
   // Headteacher (school admin) routes
   HEADTEACHER_DASHBOARD: '/headteacher/dashboard',
@@ -40,6 +41,8 @@ export const ROUTES = {
   TEACHER_COMPLIANCE: '/headteacher/compliance',
   MANAGE_CLASSES: '/headteacher/classes',
   HEADTEACHER_MANAGE_STUDENTS: '/headteacher/students',
+  HEADTEACHER_MANAGE_TEACHERS: '/headteacher/teachers',
+  HEADTEACHER_CHAT: '/headteacher/messages',
 
   // Parent routes
   PARENT_DASHBOARD: '/parent/dashboard',

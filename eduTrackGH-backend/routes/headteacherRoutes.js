@@ -15,6 +15,7 @@ const {
   deleteTeacherForSchool,
   seedDefaultClassroomsForSchool,
   getTeachersCompliance,
+  getDashboardStats,
 } = require('../controllers/headteacherController');
 const { unlockAttendanceForHeadteacher } = require('../controllers/headteacher.classrooms.controller');
 const { protect } = require('../middleware/authMiddleware');
@@ -39,5 +40,8 @@ router.patch('/attendance/unlock/:classroomId/:date', unlockAttendanceForHeadtea
 
 // Teacher compliance (marked attendance for date)
 router.get('/compliance', getTeachersCompliance);
+
+// Dashboard stats
+router.get('/dashboard-stats', getDashboardStats);
 
 module.exports = router;

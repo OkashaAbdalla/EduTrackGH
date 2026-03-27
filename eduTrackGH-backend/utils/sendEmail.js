@@ -67,7 +67,7 @@ const emailTemplates = {
     </html>
   `,
 
-  lecturerWelcome: (name, email, tempPassword, loginUrl) => `
+  accountWelcome: ({ name, email, tempPassword, loginUrl, accountType, createdByText }) => `
     <!DOCTYPE html>
     <html>
     <head>
@@ -87,7 +87,7 @@ const emailTemplates = {
         </div>
         <div class="content">
           <h2>Welcome, ${name}!</h2>
-          <p>Your headteacher account has been created by the system administrator.</p>
+          <p>Your ${accountType} account has been created by ${createdByText}.</p>
           <div class="credentials">
             <p><strong>Email:</strong> ${email}</p>
             <p><strong>Temporary Password:</strong> ${tempPassword}</p>
@@ -104,6 +104,36 @@ const emailTemplates = {
     </body>
     </html>
   `,
+
+  headteacherWelcome: (name, email, tempPassword, loginUrl) =>
+    emailTemplates.accountWelcome({
+      name,
+      email,
+      tempPassword,
+      loginUrl,
+      accountType: 'headteacher',
+      createdByText: 'the system administrator',
+    }),
+
+  teacherWelcome: (name, email, tempPassword, loginUrl, headteacherName) =>
+    emailTemplates.accountWelcome({
+      name,
+      email,
+      tempPassword,
+      loginUrl,
+      accountType: 'teacher',
+      createdByText: `your headteacher: ${headteacherName || 'your headteacher'}`,
+    }),
+
+  adminTeacherWelcome: (name, email, tempPassword, loginUrl) =>
+    emailTemplates.accountWelcome({
+      name,
+      email,
+      tempPassword,
+      loginUrl,
+      accountType: 'teacher',
+      createdByText: 'the system administrator',
+    }),
 
   chatMessageFromHeadteacher: (headteacherName, schoolName, message) => `
     <!DOCTYPE html>
