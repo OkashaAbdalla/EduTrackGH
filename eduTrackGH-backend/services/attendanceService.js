@@ -91,8 +91,25 @@ async function markDailyAttendance({ classroomId, date, attendanceData, teacherI
   if (classroom.teacherId.toString() !== teacherId.toString()) throw { status: 403, message: "Unauthorized" };
 
   const schoolId = classroom.schoolId?._id || classroom.schoolId;
-  const dateOnly = new Date(date);
-  dateOnly.setHours(0, 0, 0, 0);
+
+  // Normalize the incoming date so that the stored calendar day
+  // exactly matches what the teacher selected, regardless of server timezone.
+  let dateOnly;
+  if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [y, m, d] = date.split("-").map((v) => parseInt(v, 10));
+    dateOnly = new Date(Date.UTC(y, m - 1, d));
+  } else {
+    dateOnly = new Date(date);
+    dateOnly.setUTCHours(0, 0, 0, 0);
+  }
+
+  // Early lock check: if any attendance for this classroom+date is locked, reject immediately.
+  // Locked attendance remains locked until headteacher unlocks, regardless of day.
+  const anyLocked = await DailyAttendance.findOne({ classroomId, date: dateOnly, isLocked: true });
+  if (anyLocked) {
+    throw { status: 403, message: "Attendance is locked for this date. Contact your headteacher to request an unlock." };
+  }
+
   const savedRecords = [];
   const smsEnabled = process.env.SMS_ENABLED === "true";
 
@@ -182,7 +199,29 @@ async function markDailyAttendance({ classroomId, date, attendanceData, teacherI
 
   runFlagDetection(classroomId, schoolId, dateOnly, savedRecords).catch(() => {});
 
-  return { savedRecords };
+  return { savedRecords, schoolId };
 }
 
-module.exports = { markDailyAttendance, runFlagDetection, studentInClassroom };
+/**
+ * Check if attendance for a classroom+date is locked.
+ * Used by frontend to block marking form before teacher starts.
+ */
+async function getAttendanceLockStatus({ classroomId, date, teacherId }) {
+  const classroom = await Classroom.findById(classroomId);
+  if (!classroom) throw { status: 404, message: "Classroom not found" };
+  if (classroom.teacherId.toString() !== teacherId.toString()) throw { status: 403, message: "Unauthorized" };
+
+  let dateOnly;
+  if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [y, m, d] = date.split("-").map((v) => parseInt(v, 10));
+    dateOnly = new Date(Date.UTC(y, m - 1, d));
+  } else {
+    dateOnly = new Date(date);
+    dateOnly.setUTCHours(0, 0, 0, 0);
+  }
+
+  const anyLocked = await DailyAttendance.findOne({ classroomId, date: dateOnly, isLocked: true });
+  return { locked: !!anyLocked };
+}
+
+module.exports = { markDailyAttendance, getAttendanceLockStatus, runFlagDetection, studentInClassroom };
