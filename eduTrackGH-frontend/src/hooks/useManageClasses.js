@@ -14,6 +14,7 @@ export function useManageClasses() {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingClass, setEditingClass] = useState(null);
+  const [viewDetailsClass, setViewDetailsClass] = useState(null);
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [saving, setSaving] = useState(false);
   const [seeding, setSeeding] = useState(false);
@@ -25,6 +26,8 @@ export function useManageClasses() {
       grade: cls.grade,
       teacherId: cls.teacherId?._id || cls.teacherId || '',
       teacherName: cls.teacherId?.fullName || 'Unassigned',
+      teacherEmail: cls.teacherId?.email || '',
+      teacherStatus: cls.teacherId?.isActive ? 'Available' : 'Inactive',
       students: cls.studentCount || 0,
     }));
 
@@ -53,6 +56,28 @@ export function useManageClasses() {
     setSelectedTeacher(classItem.teacherId || '');
   }, []);
 
+  const handleUnassignTeacher = useCallback(async (classItem) => {
+    if (!classItem.teacherId) return;
+    setSaving(true);
+    try {
+      const result = await headteacherService.assignClassTeacher(classItem.id, null);
+      if (result.success) {
+        setClasses((prev) =>
+          prev.map((cls) =>
+            cls.id === classItem.id
+              ? { ...cls, teacherId: '', teacherName: 'Unassigned', teacherEmail: '', teacherStatus: '' }
+              : cls
+          )
+        );
+        showToast(`${classItem.name} teacher unassigned`, 'success');
+      } else showToast(result.message || 'Failed to unassign', 'error');
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Failed to unassign', 'error');
+    } finally {
+      setSaving(false);
+    }
+  }, [showToast]);
+
   const handleSaveAssignment = useCallback(async () => {
     if (!selectedTeacher) {
       showToast('Please select a teacher', 'error');
@@ -64,10 +89,12 @@ export function useManageClasses() {
       if (result.success) {
         const updated = result.classroom;
         const teacherName = updated.teacherId?.fullName || 'Unassigned';
+        const teacherEmail = updated.teacherId?.email || '';
+        const teacherStatus = updated.teacherId?.isActive ? 'Available' : 'Inactive';
         setClasses((prev) =>
           prev.map((cls) =>
             cls.id === editingClass.id
-              ? { ...cls, teacherId: updated.teacherId?._id || updated.teacherId, teacherName }
+              ? { ...cls, teacherId: updated.teacherId?._id || updated.teacherId, teacherName, teacherEmail, teacherStatus }
               : cls
           )
         );
@@ -115,7 +142,10 @@ export function useManageClasses() {
     saving,
     seeding,
     schoolLevel,
+    viewDetailsClass,
+    setViewDetailsClass,
     handleEditTeacher,
+    handleUnassignTeacher,
     handleSaveAssignment,
     handleCancel,
     handleSeedDefaultClasses,

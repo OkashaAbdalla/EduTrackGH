@@ -87,6 +87,10 @@ const useSchools = () => {
         schoolLevel: formData.schoolLevel,
         location: formData.location,
         contact: formData.contact,
+        // Support BOTH-level schools: two headteacher slots
+        primaryHeadteacherId: formData.primaryHeadteacherId || null,
+        jhsHeadteacherId: formData.jhsHeadteacherId || null,
+        // Backward compat for older backend/clients
         headteacherId: formData.headteacherId || null,
       };
       const response = await adminService.updateSchool(id, payload);

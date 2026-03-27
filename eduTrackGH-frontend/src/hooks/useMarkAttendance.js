@@ -32,6 +32,8 @@ export function useMarkAttendance() {
   const [capturing, setCapturing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [location, setLocation] = useState(null);
+  const [isDateLocked, setIsDateLocked] = useState(false);
+  const [lockStatusLoading, setLockStatusLoading] = useState(false);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
 
@@ -81,6 +83,28 @@ export function useMarkAttendance() {
 
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
 
+  // Check if selected date is locked when class + date change
+  useEffect(() => {
+    if (!selectedClass || !selectedDate) {
+      setIsDateLocked(false);
+      return;
+    }
+    let cancelled = false;
+    setLockStatusLoading(true);
+    attendanceService.getAttendanceLockStatus(selectedClass, selectedDate).then((res) => {
+      if (!cancelled) {
+        setIsDateLocked(!!(res.success && res.locked));
+        setLockStatusLoading(false);
+      }
+    }).catch(() => {
+      if (!cancelled) {
+        setIsDateLocked(false);
+        setLockStatusLoading(false);
+      }
+    });
+    return () => { cancelled = true; };
+  }, [selectedClass, selectedDate]);
+
   useEffect(() => {
     if (!navigator.geolocation) return;
     navigator.geolocation.getCurrentPosition(
@@ -92,12 +116,20 @@ export function useMarkAttendance() {
 
   const startCamera = useCallback(async () => {
     setCameraError(null);
+
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setCameraError('Your browser does not support camera access. Use Manual Verification.');
+      return;
+    }
+
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user', width: { ideal: 640 }, height: { ideal: 480 } } });
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: 'user' },
+      });
       streamRef.current = stream;
-      if (videoRef.current) videoRef.current.srcObject = stream;
       setCameraActive(true);
     } catch (err) {
+      console.error('startCamera error:', err);
       setCameraError('Camera access denied or unavailable. Use Manual Verification.');
       setCameraActive(false);
     }
@@ -114,6 +146,24 @@ export function useMarkAttendance() {
 
   useEffect(() => () => { stopCamera(); }, [stopCamera]);
 
+  // When camera is active and both stream and video element exist,
+  // attach the stream and explicitly call play() to avoid black preview.
+  useEffect(() => {
+    if (!cameraActive || !streamRef.current || !videoRef.current) return;
+    const video = videoRef.current;
+    video.srcObject = streamRef.current;
+    try {
+      const playPromise = video.play && video.play();
+      if (playPromise && playPromise.catch) {
+        playPromise.catch(() => {
+          // Autoplay errors are non-fatal; user already clicked a button.
+        });
+      }
+    } catch (err) {
+      console.error('video.play error:', err);
+    }
+  }, [cameraActive]);
+
   const capturePhoto = useCallback(async () => {
     if (!videoRef.current || !cameraActive) return;
     setCapturing(true);
@@ -123,6 +173,9 @@ export function useMarkAttendance() {
       canvas.width = video.videoWidth;
       canvas.height = video.videoHeight;
       const ctx = canvas.getContext('2d');
+      // Un-mirror capture so it matches real-world orientation (and preview)
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
       ctx.drawImage(video, 0, 0);
       const blob = await new Promise((r) => canvas.toBlob(r, 'image/jpeg', CAPTURE_QUALITY));
       if (!blob) throw new Error('Capture failed');
@@ -212,9 +265,11 @@ export function useMarkAttendance() {
         showToast(`Attendance saved for ${response.count ?? entries.length} students.`, 'success');
         setEntries([]);
         setCurrentIndex(0);
+        setIsDateLocked(true); // Just submitted = now locked
       } else showToast(response.message || 'Failed to save attendance', 'error');
     } catch (err) {
-      showToast('Failed to save attendance', 'error');
+      const msg = err?.response?.data?.message || err?.message || 'Failed to save attendance';
+      showToast(msg, 'error');
     } finally {
       setSaving(false);
     }
@@ -223,6 +278,8 @@ export function useMarkAttendance() {
   return {
     classrooms,
     selectedClass,
+    isDateLocked,
+    lockStatusLoading,
     setSelectedClass,
     selectedDate,
     setSelectedDate,

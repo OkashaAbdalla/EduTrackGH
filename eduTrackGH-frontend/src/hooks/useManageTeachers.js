@@ -42,6 +42,7 @@ export function useManageTeachers() {
   const [assignTeacher, setAssignTeacher] = useState(null);
   const [assignClassroomId, setAssignClassroomId] = useState('');
   const [assigning, setAssigning] = useState(false);
+  const [deletingId, setDeletingId] = useState(null);
 
   const fetchData = useCallback(async () => {
     try {
@@ -136,6 +137,34 @@ export function useManageTeachers() {
     }
   }, [showToast]);
 
+  const handleDeleteTeacher = useCallback(async (teacher) => {
+    const id = teacher?._id || teacher?.id;
+    if (!id) return;
+    const ok = window.confirm(
+      `Delete this teacher permanently?\n\n${teacher.fullName || 'Teacher'} (${teacher.email || ''})\n\nThis cannot be undone.`,
+    );
+    if (!ok) return;
+    setDeletingId(id);
+    try {
+      const res = await headteacherService.deleteTeacher(id);
+      if (res.success) {
+        setTeachers((prev) => prev.filter((t) => String(t._id || t.id) !== String(id)));
+        // Also clear any classroom assignments in local state
+        setClassrooms((prev) => prev.map((c) => {
+          const tid = c.teacherId?._id || c.teacherId;
+          return String(tid || '') === String(id) ? { ...c, teacherId: null } : c;
+        }));
+        showToast(res.message || 'Teacher deleted successfully', 'success');
+      } else {
+        showToast(res.message || 'Failed to delete teacher', 'error');
+      }
+    } catch (error) {
+      showToast(error.response?.data?.message || 'Failed to delete teacher', 'error');
+    } finally {
+      setDeletingId(null);
+    }
+  }, [showToast]);
+
   const handleAssignClassroom = useCallback(async (e) => {
     e.preventDefault();
     if (!assignTeacher || !assignClassroomId) { showToast('Please select a classroom', 'error'); return; }
@@ -180,12 +209,14 @@ export function useManageTeachers() {
     assignClassroomId,
     setAssignClassroomId,
     assigning,
+    deletingId,
     getAssignedClassrooms,
     handleOpenCreateModal,
     handleCloseCreateModal,
     handleSaveTeacher,
     validateForm,
     handleToggleStatus,
+    handleDeleteTeacher,
     handleAssignClassroom,
   };
 }
