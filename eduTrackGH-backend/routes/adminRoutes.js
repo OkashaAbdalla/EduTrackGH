@@ -35,6 +35,8 @@ router.use(authorize('admin'));
 // Headteacher management
 router.post('/headteachers', createHeadteacher);
 router.get('/headteachers', getHeadteachers);
+router.patch('/headteachers/:id/assign-school', require('../controllers/admin.users.controller').assignHeadteacherToSchool);
+router.delete('/headteachers/:id', require('../controllers/admin.users.controller').deleteHeadteacher);
 
 // Teacher management
 router.post('/teachers', createTeacher);
