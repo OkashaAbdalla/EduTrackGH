@@ -52,8 +52,9 @@ async function uploadAttendancePhoto(base64Data) {
     });
     return { success: true, url: result.secure_url };
   } catch (err) {
-    console.warn('Cloudinary upload error:', err.message);
-    return { success: false, message: err.message || 'Upload failed' };
+    const msg = err?.message || err?.toString?.() || 'Upload failed';
+    console.warn('Cloudinary upload error:', msg);
+    return { success: false, message: msg };
   }
 }
 
@@ -85,8 +86,9 @@ async function uploadProfilePhoto(base64Data) {
     });
     return { success: true, url: result.secure_url, publicId: result.public_id };
   } catch (err) {
-    console.warn('Cloudinary upload error:', err.message);
-    return { success: false, message: err.message || 'Upload failed' };
+    const msg = err?.message || err?.toString?.() || 'Upload failed';
+    console.warn('Cloudinary upload error:', msg);
+    return { success: false, message: msg };
   }
 }
 

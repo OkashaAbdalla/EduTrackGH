@@ -16,7 +16,13 @@ const sendEmail = async ({ to, subject, html }) => {
     const info = await transporter.sendMail(mailOptions);
     console.log(`✅ Email sent successfully to: ${to}`);
     console.log(`   Message ID: ${info.messageId}`);
-    return { success: true, messageId: info.messageId };
+    return {
+      success: true,
+      messageId: info.messageId,
+      accepted: info.accepted || [],
+      rejected: info.rejected || [],
+      envelope: info.envelope,
+    };
   } catch (error) {
     console.error('❌ Email sending failed:', error.message);
     throw error;
@@ -61,7 +67,7 @@ const emailTemplates = {
     </html>
   `,
 
-  lecturerWelcome: (name, email, tempPassword) => `
+  lecturerWelcome: (name, email, tempPassword, loginUrl) => `
     <!DOCTYPE html>
     <html>
     <head>
@@ -86,12 +92,43 @@ const emailTemplates = {
             <p><strong>Email:</strong> ${email}</p>
             <p><strong>Temporary Password:</strong> ${tempPassword}</p>
           </div>
+          ${loginUrl ? `<p><strong>Login:</strong> <a href="${loginUrl}">${loginUrl}</a></p>` : ''}
           <p><strong>Important:</strong> Please change your password after your first login.</p>
           <p>You can now log in and start managing your school's attendance tracking.</p>
         </div>
         <div class="footer">
           <p>EduTrack GH - Digital absenteeism tracking for Primary and JHS schools</p>
           <p>For support, contact the system administrator.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `,
+
+  chatMessageFromHeadteacher: (headteacherName, schoolName, message) => `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: #006838; color: white; padding: 20px; text-align: center; }
+        .content { padding: 20px; background: #f9f9f9; }
+        .message-box { background: white; padding: 15px; border-left: 4px solid #006838; margin: 15px 0; }
+        .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header"><h1>EduTrack GH</h1></div>
+        <div class="content">
+          <h2>New message from ${headteacherName}</h2>
+          <p><strong>School:</strong> ${schoolName || 'Your school'}</p>
+          <div class="message-box"><p>${(message || '').replace(/</g, '&lt;')}</p></div>
+          <p>Log in to EduTrack GH to reply.</p>
+        </div>
+        <div class="footer">
+          <p>EduTrack GH - Digital absenteeism tracking for Primary and JHS schools</p>
         </div>
       </div>
     </body>
