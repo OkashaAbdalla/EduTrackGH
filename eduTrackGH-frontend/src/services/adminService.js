@@ -149,6 +149,24 @@ const adminService = {
     const response = await apiClient.patch(`/admin/unlock-attendance/${classroomId}/${date}`);
     return response.data;
   },
+
+  // Headteacher assignment / unassignment
+  assignHeadteacherToSchool: async (headteacherId, schoolId) => {
+    const response = await apiClient.patch(`/admin/headteachers/${headteacherId}/assign-school`, {
+      schoolId: schoolId || null,
+    });
+    cacheService.invalidate('/admin/schools');
+    cacheService.invalidate('/admin/headteachers');
+    return response.data;
+  },
+
+  // Delete a headteacher completely
+  deleteHeadteacher: async (headteacherId) => {
+    const response = await apiClient.delete(`/admin/headteachers/${headteacherId}`);
+    cacheService.invalidate('/admin/schools');
+    cacheService.invalidate('/admin/headteachers');
+    return response.data;
+  },
 };
 
 export default adminService;

@@ -81,11 +81,23 @@ const createHeadteacher = async (req, res) => {
       }
 
       const slotKey = getSchoolSlotKeyForHeadteacher(schoolLevel);
-      if (schoolDoc[slotKey] && schoolDoc[slotKey].toString() !== String(schoolDoc.headteacher)) {
-        return res.status(400).json({
-          success: false,
-          message: `School already has a ${schoolLevel} headteacher assigned`,
-        });
+      if (schoolDoc[slotKey]) {
+        // If the slot contains a stale/mismatched headteacher id, clear it and continue.
+        const existingSlotHeadteacher = await User.findById(schoolDoc[slotKey]).select('role schoolLevel');
+
+        const isUsable =
+          existingSlotHeadteacher &&
+          existingSlotHeadteacher.role === 'headteacher' &&
+          existingSlotHeadteacher.schoolLevel === schoolLevel;
+
+        if (!isUsable) {
+          await School.findByIdAndUpdate(schoolId, { $unset: { [slotKey]: '' } });
+        } else {
+          return res.status(400).json({
+            success: false,
+            message: `School already has a ${schoolLevel} headteacher assigned`,
+          });
+        }
       }
       headteacherData.school = schoolId;
     }
