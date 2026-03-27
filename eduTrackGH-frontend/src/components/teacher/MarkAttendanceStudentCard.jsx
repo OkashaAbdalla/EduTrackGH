@@ -97,8 +97,15 @@ export default function MarkAttendanceStudentCard({
                   )}
                 </div>
                 {cameraActive && (
-                  <div className="rounded-lg overflow-hidden bg-black max-w-sm">
-                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-auto" />
+                  <div className="rounded-lg overflow-hidden bg-black max-w-xl w-full h-80">
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      className="w-full h-full object-cover transform -scale-x-100 brightness-110 contrast-110"
+                      style={{ backgroundColor: 'black' }}
+                    />
                   </div>
                 )}
                 {cameraError && <p className="text-amber-600 dark:text-amber-400 text-sm">{cameraError}</p>}
