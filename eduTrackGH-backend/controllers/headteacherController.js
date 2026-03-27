@@ -6,6 +6,7 @@
 const teachers = require('./headteacher.teachers.controller');
 const classrooms = require('./headteacher.classrooms.controller');
 const compliance = require('./headteacher.compliance.controller');
+const dashboard = require('./headteacher.dashboard.controller');
 
 module.exports = {
   getTeachersForSchool: teachers.getTeachersForSchool,
@@ -16,4 +17,5 @@ module.exports = {
   seedDefaultClassroomsForSchool: classrooms.seedDefaultClassroomsForSchool,
   assignClassTeacher: classrooms.assignClassTeacher,
   getTeachersCompliance: compliance.getTeachersCompliance,
+  getDashboardStats: dashboard.getDashboardStats,
 };

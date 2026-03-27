@@ -70,7 +70,17 @@ const createTeacherForSchool = async (req, res) => {
     });
 
     try {
-      await sendEmail({ to: email, subject: 'Welcome to EduTrack GH', html: emailTemplates.lecturerWelcome(fullName, email, tempPassword, process.env.FRONTEND_URL || '') });
+      await sendEmail({
+        to: email,
+        subject: 'Welcome to EduTrack GH',
+        html: emailTemplates.teacherWelcome(
+          fullName,
+          email,
+          tempPassword,
+          process.env.FRONTEND_URL || '',
+          req.user.fullName
+        ),
+      });
     } catch (emailError) {
       console.error('⚠️  Failed to send welcome email:', emailError.message);
     }

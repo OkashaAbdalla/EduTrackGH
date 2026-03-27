@@ -144,7 +144,7 @@ const createHeadteacher = async (req, res) => {
       const emailResult = await sendEmail({
         to: email,
         subject: 'Welcome to EduTrack GH',
-        html: emailTemplates.lecturerWelcome(fullName, email, tempPassword, loginUrl),
+        html: emailTemplates.headteacherWelcome(fullName, email, tempPassword, loginUrl),
       });
 
       // keep emailResult for potential debugging (not persisted)
@@ -233,7 +233,7 @@ const createTeacher = async (req, res) => {
       await sendEmail({
         to: email,
         subject: 'Welcome to EduTrack GH',
-        html: emailTemplates.lecturerWelcome(fullName, email, tempPassword),
+        html: emailTemplates.adminTeacherWelcome(fullName, email, tempPassword, process.env.FRONTEND_URL || ''),
       });
     } catch (emailError) {
       console.error('Failed to send teacher welcome email:', emailError.message);

@@ -60,6 +60,12 @@ const headteacherService = {
     const response = await apiClient.get('/headteacher/compliance', { params: { date } });
     return response.data;
   },
+
+  // Dashboard summary stats for headteacher scope
+  getDashboardStats: async () => {
+    const response = await apiClient.get('/headteacher/dashboard-stats');
+    return response.data;
+  },
 };
 
 export default headteacherService;

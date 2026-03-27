@@ -33,16 +33,25 @@ const HeadteacherDashboard = () => {
   const [unlockingId, setUnlockingId] = useState(null);
 
   useEffect(() => {
-    // TODO: Replace with real API call
     const fetchStats = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setStats({
-        totalStudents: 450,
-        attendanceRate: 87.5,
-        teachersCompliant: 8,
-        flaggedStudents: 12,
-      });
-      setLoading(false);
+      try {
+        setLoading(true);
+        const res = await headteacherService.getDashboardStats();
+        if (res?.success && res?.stats) {
+          setStats({
+            totalStudents: res.stats.totalStudents || 0,
+            attendanceRate: res.stats.attendanceRate || 0,
+            teachersCompliant: res.stats.teachersCompliant || 0,
+            flaggedStudents: res.stats.flaggedStudents || 0,
+          });
+        } else {
+          showToast(res?.message || 'Failed to load dashboard stats', 'error');
+        }
+      } catch (err) {
+        showToast(err?.message || 'Failed to load dashboard stats', 'error');
+      } finally {
+        setLoading(false);
+      }
     };
     fetchStats();
   }, []);
