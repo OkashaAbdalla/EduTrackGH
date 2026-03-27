@@ -38,15 +38,27 @@ export const AuthProvider = ({ children }) => {
       });
       setIsAuthenticated(true);
 
-      authService.getMe().then((res) => {
-        if (res.success && res.user) {
-          setUser((prev) => ({
-            ...prev,
-            avatarUrl: res.user.avatarUrl || prev?.avatarUrl,
-            schoolName: res.user.schoolName || prev?.schoolName,
-          }));
-        }
-      }).catch(() => {});
+      authService
+        .getMe()
+        .then((res) => {
+          if (res.success && res.user) {
+            setUser((prev) => ({
+              ...prev,
+              avatarUrl: res.user.avatarUrl || prev?.avatarUrl,
+              schoolName: res.user.schoolName || prev?.schoolName,
+            }));
+          }
+        })
+        .catch(() => {
+          // If token is expired/invalid, clear it to prevent repeated calls + server log spam.
+          localStorage.removeItem('auth_token');
+          localStorage.removeItem('user_role');
+          localStorage.removeItem('user_email');
+          localStorage.removeItem('user_name');
+          localStorage.removeItem('user_schoolLevel');
+          setUser(null);
+          setIsAuthenticated(false);
+        });
     }
     setLoading(false);
   }, []);

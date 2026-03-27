@@ -44,8 +44,25 @@ const VerifyEmail = () => {
       localStorage.removeItem('pendingVerificationEmail');
       setTimeout(() => navigate(ROUTES.LOGIN), 3000);
     } catch (error) {
+      // If the token was already used earlier, the user may already be verified in DB.
+      try {
+        const statusRes = await authService.checkVerificationStatus(email);
+        if (statusRes?.success && statusRes.isVerified) {
+          setStatus('success');
+          setMessage('Email already verified. Redirecting to login...');
+          localStorage.removeItem('pendingVerificationEmail');
+          setTimeout(() => navigate(ROUTES.LOGIN), 2500);
+          return;
+        }
+      } catch {
+        // ignore status check failures; fall back to original error message
+      }
+
       setStatus('error');
-      setMessage(error.response?.data?.message || 'Verification failed. Invalid or expired token.');
+      setMessage(
+        error.response?.data?.message ||
+          'Verification failed. The link may be invalid/expired.'
+      );
     }
   };
 
@@ -130,7 +147,7 @@ const VerifyEmail = () => {
               <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700"></div>
             </Link>
 
-            {status === 'waiting' && email && (
+            {(status === 'waiting' || status === 'error') && email && (
               <button
                 onClick={handleResend}
                 disabled={resending}

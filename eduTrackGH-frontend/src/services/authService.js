@@ -33,6 +33,11 @@ const authService = {
     return response.data;
   },
 
+  checkVerificationStatus: async (email) => {
+    const response = await apiClient.post('/auth/verification-status', { email });
+    return response.data;
+  },
+
   googleAuth: async (googleToken) => {
     const response = await apiClient.post('/auth/google', { token: googleToken });
     return response.data;

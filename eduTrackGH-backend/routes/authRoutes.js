@@ -10,6 +10,7 @@ const {
   login,
   adminLogin,
   verifyEmail,
+  checkVerificationStatus,
   getMe,
   logout,
   resendVerification,
@@ -29,6 +30,7 @@ router.post('/register', validationRules.register, validate, register);
 router.post('/login', loginLimiter, validationRules.login, validate, login);
 router.post('/verify-email', verifyEmail);
 router.post('/resend-verification', resendVerification);
+router.post('/verification-status', checkVerificationStatus);
 
 // Protected routes
 router.get('/me', protect, getMe);

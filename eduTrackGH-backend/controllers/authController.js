@@ -95,7 +95,12 @@ const login = async (req, res) => {
 
 const verifyEmail = async (req, res) => {
   try {
-    const { token } = req.body;
+    const rawToken = req.body?.token ?? req.query?.token;
+    const token = typeof rawToken === 'string' ? rawToken.trim() : String(rawToken || '').trim();
+    if (!token) {
+      return res.status(400).json({ success: false, message: 'Invalid verification token' });
+    }
+
     const user = await User.findOne({ verificationToken: token });
 
     if (!user) {
@@ -109,6 +114,20 @@ const verifyEmail = async (req, res) => {
     res.json({ success: true, message: 'Email verified successfully!' });
   } catch (error) {
     res.status(500).json({ success: false, message: 'Verification failed' });
+  }
+};
+
+// Check whether a user is already verified (useful when token is reused/expired)
+const checkVerificationStatus = async (req, res) => {
+  try {
+    const { email } = req.body || {};
+    const user = await User.findOne({ email });
+    if (!user) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    return res.json({ success: true, isVerified: !!user.isVerified });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to check status' });
   }
 };
 
@@ -260,6 +279,7 @@ module.exports = {
   login,
   adminLogin,
   verifyEmail,
+  checkVerificationStatus,
   getMe,
   logout,
   resendVerification,
