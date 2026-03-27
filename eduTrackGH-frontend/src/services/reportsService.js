@@ -9,7 +9,7 @@ const reportsService = {
   getSchoolReports: async (month) => {
     try {
       const params = month ? { month } : {};
-      const response = await apiClient.get('/reports/school', { params });
+      const response = await apiClient.get('/reports/school', { params, timeout: 20000 });
       return response.data;
     } catch (error) {
       console.error('Error fetching school reports:', error);

@@ -24,6 +24,11 @@ const headteacherService = {
     return response.data;
   },
 
+  deleteTeacher: async (teacherId) => {
+    const response = await apiClient.delete(`/headteacher/teachers/${teacherId}`);
+    return response.data;
+  },
+
   // List classrooms in headteacher's school
   getClassrooms: async () => {
     const response = await apiClient.get('/headteacher/classrooms');
@@ -36,11 +41,23 @@ const headteacherService = {
     return response.data;
   },
 
-  // Assign teacher to classroom
+  // Assign or unassign teacher to classroom (teacherId: null to unassign)
   assignClassTeacher: async (classroomId, teacherId) => {
     const response = await apiClient.patch(`/headteacher/classrooms/${classroomId}/assign-teacher`, {
-      teacherId,
+      teacherId: teacherId || null,
     });
+    return response.data;
+  },
+
+  // Unlock attendance for a classroom and date (YYYY-MM-DD)
+  unlockAttendance: async (classroomId, date) => {
+    const response = await apiClient.patch(`/headteacher/attendance/unlock/${classroomId}/${date}`);
+    return response.data;
+  },
+
+  // Get teacher compliance for a date (YYYY-MM-DD)
+  getCompliance: async (date) => {
+    const response = await apiClient.get('/headteacher/compliance', { params: { date } });
     return response.data;
   },
 };

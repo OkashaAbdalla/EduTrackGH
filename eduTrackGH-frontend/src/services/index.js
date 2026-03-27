@@ -8,4 +8,5 @@ export { default as classroomService } from './classroomService';
 export { default as adminService } from './adminService';
 export { default as studentService } from './studentService';
 export { default as headteacherService } from './headteacherService';
+export { default as messageService } from './messageService';
 export { default as apiClient } from './api';

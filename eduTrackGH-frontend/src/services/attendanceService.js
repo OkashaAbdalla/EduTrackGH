@@ -26,14 +26,24 @@ const attendanceService = {
     }
   },
 
-  // Phase 5: Upload photo for attendance verification
+  // Phase 5: Upload photo for attendance verification (longer timeout for Cloudinary)
   uploadPhoto: async (base64Image) => {
     try {
-      const response = await apiClient.post('/attendance/upload-photo', { image: base64Image });
+      const response = await apiClient.post('/attendance/upload-photo', { image: base64Image }, { timeout: 30000 });
       return response.data;
     } catch (error) {
       console.error('Error uploading photo:', error);
       return { success: false, message: error.response?.data?.message || error.message };
+    }
+  },
+
+  // Check if attendance for classroom+date is locked (teacher)
+  getAttendanceLockStatus: async (classroomId, date) => {
+    try {
+      const response = await apiClient.get(`/attendance/daily/status/${classroomId}/${date}`);
+      return response.data;
+    } catch (error) {
+      return { success: false, locked: false, message: error.response?.data?.message || error.message };
     }
   },
 
@@ -48,6 +58,16 @@ const attendanceService = {
       return response.data;
     } catch (error) {
       console.error("Error marking attendance:", error);
+      return { success: false, message: error.response?.data?.message || error.message };
+    }
+  },
+
+  // Delete a whole week of attendance (teacher)
+  deleteAttendanceWeek: async (classroomId, weekStartDate) => {
+    try {
+      const response = await apiClient.delete(`/attendance/classroom/${classroomId}/week/${weekStartDate}`);
+      return response.data;
+    } catch (error) {
       return { success: false, message: error.response?.data?.message || error.message };
     }
   },
