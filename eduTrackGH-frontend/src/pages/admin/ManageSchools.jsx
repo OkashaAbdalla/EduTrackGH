@@ -25,6 +25,8 @@ const ManageSchools = () => {
       location: { region: '', district: '', address: '' },
       contact: { phone: '', email: '' },
       headteacherId: '',
+      primaryHeadteacherId: '',
+      jhsHeadteacherId: '',
     };
   }
 
@@ -57,6 +59,14 @@ const ManageSchools = () => {
 
   const handleEdit = (school) => {
     setSelectedSchool(school);
+    const inferredPrimaryId =
+      school.primaryHeadteacher?._id ||
+      (school.schoolLevel === 'PRIMARY' ? school.headteacher?._id : '') ||
+      '';
+    const inferredJhsId =
+      school.jhsHeadteacher?._id ||
+      (school.schoolLevel === 'JHS' ? school.headteacher?._id : '') ||
+      '';
     setFormData({
       name: school.name || '',
       schoolLevel: school.schoolLevel || 'PRIMARY',
@@ -70,6 +80,8 @@ const ManageSchools = () => {
         email: school.contact?.email || '',
       },
       headteacherId: school.headteacher?._id || '',
+      primaryHeadteacherId: inferredPrimaryId,
+      jhsHeadteacherId: inferredJhsId,
     });
     setShowEditModal(true);
   };
@@ -134,7 +146,7 @@ const ManageSchools = () => {
             </Button>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
             {filteredSchools.map((school) => (
               <SchoolCard
                 key={school._id}

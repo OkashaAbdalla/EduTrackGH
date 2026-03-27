@@ -44,6 +44,7 @@ const CreateHeadteacher = () => {
   const generatePassword = () => {
     const password = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8).toUpperCase();
     setFormData({ ...formData, tempPassword: password });
+    return password;
   };
 
   const handleSubmit = async (e) => {
@@ -56,6 +57,9 @@ const CreateHeadteacher = () => {
       return;
     }
 
+    // Ensure a temp password exists even if admin didn't click Generate
+    const tempPassword = formData.tempPassword?.trim() ? formData.tempPassword : generatePassword();
+
     setLoading(true);
     try {
       const result = await adminService.createHeadteacher({
@@ -64,7 +68,7 @@ const CreateHeadteacher = () => {
         phone: formData.phone,
         schoolId: formData.schoolId || undefined,
         schoolLevel: formData.schoolLevel,
-        tempPassword: formData.tempPassword,
+        tempPassword,
       });
       
       if (result.success) {
@@ -144,7 +148,18 @@ const CreateHeadteacher = () => {
               >
                 <option value="">Select school (leave empty to assign later)</option>
                 {schools
-                  .filter(s => s.isActive && !s.headteacher)
+                  .filter((s) => {
+                    if (!s.isActive) return false;
+                    // For BOTH schools, allow assignment if the relevant slot is free
+                    if (s.schoolLevel === 'BOTH') {
+                      return formData.schoolLevel === 'PRIMARY'
+                        ? !s.primaryHeadteacher
+                        : !s.jhsHeadteacher;
+                    }
+                    // For single-level schools, level must match and must be unassigned
+                    if (s.schoolLevel !== formData.schoolLevel) return false;
+                    return !s.headteacher;
+                  })
                   .map(s => (
                     <option key={s._id} value={s._id}>
                       {s.name} ({s.schoolLevel})
@@ -152,7 +167,7 @@ const CreateHeadteacher = () => {
                   ))}
               </select>
               <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Only schools without a headteacher are shown
+                Only compatible schools with an available slot are shown
               </p>
             </div>
 
