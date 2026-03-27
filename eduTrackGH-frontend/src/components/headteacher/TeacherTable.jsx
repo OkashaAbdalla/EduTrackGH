@@ -11,6 +11,8 @@ export default function TeacherTable({
   onToggleStatus,
   onViewDetails,
   onAssignClassroom,
+  onDeleteTeacher,
+  deletingId,
 }) {
   if (loading) {
     return (
@@ -52,14 +54,16 @@ export default function TeacherTable({
           <tbody className="bg-white dark:bg-gray-900 divide-y divide-gray-100 dark:divide-gray-800">
             {filteredTeachers.map((teacher) => {
               const status = teacher.isActive ? 'Active' : 'Inactive';
+              const id = teacher._id || teacher.id;
               return (
-                <tr key={teacher._id || teacher.id} className="hover:bg-gray-50 dark:hover:bg-gray-800/70">
+                <tr key={id} className="hover:bg-gray-50 dark:hover:bg-gray-800/70">
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{teacher.fullName}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{teacher.email}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <button
                       type="button"
-                      onClick={() => onToggleStatus(teacher._id || teacher.id)}
+                      onClick={() => onToggleStatus(id)}
+                      disabled={String(deletingId || '') === String(id)}
                       className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
                         teacher.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
                       }`}
@@ -74,6 +78,14 @@ export default function TeacherTable({
                       </button>
                       <button type="button" onClick={() => onAssignClassroom(teacher)} className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800/60">
                         Assign Classroom
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => onDeleteTeacher && onDeleteTeacher(teacher)}
+                        disabled={!onDeleteTeacher || String(deletingId || '') === String(id)}
+                        className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
+                      >
+                        {String(deletingId || '') === String(id) ? 'Deleting...' : 'Delete'}
                       </button>
                     </div>
                   </td>

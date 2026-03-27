@@ -11,6 +11,7 @@ export default function AssignTeacherModal({
   setSelectedTeacher,
   saving,
   onSave,
+  onUnassign,
   onCancel,
 }) {
   if (!editingClass) return null;
@@ -44,7 +45,16 @@ export default function AssignTeacherModal({
               ))}
             </select>
           </div>
-          <div className="flex gap-3 pt-4">
+          <div className="flex flex-wrap gap-3 pt-4">
+            {editingClass?.teacherId && onUnassign && (
+              <button
+                onClick={() => onUnassign(editingClass)}
+                disabled={saving}
+                className="px-4 py-2.5 rounded-lg border-2 border-red-300 dark:border-red-800 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition font-medium disabled:opacity-50"
+              >
+                Unassign
+              </button>
+            )}
             <button
               onClick={onCancel}
               disabled={saving}
