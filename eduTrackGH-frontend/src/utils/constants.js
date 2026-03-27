@@ -39,6 +39,7 @@ export const ROUTES = {
   SCHOOL_REPORTS: '/headteacher/reports',
   TEACHER_COMPLIANCE: '/headteacher/compliance',
   MANAGE_CLASSES: '/headteacher/classes',
+  HEADTEACHER_MANAGE_STUDENTS: '/headteacher/students',
 
   // Parent routes
   PARENT_DASHBOARD: '/parent/dashboard',
@@ -49,7 +50,9 @@ export const ROUTES = {
   ADMIN_DASHBOARD: '/admin/dashboard',
   MANAGE_SCHOOLS: '/admin/schools',
   CREATE_HEADTEACHER: '/admin/create-headteacher',
+  MANAGE_HEADTEACHERS: '/admin/headteachers',
   MANAGE_TEACHERS: '/admin/teachers',
+  ATTENDANCE_AUDIT: '/admin/attendance-audit',
   SYSTEM_SETTINGS: '/admin/settings',
 };
 
