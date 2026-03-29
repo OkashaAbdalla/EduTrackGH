@@ -9,6 +9,7 @@ const Classroom = require('../models/Classroom');
 const Student = require('../models/Student');
 const DailyAttendance = require('../models/DailyAttendance');
 const { getClassroomLevelFilter } = require('../services/headteacherService');
+const { approvedInClassroomIds } = require('../utils/studentQuery');
 
 function getSchoolId(req) {
   return req.user?.school || null;
@@ -48,9 +49,10 @@ const getDashboardStats = async (req, res) => {
       });
     }
 
+    const rosterMatch = { ...approvedInClassroomIds(classroomIds), isActive: true };
     const [totalStudents, flaggedStudents] = await Promise.all([
-      Student.countDocuments({ classroomId: { $in: classroomIds }, isActive: true }),
-      Student.countDocuments({ classroomId: { $in: classroomIds }, isActive: true, isFlagged: true }),
+      Student.countDocuments(rosterMatch),
+      Student.countDocuments({ ...rosterMatch, isFlagged: true }),
     ]);
 
     const { start, end } = getMonthRangeUtc();

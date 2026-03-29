@@ -83,9 +83,9 @@ const getClassroomStudents = async (req, res) => {
       return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
-    // Get students linked to this classroom
+    const { approvedInClassroom } = require("../utils/studentQuery");
     const students = await require("../models/Student")
-      .find({ classroomId })
+      .find(approvedInClassroom(classroom._id))
       .select("_id fullName studentId gender isFlagged");
 
     res.json({

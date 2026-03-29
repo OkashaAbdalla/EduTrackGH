@@ -6,6 +6,7 @@
 const DailyAttendance = require("../models/DailyAttendance");
 const Classroom = require("../models/Classroom");
 const Student = require("../models/Student");
+const { approvedInClassroom } = require("../utils/studentQuery");
 
 const getSchoolReports = async (req, res) => {
   try {
@@ -39,7 +40,10 @@ const getSchoolReports = async (req, res) => {
     const classReports = [];
 
     for (const classroom of classrooms) {
-      const students = await Student.find({ classroomId: classroom._id, isActive: true });
+      const students = await Student.find({
+        ...approvedInClassroom(classroom._id),
+        isActive: true,
+      });
       const studentIds = students.map((s) => s._id);
       const totalStudents = studentIds.length;
 

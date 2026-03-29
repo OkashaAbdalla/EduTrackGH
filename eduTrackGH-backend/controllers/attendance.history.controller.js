@@ -7,6 +7,7 @@ const Student = require("../models/Student");
 const DailyAttendance = require("../models/DailyAttendance");
 const { uploadAttendancePhoto } = require("../utils/cloudinary");
 const { getTermDateRange } = require("../utils/gesCalendar");
+const { approvedInClassroom } = require("../utils/studentQuery");
 
 const getClassroomDailyHistory = async (req, res) => {
   try {
@@ -20,7 +21,7 @@ const getClassroomDailyHistory = async (req, res) => {
       return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
-    const students = await Student.find({ $or: [{ classroomId }, { classroom: classroomId }] })
+    const students = await Student.find(approvedInClassroom(classroomId))
       .select("_id fullName studentId studentIdNumber")
       .sort({ fullName: 1 });
     const studentIds = students.map((s) => s._id);
@@ -129,7 +130,7 @@ const getFlaggedStudentsForClassroom = async (req, res) => {
       return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
-    const students = await Student.find({ $or: [{ classroomId }, { classroom: classroomId }] }).select("_id fullName studentId gender");
+    const students = await Student.find(approvedInClassroom(classroomId)).select("_id fullName studentId gender");
     const studentIds = students.map((s) => s._id);
 
     if (studentIds.length === 0) return res.json({ success: true, flagged: [] });
