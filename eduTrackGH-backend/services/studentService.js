@@ -117,8 +117,10 @@ async function registerStudentByHeadteacher({ headteacherId, schoolId, body }) {
  * Get approved students for headteacher school, optional classroom filter.
  */
 async function getStudentsForHeadteacher(schoolId, classroomId = null) {
-  const filter = { schoolId, isApproved: true };
-  if (classroomId) filter.classroom = classroomId;
+  const filter = { schoolId, isApproved: { $ne: false } };
+  if (classroomId) {
+    filter.$or = [{ classroom: classroomId }, { classroomId: classroomId }];
+  }
   return Student.find(filter)
     .populate('classroom', 'name grade')
     .populate('parent', 'fullName email phone')
@@ -130,7 +132,11 @@ async function getStudentsForHeadteacher(schoolId, classroomId = null) {
  * Get pending (unapproved) students for headteacher school.
  */
 async function getPendingStudentsForHeadteacher(schoolId) {
-  return Student.find({ schoolId, isApproved: false })
+  return Student.find({
+    schoolId,
+    isApproved: false,
+    status: { $in: ['pending', 'PENDING'] },
+  })
     .populate('classroom', 'name grade')
     .populate('parent', 'fullName email phone')
     .populate('proposedBy', 'fullName email')

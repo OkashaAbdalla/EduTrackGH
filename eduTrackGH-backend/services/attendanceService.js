@@ -11,6 +11,7 @@ const Notification = require("../models/Notification");
 const { sendSms } = require("../utils/sendSms");
 const { handleAbsenceNotification } = require("../services/emailService");
 const { isSchoolDay } = require("../utils/gesCalendar");
+const { approvedInClassroom } = require("../utils/studentQuery");
 
 function studentInClassroom(student, classroomId) {
   const cid = classroomId.toString();
@@ -19,7 +20,7 @@ function studentInClassroom(student, classroomId) {
 
 async function runFlagDetection(classroomId, schoolId, dateOnly, savedRecords) {
   try {
-    const studentsInClass = await Student.find({ $or: [{ classroomId }, { classroom: classroomId }] }).select("_id");
+    const studentsInClass = await Student.find(approvedInClassroom(classroomId)).select("_id");
     const studentIdsArr = studentsInClass.map((s) => s._id);
 
     if (savedRecords.length >= 2) {
@@ -130,6 +131,7 @@ async function markDailyAttendance({ classroomId, date, attendanceData, teacherI
 
     const student = await Student.findById(studentId);
     if (!studentInClassroom(student, classroomId)) continue;
+    if (student.isApproved === false) continue;
 
     let verificationType = row.verificationType;
     let manualReason = row.manualReason;
