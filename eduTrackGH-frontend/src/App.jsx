@@ -13,7 +13,14 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, ToastProvider, AuthProvider, SocketProvider } from './context';
 import { Landing, Login, Register, VerifyEmail } from './pages/public';
-import { TeacherDashboard, MarkAttendance, AttendanceHistory, FlaggedStudents, Chat as TeacherChat } from './pages/teacher';
+import {
+  TeacherDashboard,
+  MarkAttendance,
+  AttendanceHistory,
+  FlaggedStudents,
+  ManageStudents as TeacherManageStudents,
+  Chat as TeacherChat,
+} from './pages/teacher';
 import { HeadteacherDashboard, SchoolReports, TeacherCompliance, ManageClasses, ManageStudents, ManageTeachers as HeadteacherManageTeachers, Chat as HeadteacherChat } from './pages/headteacher';
 import { ParentDashboard, ChildrenAttendance, Notifications } from './pages/parent';
 import { AdminLogin, AdminDashboard, CreateHeadteacher, ManageSchools, ManageHeadteachers, AttendanceAudit, SystemSettings } from './pages/admin';
@@ -42,6 +49,7 @@ function App() {
           <Route path={ROUTES.MARK_ATTENDANCE} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><MarkAttendance /></ProtectedRoute>} />
           <Route path={ROUTES.ATTENDANCE_HISTORY} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><AttendanceHistory /></ProtectedRoute>} />
           <Route path={ROUTES.FLAGGED_STUDENTS} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><FlaggedStudents /></ProtectedRoute>} />
+          <Route path={ROUTES.TEACHER_MANAGE_STUDENTS} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><TeacherManageStudents /></ProtectedRoute>} />
           <Route path={ROUTES.TEACHER_CHAT} element={<ProtectedRoute requiredRole={ROLES.TEACHER}><TeacherChat /></ProtectedRoute>} />
           
           {/* Headteacher Routes - Protected */}

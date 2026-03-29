@@ -33,6 +33,8 @@ export const ROUTES = {
   MARK_ATTENDANCE: '/teacher/mark-attendance',
   ATTENDANCE_HISTORY: '/teacher/history',
   FLAGGED_STUDENTS: '/teacher/flagged',
+  /** Teacher: propose new students for headteacher approval */
+  TEACHER_MANAGE_STUDENTS: '/teacher/students',
   TEACHER_CHAT: '/teacher/messages',
 
   // Headteacher (school admin) routes
