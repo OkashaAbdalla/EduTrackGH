@@ -6,12 +6,13 @@ const Classroom = require("../models/Classroom");
 const Student = require("../models/Student");
 const DailyAttendance = require("../models/DailyAttendance");
 const { uploadAttendancePhoto } = require("../utils/cloudinary");
+const { getTermDateRange } = require("../utils/gesCalendar");
 
 const getClassroomDailyHistory = async (req, res) => {
   try {
     const { classroomId } = req.params;
     const teacherId = req.user._id;
-    const { month } = req.query;
+    const { month, term } = req.query;
 
     const classroom = await Classroom.findById(classroomId);
     if (!classroom) return res.status(404).json({ success: false, message: "Classroom not found" });
@@ -19,11 +20,21 @@ const getClassroomDailyHistory = async (req, res) => {
       return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
-    const students = await Student.find({ $or: [{ classroomId }, { classroom: classroomId }] }).select("_id");
+    const students = await Student.find({ $or: [{ classroomId }, { classroom: classroomId }] })
+      .select("_id fullName studentId studentIdNumber")
+      .sort({ fullName: 1 });
     const studentIds = students.map((s) => s._id);
 
     let query = { classroomId, studentId: { $in: studentIds } };
-    if (month) {
+    const termUpper = typeof term === "string" ? term.trim().toUpperCase() : "";
+    if (termUpper === "TERM_1" || termUpper === "TERM_2" || termUpper === "TERM_3") {
+      const range = getTermDateRange(termUpper);
+      if (range) {
+        const start = new Date(`${range.start}T00:00:00.000Z`);
+        const end = new Date(`${range.end}T23:59:59.999Z`);
+        query.date = { $gte: start, $lte: end };
+      }
+    } else if (month) {
       const [y, m] = month.split("-");
       const start = new Date(parseInt(y), parseInt(m, 10) - 1, 1);
       const end = new Date(parseInt(y), parseInt(m, 10), 0, 23, 59, 59);
@@ -56,11 +67,49 @@ const getClassroomDailyHistory = async (req, res) => {
     });
     const grouped = Object.values(byDate).sort((a, b) => new Date(b.date) - new Date(a.date));
 
+    const entries = Object.values(latestPerStudentPerDate).map((r) => ({
+      date: r.date.toISOString().split("T")[0],
+      studentId: String(r.studentId?._id || r.studentId),
+      status: r.status, // present | absent | late
+    }));
+
+    const historyRows = students.map((s) => {
+      const sid = String(s._id);
+      const dailyRecords = entries
+        .filter((e) => e.studentId === sid)
+        .map((e) => ({ date: e.date, status: e.status }));
+
+      let present = 0;
+      let absent = 0;
+      let late = 0;
+      dailyRecords.forEach((r) => {
+        if (r.status === "present") present += 1;
+        else if (r.status === "absent") absent += 1;
+        else if (r.status === "late") late += 1;
+      });
+
+      return {
+        studentId: sid,
+        name: s.fullName,
+        rollNumber: s.studentId || s.studentIdNumber || "",
+        dailyRecords,
+        weeklyTotals: [], // computed on frontend based on selected month weekdays grouping
+        monthlyTotals: { present, absent, late },
+      };
+    });
+
     res.json({
       success: true,
       classroomId,
       classroomName: classroom.name,
       records: grouped,
+      students: students.map((s) => ({
+        id: String(s._id),
+        name: s.fullName,
+        rollNumber: s.studentId || s.studentIdNumber || "",
+      })),
+      entries,
+      historyRows,
       totalStudents: studentIds.length,
     });
   } catch (error) {

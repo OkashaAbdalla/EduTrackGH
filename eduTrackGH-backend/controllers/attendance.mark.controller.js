@@ -17,6 +17,16 @@ const markDailyAttendance = async (req, res) => {
       });
     }
 
+    // Hard guard: attendance cannot be marked on weekends.
+    const dateObj = new Date(`${date}T00:00:00Z`);
+    const dayOfWeek = dateObj.getUTCDay(); // 0 = Sun, 6 = Sat
+    if (dayOfWeek === 0 || dayOfWeek === 6) {
+      return res.status(400).json({
+        success: false,
+        message: "Attendance cannot be marked on Saturday or Sunday",
+      });
+    }
+
     const { savedRecords, schoolId } = await markDaily({
       classroomId,
       date,
@@ -39,7 +49,9 @@ const markDailyAttendance = async (req, res) => {
     const status = error.status || 500;
     const message = error.message || "Failed to save attendance";
     if (status === 500) console.error("markDailyAttendance error:", error);
-    return res.status(status).json({ success: false, message });
+    const payload = { success: false, message };
+    if (error.code) payload.error = error.code;
+    return res.status(status).json(payload);
   }
 };
 
