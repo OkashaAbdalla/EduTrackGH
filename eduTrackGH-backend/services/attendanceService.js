@@ -10,6 +10,7 @@ const AttendanceFlag = require("../models/AttendanceFlag");
 const Notification = require("../models/Notification");
 const { sendSms } = require("../utils/sendSms");
 const { handleAbsenceNotification } = require("../services/emailService");
+const { isSchoolDay } = require("../utils/gesCalendar");
 
 function studentInClassroom(student, classroomId) {
   const cid = classroomId.toString();
@@ -101,6 +102,16 @@ async function markDailyAttendance({ classroomId, date, attendanceData, teacherI
   } else {
     dateOnly = new Date(date);
     dateOnly.setUTCHours(0, 0, 0, 0);
+  }
+
+  const classLevelRef = classroom.grade || classroom.level || "";
+  if (!isSchoolDay(dateOnly, classLevelRef)) {
+    throw {
+      status: 400,
+      message:
+        "Attendance cannot be marked on weekends, holidays, BECE days, or during vacation per GES policy.",
+      code: "INVALID_SCHOOL_DAY",
+    };
   }
 
   // Early lock check: if any attendance for this classroom+date is locked, reject immediately.
