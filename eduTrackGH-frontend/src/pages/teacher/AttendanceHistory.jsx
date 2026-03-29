@@ -3,15 +3,21 @@ import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import classroomService from '../../services/classroomService';
 import attendanceService from '../../services/attendanceService';
-import { useToast } from '../../context';
 import {
   TERMS,
   TERM_WEEK_COUNTS,
+  GES_ACADEMIC_YEAR_LABEL,
   generateSchoolDaysForTerm,
   buildWeeksForTerm,
   generateWeekStructure,
   getTermForDate,
 } from '../../utils/gesCalendar';
+
+const formatMonthYearHuman = (yyyyMm) => {
+  if (!yyyyMm || !/^\d{4}-\d{2}$/.test(yyyyMm)) return yyyyMm;
+  const [y, m] = yyyyMm.split('-');
+  return new Date(Number(y), Number(m) - 1, 15).toLocaleDateString('en-GB', { month: 'long', year: 'numeric' });
+};
 
 const historyQueryParams = (periodMode, selectedMonth, selectedTerm) => {
   if (periodMode === 'term') return { term: selectedTerm };
@@ -32,7 +38,6 @@ const chipForStatus = (status) => {
 };
 
 const AttendanceHistory = () => {
-  const { showToast } = useToast();
   const [classrooms, setClassrooms] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
   const todayIso = new Date().toISOString().slice(0, 10);
@@ -44,7 +49,6 @@ const AttendanceHistory = () => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [deletingWeek, setDeletingWeek] = useState(false);
 
   useEffect(() => {
     const fetchClassrooms = async () => {
@@ -141,7 +145,7 @@ const AttendanceHistory = () => {
   }, [historyRows]);
 
   const periodLabelForExport = useMemo(() => {
-    if (periodMode === 'term') return selectedTerm.toLowerCase();
+    if (periodMode === 'term') return `${selectedTerm.toLowerCase()}-ges-${GES_ACADEMIC_YEAR_LABEL.replace('/', '-')}`;
     return selectedMonth;
   }, [periodMode, selectedTerm, selectedMonth]);
 
@@ -149,16 +153,20 @@ const AttendanceHistory = () => {
     if (periodMode === 'term') {
       const meta = TERMS.find((t) => t.name === selectedTerm);
       const wk = TERM_WEEK_COUNTS[selectedTerm];
-      return meta ? `${meta.label} · ${wk} weeks (GES register)` : selectedTerm;
+      return meta
+        ? `${meta.label} · GES ${GES_ACADEMIC_YEAR_LABEL} · ${wk} weeks (register)`
+        : selectedTerm;
     }
-    return selectedMonth;
+    return formatMonthYearHuman(selectedMonth);
   }, [periodMode, selectedTerm, selectedMonth]);
 
   const exportCsv = () => {
     if (!historyRows.length) return;
     const headers = ['No.', 'Name', 'Roll Number'];
     weeks.forEach((w, wi) => {
-      w.days.forEach((d) => headers.push(`W${wi + 1}_${d.monthAbbr || ''}_${d.dayName}${d.day}`));
+      w.days.forEach((d) =>
+        headers.push(`W${wi + 1}_${d.monthAbbr || ''}${d.year || ''}_${d.dayName}${d.day}`)
+      );
       headers.push(`W${wi + 1}_P`, `W${wi + 1}_A`, `W${wi + 1}_L`);
     });
     headers.push('TERM_P', 'TERM_A', 'TERM_L', 'RATE');
@@ -207,7 +215,7 @@ const AttendanceHistory = () => {
     let html = '<table><tr><th>No.</th><th>Name</th><th>Roll Number</th>';
     weeks.forEach((w, wi) => {
       w.days.forEach((d) => {
-        html += `<th>W${wi + 1} ${d.monthAbbr || ''} ${d.day} ${d.dayName}</th>`;
+        html += `<th>W${wi + 1} ${d.monthAbbr || ''} ${d.year || ''} ${d.day} ${d.dayName}</th>`;
       });
       html += `<th>W${wi + 1} P</th><th>W${wi + 1} A</th><th>W${wi + 1} L</th>`;
     });
@@ -246,31 +254,6 @@ const AttendanceHistory = () => {
     link.href = `data:application/vnd.ms-excel;charset=utf-8,${encodeURIComponent(html)}`;
     link.download = `attendance-history-register-${periodLabelForExport}.xls`;
     link.click();
-  };
-
-  const deleteLastWeek = async () => {
-    if (!selectedClass || !weeks.length) return;
-    const lastWeekStart = weeks[weeks.length - 1]?.days?.[0]?.date;
-    if (!lastWeekStart) return;
-    if (!window.confirm(`Delete all attendance for the last week (starting ${lastWeekStart})? This cannot be undone.`)) return;
-    setDeletingWeek(true);
-    try {
-      const res = await attendanceService.deleteAttendanceWeek(selectedClass, lastWeekStart);
-      if (res.success) {
-        showToast(res.message || 'Last week deleted', 'success');
-        const refreshed = await attendanceService.getClassroomAttendanceHistory(
-          selectedClass,
-          historyQueryParams(periodMode, selectedMonth, selectedTerm)
-        );
-        if (refreshed.success) setHistoryRows(refreshed.historyRows || []);
-      } else {
-        showToast(res.message || 'Failed to delete last week', 'error');
-      }
-    } catch (err) {
-      showToast(err?.response?.data?.message || 'Failed to delete last week', 'error');
-    } finally {
-      setDeletingWeek(false);
-    }
   };
 
   if (initialLoading) {
@@ -348,9 +331,6 @@ const AttendanceHistory = () => {
             <button type="button" onClick={exportCsv} disabled={!historyRows.length} className="rounded-md border border-green-500/30 bg-green-500/15 px-3 py-1.5 text-xs font-bold text-green-400 disabled:opacity-50">CSV</button>
             <button type="button" onClick={exportExcel} disabled={!historyRows.length} className="rounded-md border border-emerald-500/30 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-400 disabled:opacity-50">Excel</button>
             <button type="button" onClick={() => window.print()} className="rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-300">Print</button>
-            <button type="button" onClick={deleteLastWeek} disabled={!weeks.length || deletingWeek} className="rounded-md border border-red-500/30 bg-red-500/15 px-3 py-1.5 text-xs font-bold text-red-400 disabled:opacity-50">
-              {deletingWeek ? 'Deleting...' : 'Delete Last Week'}
-            </button>
           </div>
         </div>
 
@@ -358,6 +338,9 @@ const AttendanceHistory = () => {
           {subtitlePeriod} · {historyRows.length} students on roll
           {periodMode === 'term' && (
             <span className="ml-2 text-slate-500">· Scroll horizontally to see all {weeks.length} week blocks</span>
+          )}
+          {periodMode === 'month' && (
+            <span className="ml-2 text-slate-500">· GES {GES_ACADEMIC_YEAR_LABEL}</span>
           )}
         </div>
 
@@ -383,8 +366,8 @@ const AttendanceHistory = () => {
               <table className="w-max min-w-full table-fixed border-collapse">
                 <thead>
                   <tr className="bg-slate-800/80 text-[10px] uppercase tracking-wider text-slate-400">
-                    <th className="sticky left-0 z-10 w-10 border-r border-slate-700 bg-slate-950 px-2 py-2 text-left">#</th>
-                    <th className="sticky left-10 z-10 w-52 border-r border-slate-700 bg-slate-950 px-3 py-2 text-left">Student</th>
+                    <th rowSpan={2} className="sticky left-0 z-10 w-10 border-r border-slate-700 bg-slate-950 px-2 py-2 align-middle text-left">#</th>
+                    <th rowSpan={2} className="sticky left-10 z-10 w-52 border-r border-slate-700 bg-slate-950 px-3 py-2 align-middle text-left">Student</th>
                     {weeks.map((w) => (
                       <th key={`wk-${w.index}`} className="border-r border-slate-700 bg-indigo-500/10 px-2 py-2 text-indigo-300" colSpan={Math.max(w.days.length, 0) + 1}>
                         <div className="flex flex-col items-center gap-0.5">
@@ -395,24 +378,24 @@ const AttendanceHistory = () => {
                         </div>
                       </th>
                     ))}
-                    <th className="border-r border-slate-700 bg-indigo-500/20 px-2 py-2 text-indigo-200">Term Total</th>
-                    <th className="bg-indigo-500/20 px-2 py-2 text-indigo-200">Rate</th>
+                    <th rowSpan={2} className="border-r border-indigo-700 bg-indigo-500/20 px-2 py-2 align-middle text-indigo-200">
+                      <div className="text-[10px] uppercase tracking-wider">Term Total</div>
+                      <div className="mt-1 text-[9px] font-normal normal-case tracking-normal text-indigo-300/90">P / A / L</div>
+                    </th>
+                    <th rowSpan={2} className="bg-indigo-500/20 px-2 py-2 align-middle text-indigo-200">
+                      <div className="text-[10px] uppercase tracking-wider">Rate</div>
+                      <div className="mt-1 text-[9px] font-normal">%</div>
+                    </th>
                   </tr>
                   <tr className="bg-slate-950 text-[10px] uppercase tracking-wider text-slate-500">
-                    <th className="sticky left-0 z-10 border-r border-slate-700 bg-slate-950 px-2 py-2">#</th>
-                    <th className="sticky left-10 z-10 border-r border-slate-700 bg-slate-950 px-3 py-2 text-left">Student Name</th>
                     {weeks.flatMap((w) => [
                       ...w.days.map((day) => (
-                        <th key={`day-${w.index}-${day.date}`} className="border-r border-slate-800 px-1 py-2 text-center">
-                          <span className="block text-[9px] font-semibold text-slate-400">{day.monthAbbr}</span>
-                          <span className="block font-mono text-xs text-slate-200">{day.day}</span>
-                          <span className="block text-[9px]">{day.dayName}</span>
+                        <th key={`day-${w.index}-${day.date}`} className="border-r border-slate-800 px-1.5 py-2.5 text-center">
+                          <span className="font-mono text-sm font-bold tabular-nums text-slate-100">{day.day}</span>
                         </th>
                       )),
                       <th key={`wsub-${w.index}`} className="border-r border-indigo-700 bg-indigo-500/10 px-2 py-2 text-[9px] text-indigo-200">P / A / L</th>,
                     ])}
-                    <th className="border-r border-indigo-700 bg-indigo-500/20 px-2 py-2 text-[9px] text-indigo-200">P / A / L</th>
-                    <th className="bg-indigo-500/20 px-2 py-2 text-[9px] text-indigo-200">%</th>
                   </tr>
                 </thead>
                 <tbody>

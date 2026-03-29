@@ -16,6 +16,9 @@ export const TERMS = [
   { name: "TERM_3", label: "Term 3", start: "2026-04-21", end: "2026-07-23", vacationStart: "2026-07-24", vacationEnd: "2026-12-31" },
 ];
 
+/** Display label for the GES academic year window used in this app. */
+export const GES_ACADEMIC_YEAR_LABEL = "2025/2026";
+
 const HOLIDAYS = new Set([
   "2025-09-21",
   "2025-12-04",
@@ -59,11 +62,13 @@ export const enrichSchoolDayEntry = (entry) => {
   const wd = d.getUTCDay();
   const dayNum = Number(iso.split("-")[2]);
   const monthIdx = d.getUTCMonth();
+  const year = d.getUTCFullYear();
   return {
     ...entry,
     day: dayNum,
     dayName: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][wd],
     monthAbbr: MONTH_ABBR[monthIdx],
+    year,
   };
 };
 
@@ -90,6 +95,24 @@ export const generateSchoolDaysForTerm = (termName, level) => {
   return out;
 };
 
+/** Week header: e.g. "Mar 2026", "Mar–Apr 2026", or "Dec 2025–Jan 2026". */
+export const getWeekMonthYearLabel = (days) => {
+  if (!days.length) return "";
+  const first = days[0];
+  const last = days[days.length - 1];
+  const y1 = first.year ?? Number(String(first.date || "").slice(0, 4));
+  const y2 = last.year ?? Number(String(last.date || "").slice(0, 4));
+  const m1 = first.monthAbbr;
+  const m2 = last.monthAbbr;
+  if (!m1 || !m2) return "";
+  if (m1 === m2 && y1 === y2) return `${m1} ${y1}`;
+  if (y1 === y2) return `${m1}–${m2} ${y1}`;
+  return `${m1} ${y1}–${m2} ${y2}`;
+};
+
+/** @deprecated use getWeekMonthYearLabel */
+export const getWeekMonthLabel = (days) => getWeekMonthYearLabel(days);
+
 /**
  * Split term school days into WEEK-1..N (5 school days per week). Ensures at least
  * TERM_WEEK_COUNTS[termName] columns; pads with empty weeks if needed; extends if more data exists.
@@ -108,18 +131,10 @@ export const buildWeeksForTerm = (schoolDays, termName) => {
       index: w + 1,
       label: `WEEK-${w + 1}`,
       days,
-      monthLabel: getWeekMonthLabel(days),
+      monthLabel: getWeekMonthYearLabel(days),
     });
   }
   return weeks;
-};
-
-/** Short label for week header: one month or "Jan–Mar". */
-export const getWeekMonthLabel = (days) => {
-  if (!days.length) return "";
-  const months = [...new Set(days.map((d) => d.monthAbbr).filter(Boolean))];
-  if (months.length <= 1) return months[0] || "";
-  return `${months[0]}–${months[months.length - 1]}`;
 };
 
 const inRange = (iso, start, end) => iso >= start && iso <= end;
@@ -186,7 +201,7 @@ export const generateWeekStructure = (month, year, level) => {
     out.push({
       week: out.length + 1,
       days: slice,
-      monthLabel: getWeekMonthLabel(slice),
+      monthLabel: getWeekMonthYearLabel(slice),
     });
   }
   return out;
