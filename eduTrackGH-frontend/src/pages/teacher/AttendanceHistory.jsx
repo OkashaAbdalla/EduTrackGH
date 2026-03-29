@@ -1,125 +1,273 @@
-/**
- * Attendance History Page
- * Purpose: View past attendance records for teacher's classrooms
- * 
- * Security:
- * - Fetches only classrooms assigned to this teacher
- * - Cannot access other teachers' attendance data
- * - Authorization checked on backend
- */
-
-import { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import classroomService from '../../services/classroomService';
 import attendanceService from '../../services/attendanceService';
 import { useToast } from '../../context';
+import {
+  TERMS,
+  TERM_WEEK_COUNTS,
+  generateSchoolDaysForTerm,
+  buildWeeksForTerm,
+  generateWeekStructure,
+  getTermForDate,
+} from '../../utils/gesCalendar';
+
+const historyQueryParams = (periodMode, selectedMonth, selectedTerm) => {
+  if (periodMode === 'term') return { term: selectedTerm };
+  return { month: selectedMonth };
+};
+
+const chipForStatus = (status) => {
+  if (status === 'present') {
+    return <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-green-500/40 bg-green-500/15 font-mono text-sm font-bold text-green-400">1</span>;
+  }
+  if (status === 'late') {
+    return <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/15 font-mono text-sm font-bold text-amber-400">1</span>;
+  }
+  if (status === 'absent') {
+    return <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-red-500/40 bg-red-500/15 font-mono text-sm font-bold text-red-400">0</span>;
+  }
+  return <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-slate-600 border-dashed font-mono text-xs text-slate-500">-</span>;
+};
 
 const AttendanceHistory = () => {
   const { showToast } = useToast();
   const [classrooms, setClassrooms] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const defaultTerm = getTermForDate(todayIso) || 'TERM_1';
+  const [periodMode, setPeriodMode] = useState('term');
+  const [selectedTerm, setSelectedTerm] = useState(defaultTerm);
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
-  const [records, setRecords] = useState([]);
+  const [historyRows, setHistoryRows] = useState([]);
   const [initialLoading, setInitialLoading] = useState(true);
   const [recordsLoading, setRecordsLoading] = useState(false);
   const [error, setError] = useState(null);
   const [deletingWeek, setDeletingWeek] = useState(false);
 
-  // Fetch teacher's classrooms on mount
   useEffect(() => {
     const fetchClassrooms = async () => {
       try {
         setInitialLoading(true);
-        const response = await classroomService.getTeacherClassrooms();
-
-        if (response.success && response.classrooms.length > 0) {
-          setClassrooms(response.classrooms);
-
-          // Auto-select if only one classroom
-          if (response.classrooms.length === 1) {
-            setSelectedClass(response.classrooms[0]._id);
-          }
+        const res = await classroomService.getTeacherClassrooms();
+        if (res.success && res.classrooms?.length) {
+          setClassrooms(res.classrooms);
+          setSelectedClass(res.classrooms[0]._id);
         } else {
           setError('No classrooms assigned. Contact your headteacher.');
-          setClassrooms([]);
         }
-      } catch (err) {
-        console.error('Error fetching classrooms:', err);
+      } catch {
         setError('Failed to load classrooms.');
       } finally {
         setInitialLoading(false);
       }
     };
-
     fetchClassrooms();
   }, []);
 
-  // Fetch attendance records when classroom or month changes
   useEffect(() => {
-    if (selectedClass) {
-      fetchAttendanceRecords();
-    }
-  }, [selectedClass, selectedMonth]);
-
-  const fetchAttendanceRecords = async () => {
-    try {
-      setRecordsLoading(true);
-      setError(null);
-      const response = await attendanceService.getClassroomAttendanceHistory(selectedClass, selectedMonth);
-
-      if (response.success) {
-        setRecords(response.records || []);
-      } else {
-        setError(response.message || 'Failed to load attendance records.');
-        setRecords([]);
+    const fetchHistory = async () => {
+      if (!selectedClass) return;
+      try {
+        setRecordsLoading(true);
+        setError(null);
+        const res = await attendanceService.getClassroomAttendanceHistory(
+          selectedClass,
+          historyQueryParams(periodMode, selectedMonth, selectedTerm)
+        );
+        if (res.success) setHistoryRows(res.historyRows || []);
+        else {
+          setHistoryRows([]);
+          setError(res.message || 'Failed to load attendance records.');
+        }
+      } catch {
+        setHistoryRows([]);
+        setError('Error loading attendance records.');
+      } finally {
+        setRecordsLoading(false);
       }
-    } catch (err) {
-      console.error('Error fetching attendance:', err);
-      setError('Error loading attendance records.');
-      setRecords([]);
-    } finally {
-      setRecordsLoading(false);
+    };
+    fetchHistory();
+  }, [selectedClass, periodMode, selectedMonth, selectedTerm]);
+
+  const selectedClassroom = useMemo(
+    () => classrooms.find((c) => c._id === selectedClass) || null,
+    [classrooms, selectedClass]
+  );
+  const classLevelRef = selectedClassroom?.grade || selectedClassroom?.level || '';
+
+  const weeks = useMemo(() => {
+    if (periodMode === 'term') {
+      const days = generateSchoolDaysForTerm(selectedTerm, classLevelRef);
+      return buildWeeksForTerm(days, selectedTerm);
     }
-  };
+    if (!selectedMonth || !/^\d{4}-\d{2}$/.test(selectedMonth)) return [];
+    const [yearStr, monthStr] = selectedMonth.split('-');
+    const y = Number(yearStr);
+    const m = Number(monthStr);
+    const structure = generateWeekStructure(m, y, classLevelRef);
+    return structure.map((w) => ({
+      index: w.week,
+      label: `WEEK-${w.week}`,
+      days: w.days,
+      monthLabel: w.monthLabel,
+    }));
+  }, [periodMode, selectedTerm, selectedMonth, classLevelRef]);
 
-  const formatDate = (dateStr) => {
-    const date = new Date(dateStr + 'T00:00:00Z');
-    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-  };
+  const marksMap = useMemo(() => {
+    const map = new Map();
+    historyRows.forEach((row) => {
+      (row.dailyRecords || []).forEach((r) => {
+        map.set(`${row.studentId}:${r.date}`, r.status);
+      });
+    });
+    return map;
+  }, [historyRows]);
 
-  const getAttendanceRate = (record) => {
-    if (!record.total || record.total === 0) return '0.0';
-    return ((record.present / record.total) * 100).toFixed(1);
-  };
+  const summary = useMemo(() => {
+    let present = 0;
+    let absent = 0;
+    let late = 0;
+    historyRows.forEach((row) => {
+      present += row.monthlyTotals?.present || 0;
+      absent += row.monthlyTotals?.absent || 0;
+      late += row.monthlyTotals?.late || 0;
+    });
+    const presentEquivalent = present + late;
+    const totalMarked = present + absent + late;
+    const rate = totalMarked > 0 ? ((presentEquivalent / totalMarked) * 100).toFixed(1) : '0.0';
+    return { onRoll: historyRows.length, presentEquivalent, absent, late, rate };
+  }, [historyRows]);
+
+  const periodLabelForExport = useMemo(() => {
+    if (periodMode === 'term') return selectedTerm.toLowerCase();
+    return selectedMonth;
+  }, [periodMode, selectedTerm, selectedMonth]);
+
+  const subtitlePeriod = useMemo(() => {
+    if (periodMode === 'term') {
+      const meta = TERMS.find((t) => t.name === selectedTerm);
+      const wk = TERM_WEEK_COUNTS[selectedTerm];
+      return meta ? `${meta.label} · ${wk} weeks (GES register)` : selectedTerm;
+    }
+    return selectedMonth;
+  }, [periodMode, selectedTerm, selectedMonth]);
 
   const exportCsv = () => {
-    if (!records.length) return;
-    const headers = ['Date', 'Present', 'Absent', 'Late', 'Attendance Rate (%)'];
-    const rows = records.map((r) => [r.date, r.present, r.absent, r.late, getAttendanceRate(r)]);
-    const csv = [headers.join(','), ...rows.map((row) => row.join(','))].join('\n');
+    if (!historyRows.length) return;
+    const headers = ['No.', 'Name', 'Roll Number'];
+    weeks.forEach((w, wi) => {
+      w.days.forEach((d) => headers.push(`W${wi + 1}_${d.monthAbbr || ''}_${d.dayName}${d.day}`));
+      headers.push(`W${wi + 1}_P`, `W${wi + 1}_A`, `W${wi + 1}_L`);
+    });
+    headers.push('TERM_P', 'TERM_A', 'TERM_L', 'RATE');
+
+    const rows = historyRows.map((row, idx) => {
+      const out = [idx + 1, `"${row.name}"`, row.rollNumber || ''];
+      let termP = 0;
+      let termA = 0;
+      let termL = 0;
+      weeks.forEach((w) => {
+        let wP = 0;
+        let wA = 0;
+        let wL = 0;
+        w.days.forEach((d) => {
+          if (d.type === 'exam') {
+            out.push('EXAM');
+            return;
+          }
+          const s = marksMap.get(`${row.studentId}:${d.date}`) || '';
+          out.push(s === 'present' ? 'P' : s === 'late' ? 'L' : s === 'absent' ? 'A' : '');
+          if (s === 'present') wP += 1;
+          else if (s === 'absent') wA += 1;
+          else if (s === 'late') wL += 1;
+        });
+        termP += wP;
+        termA += wA;
+        termL += wL;
+        out.push(wP + wL, wA, wL);
+      });
+      const rate = (((termP + termL) / Math.max(termP + termA + termL, 1)) * 100).toFixed(1);
+      out.push(termP + termL, termA, termL, `${rate}%`);
+      return out.join(',');
+    });
+
+    const csv = [headers.join(','), ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `attendance-history-${selectedMonth}-${selectedClass}.csv`;
+    link.download = `attendance-history-register-${periodLabelForExport}.csv`;
     link.click();
     URL.revokeObjectURL(link.href);
   };
 
-  const deleteWeek = async (weekStartDate) => {
-    if (!selectedClass || !weekStartDate) return;
-    if (!window.confirm(`Delete ALL attendance records for the week starting ${weekStartDate}? This cannot be undone.`)) return;
+  const exportExcel = () => {
+    if (!historyRows.length) return;
+    let html = '<table><tr><th>No.</th><th>Name</th><th>Roll Number</th>';
+    weeks.forEach((w, wi) => {
+      w.days.forEach((d) => {
+        html += `<th>W${wi + 1} ${d.monthAbbr || ''} ${d.day} ${d.dayName}</th>`;
+      });
+      html += `<th>W${wi + 1} P</th><th>W${wi + 1} A</th><th>W${wi + 1} L</th>`;
+    });
+    html += '<th>Term P</th><th>Term A</th><th>Term L</th><th>Rate</th></tr>';
+
+    historyRows.forEach((row, idx) => {
+      html += `<tr><td>${idx + 1}</td><td>${row.name}</td><td>${row.rollNumber || ''}</td>`;
+      let termP = 0;
+      let termA = 0;
+      let termL = 0;
+      weeks.forEach((w) => {
+        let wP = 0;
+        let wA = 0;
+        let wL = 0;
+        w.days.forEach((d) => {
+          if (d.type === 'exam') {
+            html += '<td>EXAM</td>';
+            return;
+          }
+          const s = marksMap.get(`${row.studentId}:${d.date}`) || '';
+          html += `<td>${s === 'present' ? 'P' : s === 'late' ? 'L' : s === 'absent' ? 'A' : ''}</td>`;
+          if (s === 'present') wP += 1;
+          else if (s === 'absent') wA += 1;
+          else if (s === 'late') wL += 1;
+        });
+        termP += wP;
+        termA += wA;
+        termL += wL;
+        html += `<td>${wP + wL}</td><td>${wA}</td><td>${wL}</td>`;
+      });
+      html += `<td>${termP + termL}</td><td>${termA}</td><td>${termL}</td><td>${(((termP + termL) / Math.max(termP + termA + termL, 1)) * 100).toFixed(1)}%</td></tr>`;
+    });
+    html += '</table>';
+
+    const link = document.createElement('a');
+    link.href = `data:application/vnd.ms-excel;charset=utf-8,${encodeURIComponent(html)}`;
+    link.download = `attendance-history-register-${periodLabelForExport}.xls`;
+    link.click();
+  };
+
+  const deleteLastWeek = async () => {
+    if (!selectedClass || !weeks.length) return;
+    const lastWeekStart = weeks[weeks.length - 1]?.days?.[0]?.date;
+    if (!lastWeekStart) return;
+    if (!window.confirm(`Delete all attendance for the last week (starting ${lastWeekStart})? This cannot be undone.`)) return;
     setDeletingWeek(true);
     try {
-      const res = await attendanceService.deleteAttendanceWeek(selectedClass, weekStartDate);
+      const res = await attendanceService.deleteAttendanceWeek(selectedClass, lastWeekStart);
       if (res.success) {
-        showToast(res.message || 'Week deleted', 'success');
-        fetchAttendanceRecords();
+        showToast(res.message || 'Last week deleted', 'success');
+        const refreshed = await attendanceService.getClassroomAttendanceHistory(
+          selectedClass,
+          historyQueryParams(periodMode, selectedMonth, selectedTerm)
+        );
+        if (refreshed.success) setHistoryRows(refreshed.historyRows || []);
       } else {
-        showToast(res.message || 'Failed to delete week', 'error');
+        showToast(res.message || 'Failed to delete last week', 'error');
       }
     } catch (err) {
-      showToast(err?.response?.data?.message || 'Failed to delete week', 'error');
+      showToast(err?.response?.data?.message || 'Failed to delete last week', 'error');
     } finally {
       setDeletingWeek(false);
     }
@@ -128,9 +276,9 @@ const AttendanceHistory = () => {
   if (initialLoading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex min-h-[60vh] items-center justify-center">
           <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto mb-4"></div>
+            <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-green-600"></div>
             <p className="text-gray-600 dark:text-gray-400">Loading your classrooms...</p>
           </div>
         </div>
@@ -140,146 +288,209 @@ const AttendanceHistory = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-5xl mx-auto">
-        {/* Header */}
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Attendance History</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">View past attendance records for your class{classrooms.length > 1 ? 'es' : ''}</p>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <Card className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-            <p className="text-red-700 dark:text-red-400">{error}</p>
-          </Card>
-        )}
-
-        {/* Filters */}
-        {classrooms.length > 0 && (
-          <Card className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Your Class{classrooms.length > 1 ? 'es' : ''}
-                </label>
-                <select
-                  value={selectedClass}
-                  onChange={(e) => setSelectedClass(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                >
-                  <option value="">
-                    {classrooms.length === 1 ? 'Auto-selected: ' : 'Choose a class...'}
-                  </option>
-                  {classrooms.map(cls => (
-                    <option key={cls._id} value={cls._id}>
-                      {cls.name} (Grade {cls.grade})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Month
-                </label>
-                <input
-                  type="month"
-                  value={selectedMonth}
-                  onChange={(e) => setSelectedMonth(e.target.value)}
-                  max={new Date().toISOString().slice(0, 7)}
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500 focus:border-transparent"
-                />
-              </div>
+      <div className="space-y-4 rounded-xl border border-slate-800 bg-slate-950 text-slate-200">
+        <div className="sticky top-0 z-20 flex flex-wrap items-end justify-between gap-3 border-b border-slate-800 bg-slate-900/95 px-4 py-3 backdrop-blur">
+          <div className="text-xl font-extrabold tracking-tight">Attendance <span className="text-indigo-400">History</span></div>
+          <div className="flex flex-wrap items-end gap-2">
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase tracking-widest text-slate-500">Class</label>
+              <select value={selectedClass} onChange={(e) => setSelectedClass(e.target.value)} className="rounded-md border border-slate-700 bg-slate-800 px-2 py-1.5 text-xs font-semibold">
+                {classrooms.map((cls) => (
+                  <option key={cls._id} value={cls._id}>{cls.name} ({cls.grade})</option>
+                ))}
+              </select>
             </div>
-            <div className="mt-4 flex flex-wrap gap-2 justify-end">
-              <button
-                type="button"
-                onClick={exportCsv}
-                disabled={!records.length}
-                className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
-              >
-                Export CSV
-              </button>
-              {records.length > 0 && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[10px] uppercase tracking-widest text-slate-500">Period</label>
+              <div className="flex rounded-md border border-slate-700 bg-slate-900 p-0.5">
                 <button
                   type="button"
-                  onClick={() => deleteWeek(records[records.length - 1].date)}
-                  disabled={deletingWeek}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:opacity-50 text-white rounded-lg text-sm font-medium"
+                  onClick={() => setPeriodMode('term')}
+                  className={`rounded px-2 py-1 text-[11px] font-bold ${periodMode === 'term' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
                 >
-                  {deletingWeek ? 'Deleting...' : 'Delete Oldest Week'}
+                  Term
                 </button>
-              )}
-            </div>
-          </Card>
-        )}
-
-        {/* Records Table */}
-        {selectedClass && (
-          <Card className="p-6">
-            {recordsLoading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
+                <button
+                  type="button"
+                  onClick={() => setPeriodMode('month')}
+                  className={`rounded px-2 py-1 text-[11px] font-bold ${periodMode === 'month' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-slate-200'}`}
+                >
+                  Month
+                </button>
               </div>
-            ) : records.length > 0 ? (
-              <div className="overflow-x-auto">
-                <table className="w-full">
-                  <thead>
-                    <tr className="border-b border-gray-200 dark:border-gray-700">
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Date</th>
-                      <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Present</th>
-                      <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Absent</th>
-                      <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Late</th>
-                      <th className="text-center py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Attendance Rate</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {records.map((record, index) => (
-                      <tr key={index} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
-                        <td className="py-3 px-4 text-sm text-gray-900 dark:text-white font-medium">
-                          {formatDate(record.date)}
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400">
-                            {record.present}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400">
-                            {record.absent}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center">
-                          <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400">
-                            {record.late}
-                          </span>
-                        </td>
-                        <td className="py-3 px-4 text-center text-sm font-semibold text-gray-900 dark:text-white">
-                          {getAttendanceRate(record)}%
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+            </div>
+            {periodMode === 'term' ? (
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] uppercase tracking-widest text-slate-500">GES term</label>
+                <div className="flex flex-wrap gap-1">
+                  {TERMS.map((t) => (
+                    <button
+                      key={t.name}
+                      type="button"
+                      onClick={() => setSelectedTerm(t.name)}
+                      className={`rounded-md border px-2 py-1.5 text-[11px] font-bold ${
+                        selectedTerm === t.name
+                          ? 'border-emerald-500/50 bg-emerald-500/20 text-emerald-300'
+                          : 'border-slate-700 bg-slate-800 text-slate-400 hover:border-slate-600'
+                      }`}
+                    >
+                      {t.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             ) : (
-              <div className="text-center py-12 text-gray-500 dark:text-gray-400">
-                {recordsLoading ? 'Loading records...' : 'No attendance records found for this period'}
+              <div className="flex flex-col gap-1">
+                <label className="text-[10px] uppercase tracking-widest text-slate-500">Month</label>
+                <input type="month" value={selectedMonth} onChange={(e) => setSelectedMonth(e.target.value)} className="rounded-md border border-slate-700 bg-slate-800 px-2 py-1.5 text-xs font-semibold" />
               </div>
             )}
+            <button type="button" onClick={exportCsv} disabled={!historyRows.length} className="rounded-md border border-green-500/30 bg-green-500/15 px-3 py-1.5 text-xs font-bold text-green-400 disabled:opacity-50">CSV</button>
+            <button type="button" onClick={exportExcel} disabled={!historyRows.length} className="rounded-md border border-emerald-500/30 bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-400 disabled:opacity-50">Excel</button>
+            <button type="button" onClick={() => window.print()} className="rounded-md border border-slate-700 bg-slate-800 px-3 py-1.5 text-xs font-bold text-slate-300">Print</button>
+            <button type="button" onClick={deleteLastWeek} disabled={!weeks.length || deletingWeek} className="rounded-md border border-red-500/30 bg-red-500/15 px-3 py-1.5 text-xs font-bold text-red-400 disabled:opacity-50">
+              {deletingWeek ? 'Deleting...' : 'Delete Last Week'}
+            </button>
+          </div>
+        </div>
+
+        <div className="px-4 text-xs text-slate-400">
+          {subtitlePeriod} · {historyRows.length} students on roll
+          {periodMode === 'term' && (
+            <span className="ml-2 text-slate-500">· Scroll horizontally to see all {weeks.length} week blocks</span>
+          )}
+        </div>
+
+        {error && (
+          <Card className="mx-4 border border-red-800 bg-red-900/20 p-3">
+            <p className="text-sm text-red-400">{error}</p>
           </Card>
         )}
 
-        {!selectedClass && classrooms.length > 0 && !recordsLoading && (
-          <Card className="p-12">
-            <div className="text-center text-gray-500 dark:text-gray-400">
-              <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-              </svg>
-              <p className="text-lg font-medium">Select your class to view attendance history</p>
-            </div>
-          </Card>
-        )}
+        <div className="flex flex-wrap items-center gap-4 px-4 text-xs text-slate-400">
+          <div className="flex items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-green-500/40 bg-green-500/15 font-mono text-sm font-bold text-green-400">1</span>Present</div>
+          <div className="flex items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/15 font-mono text-sm font-bold text-amber-400">1</span>Late</div>
+          <div className="flex items-center gap-2"><span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-red-500/40 bg-red-500/15 font-mono text-sm font-bold text-red-400">0</span>Absent</div>
+        </div>
+
+        <div className="overflow-x-auto px-4 pb-4 print:overflow-visible">
+          <div className="inline-block min-w-full overflow-hidden rounded-lg border border-slate-800 bg-slate-900">
+            {recordsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-green-600"></div>
+              </div>
+            ) : (
+              <table className="w-max min-w-full table-fixed border-collapse">
+                <thead>
+                  <tr className="bg-slate-800/80 text-[10px] uppercase tracking-wider text-slate-400">
+                    <th className="sticky left-0 z-10 w-10 border-r border-slate-700 bg-slate-950 px-2 py-2 text-left">#</th>
+                    <th className="sticky left-10 z-10 w-52 border-r border-slate-700 bg-slate-950 px-3 py-2 text-left">Student</th>
+                    {weeks.map((w) => (
+                      <th key={`wk-${w.index}`} className="border-r border-slate-700 bg-indigo-500/10 px-2 py-2 text-indigo-300" colSpan={Math.max(w.days.length, 0) + 1}>
+                        <div className="flex flex-col items-center gap-0.5">
+                          <span>{w.label}</span>
+                          {w.monthLabel ? (
+                            <span className="text-[9px] font-semibold normal-case tracking-normal text-slate-400">{w.monthLabel}</span>
+                          ) : null}
+                        </div>
+                      </th>
+                    ))}
+                    <th className="border-r border-slate-700 bg-indigo-500/20 px-2 py-2 text-indigo-200">Term Total</th>
+                    <th className="bg-indigo-500/20 px-2 py-2 text-indigo-200">Rate</th>
+                  </tr>
+                  <tr className="bg-slate-950 text-[10px] uppercase tracking-wider text-slate-500">
+                    <th className="sticky left-0 z-10 border-r border-slate-700 bg-slate-950 px-2 py-2">#</th>
+                    <th className="sticky left-10 z-10 border-r border-slate-700 bg-slate-950 px-3 py-2 text-left">Student Name</th>
+                    {weeks.flatMap((w) => [
+                      ...w.days.map((day) => (
+                        <th key={`day-${w.index}-${day.date}`} className="border-r border-slate-800 px-1 py-2 text-center">
+                          <span className="block text-[9px] font-semibold text-slate-400">{day.monthAbbr}</span>
+                          <span className="block font-mono text-xs text-slate-200">{day.day}</span>
+                          <span className="block text-[9px]">{day.dayName}</span>
+                        </th>
+                      )),
+                      <th key={`wsub-${w.index}`} className="border-r border-indigo-700 bg-indigo-500/10 px-2 py-2 text-[9px] text-indigo-200">P / A / L</th>,
+                    ])}
+                    <th className="border-r border-indigo-700 bg-indigo-500/20 px-2 py-2 text-[9px] text-indigo-200">P / A / L</th>
+                    <th className="bg-indigo-500/20 px-2 py-2 text-[9px] text-indigo-200">%</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {historyRows.map((row, idx) => {
+                    let termP = 0;
+                    let termA = 0;
+                    let termL = 0;
+                    return (
+                      <tr key={row.studentId} className={idx % 2 === 0 ? 'bg-slate-900' : 'bg-slate-950'}>
+                        <td className="sticky left-0 z-10 border-r border-slate-800 bg-slate-950 px-2 py-2 font-mono text-xs text-slate-500">{idx + 1}</td>
+                        <td className="sticky left-10 z-10 border-r border-slate-800 bg-slate-950 px-3 py-2 text-left">
+                          <div className="truncate text-sm font-bold text-slate-100">{row.name}</div>
+                          <div className="font-mono text-[10px] text-slate-500">{row.rollNumber || '-'}</div>
+                        </td>
+                        {weeks.flatMap((w) => {
+                          let wP = 0;
+                          let wA = 0;
+                          let wL = 0;
+                          const dayCells = w.days.map((day) => {
+                            if (day.type === 'exam') {
+                              return (
+                                <td key={`${row.studentId}-${day.date}`} className="border-r border-slate-800 px-1 py-2 text-center">
+                                  <span className="inline-flex rounded-md border border-slate-500/60 bg-slate-700/40 px-2 py-1 text-[10px] font-semibold text-slate-200">
+                                    EXAM
+                                  </span>
+                                </td>
+                              );
+                            }
+                            const status = marksMap.get(`${row.studentId}:${day.date}`);
+                            if (status === 'present') wP += 1;
+                            else if (status === 'absent') wA += 1;
+                            else if (status === 'late') wL += 1;
+                            return (
+                              <td key={`${row.studentId}-${day.date}`} className="border-r border-slate-800 px-1 py-2 text-center">
+                                {chipForStatus(status)}
+                              </td>
+                            );
+                          });
+                          termP += wP;
+                          termA += wA;
+                          termL += wL;
+                          dayCells.push(
+                            <td key={`wt-${row.studentId}-${w.index}`} className="border-r border-indigo-700 bg-indigo-500/10 px-2 py-1">
+                              <div className="space-y-0.5 text-left font-mono text-[10px]">
+                                <div className="text-green-400">{wP + wL}P</div>
+                                <div className="text-red-400">{wA}A</div>
+                                <div className="text-amber-400">{wL}L</div>
+                              </div>
+                            </td>
+                          );
+                          return dayCells;
+                        })}
+                        <td className="border-r border-indigo-700 bg-indigo-500/20 px-2 py-1">
+                          <div className="space-y-0.5 text-left font-mono text-[10px]">
+                            <div className="text-green-400">{termP + termL}P</div>
+                            <div className="text-red-400">{termA}A</div>
+                            <div className="text-amber-400">{termL}L</div>
+                          </div>
+                        </td>
+                        <td className="bg-indigo-500/20 px-2 py-2 text-center font-mono text-xs font-bold text-slate-100">
+                          {(((termP + termL) / Math.max(termP + termA + termL, 1)) * 100).toFixed(1)}%
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-2 px-4 pb-4 sm:grid-cols-5">
+          <div className="rounded-lg border border-slate-800 bg-slate-900 p-3 text-center"><div className="font-mono text-2xl font-bold text-slate-100">{summary.onRoll}</div><div className="mt-1 text-[10px] uppercase tracking-wider text-slate-500">On Roll</div></div>
+          <div className="rounded-lg border border-slate-800 bg-slate-900 p-3 text-center"><div className="font-mono text-2xl font-bold text-green-400">{summary.presentEquivalent}</div><div className="mt-1 text-[10px] uppercase tracking-wider text-slate-500">Present (incl. late)</div></div>
+          <div className="rounded-lg border border-slate-800 bg-slate-900 p-3 text-center"><div className="font-mono text-2xl font-bold text-red-400">{summary.absent}</div><div className="mt-1 text-[10px] uppercase tracking-wider text-slate-500">Total Absent</div></div>
+          <div className="rounded-lg border border-slate-800 bg-slate-900 p-3 text-center"><div className="font-mono text-2xl font-bold text-amber-400">{summary.late}</div><div className="mt-1 text-[10px] uppercase tracking-wider text-slate-500">Late Arrivals</div></div>
+          <div className="rounded-lg border border-slate-800 bg-slate-900 p-3 text-center"><div className="font-mono text-2xl font-bold text-indigo-300">{summary.rate}%</div><div className="mt-1 text-[10px] uppercase tracking-wider text-slate-500">Overall Rate</div></div>
+        </div>
       </div>
     </DashboardLayout>
   );
