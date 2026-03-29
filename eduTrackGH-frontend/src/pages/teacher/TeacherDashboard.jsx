@@ -167,7 +167,7 @@ const TeacherDashboard = () => {
             </Card>
           </Link>
 
-          <Link to={ROUTES.MANAGE_STUDENTS}>
+          <Link to={ROUTES.TEACHER_MANAGE_STUDENTS}>
             <Card variant="action" hover className="p-6 group cursor-pointer">
               <div className="flex items-center space-x-5">
                 <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
