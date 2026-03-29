@@ -3,7 +3,7 @@
  * Purpose: API calls for attendance operations (EduTrack GH)
  * Endpoints:
  *   - markDailyAttendance(classroomId, date, attendanceData): POST /api/attendance/mark
- *   - getClassroomAttendanceHistory(classroomId, month): GET /api/attendance/classroom/:classroomId
+ *   - getClassroomAttendanceHistory(classroomId, month | { month?, term? }): GET .../daily
  *   - getFlaggedStudents(classroomId): GET /api/attendance/flagged
  *   - getChildAttendance(childId): GET /api/attendance/child/:id (for parents)
  */
@@ -12,9 +12,16 @@ import apiClient from "./api";
 
 const attendanceService = {
   // Get daily attendance history for a classroom (teacher)
-  getClassroomAttendanceHistory: async (classroomId, month) => {
+  /** @param {string} [month] legacy: YYYY-MM — or pass options `{ month }` or `{ term: 'TERM_1'|'TERM_2'|'TERM_3' }` */
+  getClassroomAttendanceHistory: async (classroomId, monthOrOptions) => {
     try {
-      const params = month ? { month } : {};
+      let params = {};
+      if (monthOrOptions && typeof monthOrOptions === "object" && !Array.isArray(monthOrOptions)) {
+        if (monthOrOptions.month) params.month = monthOrOptions.month;
+        if (monthOrOptions.term) params.term = monthOrOptions.term;
+      } else if (monthOrOptions) {
+        params = { month: monthOrOptions };
+      }
       const response = await apiClient.get(
         `/attendance/classroom/${classroomId}/daily`,
         { params },

@@ -2,11 +2,12 @@
  * useMarkAttendance – data and handlers for teacher Mark Attendance page
  */
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import classroomService from '../services/classroomService';
 import attendanceService from '../services/attendanceService';
 import { useToast } from '../context';
 import { compressImageForAttendance } from '../utils/attendancePhoto';
+import { isSchoolDay } from '../utils/gesCalendar';
 
 const CAPTURE_QUALITY = 0.82;
 
@@ -82,6 +83,23 @@ export function useMarkAttendance() {
   }, [selectedClass]);
 
   useEffect(() => { fetchStudents(); }, [fetchStudents]);
+
+  const selectedClassroom = useMemo(
+    () => classrooms.find((c) => c._id === selectedClass) || null,
+    [classrooms, selectedClass]
+  );
+
+  const setSelectedDateSafe = useCallback(
+    (nextDate) => {
+      const levelRef = selectedClassroom?.grade || selectedClassroom?.level || '';
+      if (nextDate && !isSchoolDay(nextDate, levelRef)) {
+        showToast('Selected date is not a valid GES school day.', 'error');
+        return;
+      }
+      setSelectedDate(nextDate);
+    },
+    [selectedClassroom, showToast]
+  );
 
   // Check if selected date is locked when class + date change
   useEffect(() => {
@@ -258,6 +276,14 @@ export function useMarkAttendance() {
 
   const handleSubmit = useCallback(async () => {
     if (!selectedClass || !allDone || entries.length === 0) return;
+    const levelRef = selectedClassroom?.grade || selectedClassroom?.level || '';
+    if (!isSchoolDay(selectedDate, levelRef)) {
+      showToast(
+        'Attendance cannot be marked on weekends, holidays, BECE days, or during vacation per GES policy.',
+        'error'
+      );
+      return;
+    }
     setSaving(true);
     try {
       const response = await attendanceService.markDailyAttendance(selectedClass, selectedDate, entries);
@@ -273,7 +299,7 @@ export function useMarkAttendance() {
     } finally {
       setSaving(false);
     }
-  }, [selectedClass, selectedDate, entries, allDone, showToast]);
+  }, [selectedClass, selectedDate, entries, allDone, showToast, selectedClassroom]);
 
   return {
     classrooms,
@@ -282,7 +308,7 @@ export function useMarkAttendance() {
     lockStatusLoading,
     setSelectedClass,
     selectedDate,
-    setSelectedDate,
+    setSelectedDate: setSelectedDateSafe,
     students,
     initialLoading,
     classLoading,
