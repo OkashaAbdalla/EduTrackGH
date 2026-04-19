@@ -16,9 +16,10 @@ import axios from 'axios';
 import { ROUTES } from '../utils/constants';
 
 // ========================================
-// BASE URL CONFIGURATION
+// BASE URL CONFIGURATION (Vite: set VITE_API_URL in .env / Vercel)
 // ========================================
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL =
+  import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const apiClient = axios.create({
   baseURL: BASE_URL,

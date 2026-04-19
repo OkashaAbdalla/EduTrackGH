@@ -176,7 +176,7 @@ const TeacherDashboard = () => {
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Manage Students</h3>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Propose Students</h3>
                   <p className="text-sm text-gray-600 dark:text-gray-400">Propose new students for approval</p>
                   <div className="mt-3 flex items-center text-blue-600 dark:text-blue-400 text-sm font-medium">
                     <span>Add students</span>
@@ -189,19 +189,19 @@ const TeacherDashboard = () => {
             </Card>
           </Link>
 
-          <Link to={ROUTES.FLAGGED_STUDENTS}>
+          <Link to={ROUTES.ATTENDANCE_HISTORY}>
             <Card variant="action" hover className="p-6 group cursor-pointer">
               <div className="flex items-center space-x-5">
-                <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <div className="w-16 h-16 bg-gradient-to-br from-slate-500 to-slate-600 dark:from-slate-600 dark:to-slate-700 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
                 <div className="flex-1">
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Flagged Students</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">View students with chronic absenteeism</p>
-                  <div className="mt-3 flex items-center text-orange-600 dark:text-orange-400 text-sm font-medium">
-                    <span>View details</span>
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">Attendance History</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Browse past attendance records</p>
+                  <div className="mt-3 flex items-center text-slate-600 dark:text-slate-400 text-sm font-medium">
+                    <span>View history</span>
                     <svg className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                     </svg>

@@ -128,9 +128,9 @@ Create a `.env` file in `eduTrackGH-backend/` with the following variables:
 # Database
 MONGODB_URI=your_mongodb_connection_string_here
 
-# JWT
+# JWT (variable name must match `generateToken.js`)
 JWT_SECRET=your_strong_random_jwt_secret_here
-JWT_EXPIRE=7d
+JWT_EXPIRES_IN=7d
 
 # Server
 PORT=5000
@@ -141,19 +141,31 @@ EMAIL_SERVICE=gmail
 EMAIL_USER=your_email@gmail.com
 EMAIL_PASSWORD=your_gmail_app_password
 
-# Frontend URL (for CORS)
+# Frontend URL(s) for CORS + Socket.IO (comma-separated for Vercel prod + preview)
 FRONTEND_URL=http://localhost:5173
+
+# Must match frontend `VITE_ADMIN_LOGIN_PATH`
+ADMIN_LOGIN_PATH=secure-admin-CHANGE_ME
 ```
 
 **Note:** Never commit the `.env` file. Use `.env.example` as a template. See `eduTrackGH-backend/.env.example` for reference.
 
-### Frontend (.env.local)
+### Frontend (`.env` or `.env.local`)
 
-Create a `.env.local` file in `eduTrackGH-frontend/` with:
+Create a `.env` file in `eduTrackGH-frontend/` (see `eduTrackGH-frontend/.env.example`):
 
 ```
 VITE_API_URL=http://localhost:5000/api
+VITE_ADMIN_LOGIN_PATH=secure-admin-CHANGE_ME
 ```
+
+On **Vercel**, set `VITE_API_URL` to your deployed API (e.g. `https://your-service.onrender.com/api`).
+
+### Deploy (Render + Vercel)
+
+- **Render (API):** Root directory `eduTrackGH-backend`, build `npm install`, start `npm start`. Set `MONGODB_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `FRONTEND_URL` (your Vercel URL), `ADMIN_LOGIN_PATH` (same as frontend), and email/Cloudinary keys as needed.
+- **Vercel (SPA):** Root directory `eduTrackGH-frontend`, build `npm run build`, output `dist`. Set `VITE_API_URL` and `VITE_ADMIN_LOGIN_PATH` to match the backend.
+- Optional: use `render.yaml` at the repo root as a Render Blueprint for the API service.
 
 ## Project Status
 

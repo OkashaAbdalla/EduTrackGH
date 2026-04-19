@@ -5,13 +5,14 @@
 
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { getCorsOrigins } = require('./corsOrigins');
 
 let io = null;
 
 function setupSocketServer(httpServer) {
   const { Server } = require('socket.io');
   io = new Server(httpServer, {
-    cors: { origin: process.env.FRONTEND_URL || ['http://localhost:5173', 'http://localhost:5174'], credentials: true },
+    cors: { origin: getCorsOrigins(), credentials: true },
   });
 
   io.use(async (socket, next) => {

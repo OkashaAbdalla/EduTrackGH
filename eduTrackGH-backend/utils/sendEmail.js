@@ -67,7 +67,7 @@ const emailTemplates = {
     </html>
   `,
 
-  accountWelcome: ({ name, email, tempPassword, loginUrl, accountType, createdByText }) => `
+  accountWelcome: ({ name, email, tempPassword, loginUrl, accountType, createdByText, introParagraph }) => `
     <!DOCTYPE html>
     <html>
     <head>
@@ -87,7 +87,7 @@ const emailTemplates = {
         </div>
         <div class="content">
           <h2>Welcome, ${name}!</h2>
-          <p>Your ${accountType} account has been created by ${createdByText}.</p>
+          ${introParagraph || `<p>Your ${accountType} account has been created by ${createdByText}.</p>`}
           <div class="credentials">
             <p><strong>Email:</strong> ${email}</p>
             <p><strong>Temporary Password:</strong> ${tempPassword}</p>
@@ -122,7 +122,8 @@ const emailTemplates = {
       tempPassword,
       loginUrl,
       accountType: 'teacher',
-      createdByText: `your headteacher: ${headteacherName || 'your headteacher'}`,
+      createdByText: '',
+      introParagraph: `<p>Your teacher account has been created by your headteacher.${headteacherName ? ` ${headteacherName}` : ''}</p>`,
     }),
 
   adminTeacherWelcome: (name, email, tempPassword, loginUrl) =>

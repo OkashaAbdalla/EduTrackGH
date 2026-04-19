@@ -10,9 +10,15 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const errorMiddleware = require("./middleware/errorMiddleware");
 const { setupSocketServer } = require("./utils/socketServer");
+const { getCorsOrigins } = require("./utils/corsOrigins");
 
 // Load environment variables
 dotenv.config();
+
+if (!process.env.JWT_SECRET) {
+  console.error("❌ JWT_SECRET is not set. Add it to eduTrackGH-backend/.env or your host (Render).");
+  process.exit(1);
+}
 
 // Initialize Express app
 const app = express();
@@ -23,10 +29,7 @@ connectDB();
 // Middleware
 app.use(
   cors({
-    origin: process.env.FRONTEND_URL || [
-      "http://localhost:5173",
-      "http://localhost:5174",
-    ],
+    origin: getCorsOrigins(),
     credentials: true,
   }),
 );
