@@ -1,0 +1,13 @@
+# Render Blueprint: deploy the Express API only. Set secrets in the Render dashboard.
+# https://render.com/docs/blueprint-spec
+services:
+  - type: web
+    name: edutrackgh-api
+    runtime: node
+    rootDir: eduTrackGH-backend
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
