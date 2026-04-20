@@ -10,8 +10,10 @@ const AttendanceFlag = require("../models/AttendanceFlag");
 const Notification = require("../models/Notification");
 const { sendSms } = require("../utils/sendSms");
 const { handleAbsenceNotification } = require("../services/emailService");
-const { isSchoolDay } = require("../utils/gesCalendar");
+const { getSchoolDayDecision } = require("./calendarRuntime");
 const { approvedInClassroom } = require("../utils/studentQuery");
+const School = require("../models/School");
+const { haversineMeters, isGeoFenceActive } = require("../utils/geo");
 
 function studentInClassroom(student, classroomId) {
   const cid = classroomId.toString();
@@ -87,12 +89,54 @@ async function runFlagDetection(classroomId, schoolId, dateOnly, savedRecords) {
  * Mark daily attendance: save records, notify parents, lock, run flag detection.
  * @returns {{ savedRecords, locked: boolean }} or throws { status, message }
  */
-async function markDailyAttendance({ classroomId, date, attendanceData, teacherId }) {
+async function markDailyAttendance({
+  classroomId,
+  date,
+  attendanceData,
+  teacherId,
+  teacherLatitude,
+  teacherLongitude,
+  geoAudit,
+}) {
   const classroom = await Classroom.findById(classroomId).populate("schoolId");
   if (!classroom) throw { status: 404, message: "Classroom not found" };
   if (classroom.teacherId.toString() !== teacherId.toString()) throw { status: 403, message: "Unauthorized" };
 
   const schoolId = classroom.schoolId?._id || classroom.schoolId;
+
+  const schoolDoc = await School.findById(schoolId).select("location").lean();
+  const fenceLoc = schoolDoc?.location;
+  if (isGeoFenceActive(fenceLoc)) {
+    const tLat = teacherLatitude != null ? Number(teacherLatitude) : NaN;
+    const tLng = teacherLongitude != null ? Number(teacherLongitude) : NaN;
+    if (!Number.isFinite(tLat) || !Number.isFinite(tLng)) {
+      throw {
+        status: 400,
+        message: "Location is required to mark attendance. Enable location services and try again.",
+        code: "GEO_REQUIRED",
+      };
+    }
+    const dist = haversineMeters(tLat, tLng, fenceLoc.latitude, fenceLoc.longitude);
+    const auditLine = {
+      event: "attendance_geo_check",
+      ok: dist <= fenceLoc.radius,
+      ip: geoAudit?.ip || null,
+      ts: new Date().toISOString(),
+      teacherLat: tLat,
+      teacherLng: tLng,
+      distanceM: Math.round(dist),
+      radiusM: fenceLoc.radius,
+    };
+    if (dist > fenceLoc.radius) {
+      console.warn("[geo-fence]", JSON.stringify({ ...auditLine }));
+      throw {
+        status: 403,
+        message: "You are outside the allowed school location",
+        code: "GEO_OUTSIDE",
+      };
+    }
+    console.log("[geo-fence]", JSON.stringify(auditLine));
+  }
 
   // Normalize the incoming date so that the stored calendar day
   // exactly matches what the teacher selected, regardless of server timezone.
@@ -106,12 +150,24 @@ async function markDailyAttendance({ classroomId, date, attendanceData, teacherI
   }
 
   const classLevelRef = classroom.grade || classroom.level || "";
-  if (!isSchoolDay(dateOnly, classLevelRef)) {
+  const schoolDayDecision = await getSchoolDayDecision(dateOnly, classLevelRef);
+  if (!schoolDayDecision.isSchoolDay) {
+    const reasonToMessage = {
+      weekend: "Attendance cannot be marked on Saturday or Sunday.",
+      before_resumption: "Attendance cannot be marked before school resumption.",
+      holiday: "Attendance cannot be marked on a holiday.",
+      term_ended: "Attendance cannot be marked outside the active school term.",
+      vacation: "Attendance cannot be marked during vacation.",
+      bece: "Attendance cannot be marked during BECE days for this class.",
+      invalid_date: "Invalid attendance date selected.",
+    };
     throw {
       status: 400,
       message:
-        "Attendance cannot be marked on weekends, holidays, BECE days, or during vacation per GES policy.",
+        reasonToMessage[schoolDayDecision.reason] ||
+        "Attendance cannot be marked on this date based on GES calendar rules.",
       code: "INVALID_SCHOOL_DAY",
+      reason: schoolDayDecision.reason,
     };
   }
 
