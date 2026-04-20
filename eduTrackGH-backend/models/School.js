@@ -29,6 +29,18 @@ const schoolSchema = new mongoose.Schema({
       type: String,
       trim: true,
     },
+    /** GPS attendance boundary (meters). Set by headteacher; optional for new schools until configured */
+    latitude: {
+      type: Number,
+    },
+    longitude: {
+      type: Number,
+    },
+    radius: {
+      type: Number,
+      min: 10,
+      max: 1000,
+    },
   },
   contact: {
     phone: {
