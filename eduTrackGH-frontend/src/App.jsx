@@ -11,7 +11,7 @@
  */
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, ToastProvider, AuthProvider, SocketProvider } from './context';
+import { ThemeProvider, ToastProvider, AuthProvider, SocketProvider, CalendarProvider } from './context';
 import { Landing, Login, Register, VerifyEmail } from './pages/public';
 import {
   TeacherDashboard,
@@ -23,7 +23,16 @@ import {
 } from './pages/teacher';
 import { HeadteacherDashboard, SchoolReports, TeacherCompliance, ManageClasses, ManageStudents, ManageTeachers as HeadteacherManageTeachers, Chat as HeadteacherChat } from './pages/headteacher';
 import { ParentDashboard, ChildrenAttendance, Notifications } from './pages/parent';
-import { AdminLogin, AdminDashboard, CreateHeadteacher, ManageSchools, ManageHeadteachers, AttendanceAudit, SystemSettings } from './pages/admin';
+import {
+  AdminLogin,
+  AdminDashboard,
+  CreateHeadteacher,
+  ManageSchools,
+  ManageHeadteachers,
+  AttendanceAudit,
+  SystemSettings,
+  GesCalendarManagement,
+} from './pages/admin';
 import { ProtectedRoute } from './components/common';
 import { ROUTES, ROLES } from './utils/constants';
 
@@ -32,6 +41,7 @@ function App() {
     <ThemeProvider>
       <ToastProvider>
         <AuthProvider>
+          <CalendarProvider>
           <SocketProvider>
           <Router>
         <Routes>
@@ -73,6 +83,7 @@ function App() {
           <Route path={ROUTES.CREATE_HEADTEACHER} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><CreateHeadteacher /></ProtectedRoute>} />
           <Route path={ROUTES.MANAGE_HEADTEACHERS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><ManageHeadteachers /></ProtectedRoute>} />
           <Route path={ROUTES.ATTENDANCE_AUDIT} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AttendanceAudit /></ProtectedRoute>} />
+          <Route path={ROUTES.GES_CALENDAR} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><GesCalendarManagement /></ProtectedRoute>} />
           <Route path={ROUTES.SYSTEM_SETTINGS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><SystemSettings /></ProtectedRoute>} />
           
           {/* Catch all - redirect to home */}
@@ -80,6 +91,7 @@ function App() {
         </Routes>
       </Router>
       </SocketProvider>
+          </CalendarProvider>
         </AuthProvider>
       </ToastProvider>
     </ThemeProvider>
