@@ -8,6 +8,7 @@ import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import HeadteacherStatsCards from '../../components/headteacher/HeadteacherStatsCards';
 import HeadteacherQuickActions from '../../components/headteacher/HeadteacherQuickActions';
+import SchoolLocationSettings from '../../components/headteacher/SchoolLocationSettings';
 import { useAuthContext, useToast, useSocket } from '../../context';
 import authService from '../../services/authService';
 import { messageService, headteacherService } from '../../services';
@@ -294,6 +295,8 @@ const HeadteacherDashboard = () => {
             </div>
           </Card>
         )}
+
+        <SchoolLocationSettings />
 
         <HeadteacherQuickActions />
       </div>
