@@ -59,6 +59,7 @@ export const ROUTES = {
   MANAGE_TEACHERS: '/admin/teachers',
   ATTENDANCE_AUDIT: '/admin/attendance-audit',
   SYSTEM_SETTINGS: '/admin/settings',
+  GES_CALENDAR: '/admin/ges-calendar',
 };
 
 // ========================================
