@@ -5,14 +5,28 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import classroomService from '../services/classroomService';
 import attendanceService from '../services/attendanceService';
-import { useToast } from '../context';
+import { useToast, useCalendar } from '../context';
 import { compressImageForAttendance } from '../utils/attendancePhoto';
-import { isSchoolDay } from '../utils/gesCalendar';
+import { isGeoFenceConfigured, haversineMeters } from '../utils/geo';
 
 const CAPTURE_QUALITY = 0.82;
 
+function readPosition() {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('no geolocation'));
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(resolve, reject, {
+      enableHighAccuracy: true,
+      timeout: 15000,
+    });
+  });
+}
+
 export function useMarkAttendance() {
   const { showToast } = useToast();
+  const { engine } = useCalendar();
   const [classrooms, setClassrooms] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
   const [selectedDate, setSelectedDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -33,6 +47,9 @@ export function useMarkAttendance() {
   const [capturing, setCapturing] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [location, setLocation] = useState(null);
+  const [geoSubmitState, setGeoSubmitState] = useState('idle');
+  const [geoMessage, setGeoMessage] = useState('');
+  const [geoDistanceM, setGeoDistanceM] = useState(null);
   const [isDateLocked, setIsDateLocked] = useState(false);
   const [lockStatusLoading, setLockStatusLoading] = useState(false);
   const videoRef = useRef(null);
@@ -89,16 +106,22 @@ export function useMarkAttendance() {
     [classrooms, selectedClass]
   );
 
+  const needsGeoFence = useMemo(() => {
+    const sch = selectedClassroom?.schoolId;
+    if (!sch || typeof sch !== 'object') return false;
+    return isGeoFenceConfigured(sch);
+  }, [selectedClassroom]);
+
   const setSelectedDateSafe = useCallback(
     (nextDate) => {
       const levelRef = selectedClassroom?.grade || selectedClassroom?.level || '';
-      if (nextDate && !isSchoolDay(nextDate, levelRef)) {
+      if (nextDate && !engine.isSchoolDay(nextDate, levelRef)) {
         showToast('Selected date is not a valid GES school day.', 'error');
         return;
       }
       setSelectedDate(nextDate);
     },
-    [selectedClassroom, showToast]
+    [selectedClassroom, showToast, engine]
   );
 
   // Check if selected date is locked when class + date change
@@ -131,6 +154,35 @@ export function useMarkAttendance() {
       { enableHighAccuracy: false, timeout: 5000 }
     );
   }, [selectedClass, selectedDate]);
+
+  const runGeoPreview = useCallback(() => {
+    const sch = selectedClassroom?.schoolId;
+    if (!needsGeoFence || !sch?.location) return;
+    setGeoSubmitState('checking');
+    setGeoMessage('Verifying your location…');
+    setGeoDistanceM(null);
+    readPosition()
+      .then((p) => {
+        const lat = p.coords.latitude;
+        const lng = p.coords.longitude;
+        const { latitude: slat, longitude: slng, radius } = sch.location;
+        const dist = haversineMeters(lat, lng, slat, slng);
+        const d = Math.round(dist);
+        setGeoDistanceM(d);
+        if (dist <= radius) {
+          setGeoSubmitState('ok');
+          setGeoMessage(`You are within the school boundary (~${d}m from center).`);
+        } else {
+          setGeoSubmitState('blocked');
+          setGeoMessage(`You are about ${d}m from the school center. You must be within ${radius}m to submit.`);
+        }
+      })
+      .catch(() => {
+        setGeoSubmitState('unavailable');
+        setGeoMessage('Location access is required to submit attendance while the school boundary is set. Allow location in your browser and try again.');
+        setGeoDistanceM(null);
+      });
+  }, [needsGeoFence, selectedClassroom]);
 
   const startCamera = useCallback(async () => {
     setCameraError(null);
@@ -274,24 +326,70 @@ export function useMarkAttendance() {
 
   const allDone = currentIndex >= students.length && students.length > 0;
 
+  useEffect(() => {
+    if (!allDone || !needsGeoFence) {
+      setGeoSubmitState('idle');
+      setGeoMessage('');
+      setGeoDistanceM(null);
+      return;
+    }
+    runGeoPreview();
+  }, [allDone, needsGeoFence, runGeoPreview]);
+
+  const submitBlockedByGeo = needsGeoFence && geoSubmitState !== 'ok';
+
   const handleSubmit = useCallback(async () => {
     if (!selectedClass || !allDone || entries.length === 0) return;
     const levelRef = selectedClassroom?.grade || selectedClassroom?.level || '';
-    if (!isSchoolDay(selectedDate, levelRef)) {
+    if (!engine.isSchoolDay(selectedDate, levelRef)) {
       showToast(
         'Attendance cannot be marked on weekends, holidays, BECE days, or during vacation per GES policy.',
         'error'
       );
       return;
     }
+    let coords = {};
+    if (needsGeoFence) {
+      const sch = selectedClassroom?.schoolId;
+      if (!sch?.location) {
+        showToast('School location is not configured. Contact your headteacher.', 'error');
+        return;
+      }
+      try {
+        const p = await readPosition();
+        coords = { latitude: p.coords.latitude, longitude: p.coords.longitude };
+        const dist = haversineMeters(
+          coords.latitude,
+          coords.longitude,
+          sch.location.latitude,
+          sch.location.longitude
+        );
+        if (dist > sch.location.radius) {
+          showToast(
+            `You must be within school premises to mark attendance. You are about ${Math.round(dist)}m from the school center.`,
+            'error'
+          );
+          return;
+        }
+      } catch {
+        showToast('You must be within school premises to mark attendance. Allow location access and try again.', 'error');
+        return;
+      }
+    }
+
     setSaving(true);
     try {
-      const response = await attendanceService.markDailyAttendance(selectedClass, selectedDate, entries);
+      const response = await attendanceService.markDailyAttendance(
+        selectedClass,
+        selectedDate,
+        entries,
+        coords
+      );
       if (response.success) {
         showToast(`Attendance saved for ${response.count ?? entries.length} students.`, 'success');
         setEntries([]);
         setCurrentIndex(0);
-        setIsDateLocked(true); // Just submitted = now locked
+        setIsDateLocked(true);
       } else showToast(response.message || 'Failed to save attendance', 'error');
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || 'Failed to save attendance';
@@ -299,7 +397,16 @@ export function useMarkAttendance() {
     } finally {
       setSaving(false);
     }
-  }, [selectedClass, selectedDate, entries, allDone, showToast, selectedClassroom]);
+  }, [
+    selectedClass,
+    selectedDate,
+    entries,
+    allDone,
+    showToast,
+    selectedClassroom,
+    needsGeoFence,
+    engine,
+  ]);
 
   return {
     classrooms,
@@ -339,5 +446,11 @@ export function useMarkAttendance() {
     completeCurrent,
     allDone,
     handleSubmit,
+    needsGeoFence,
+    geoSubmitState,
+    geoMessage,
+    geoDistanceM,
+    refreshGeoPreview: runGeoPreview,
+    submitBlockedByGeo,
   };
 }
