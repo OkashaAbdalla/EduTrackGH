@@ -66,6 +66,16 @@ const headteacherService = {
     const response = await apiClient.get('/headteacher/dashboard-stats');
     return response.data;
   },
+
+  getSchoolLocation: async () => {
+    const response = await apiClient.get('/headteacher/school-location');
+    return response.data;
+  },
+
+  setSchoolLocation: async (body) => {
+    const response = await apiClient.put('/headteacher/set-location', body);
+    return response.data;
+  },
 };
 
 export default headteacherService;

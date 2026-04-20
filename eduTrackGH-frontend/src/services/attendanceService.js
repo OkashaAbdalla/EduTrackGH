@@ -55,13 +55,14 @@ const attendanceService = {
   },
 
   // Mark daily attendance for a class (teacher)
-  markDailyAttendance: async (classroomId, date, attendanceData) => {
+  markDailyAttendance: async (classroomId, date, attendanceData, coords = {}) => {
     try {
-      const response = await apiClient.post("/attendance/daily", {
-        classroomId,
-        date,
-        attendanceData,
-      });
+      const payload = { classroomId, date, attendanceData };
+      if (coords.latitude != null && coords.longitude != null) {
+        payload.latitude = coords.latitude;
+        payload.longitude = coords.longitude;
+      }
+      const response = await apiClient.post("/attendance/daily", payload);
       return response.data;
     } catch (error) {
       console.error("Error marking attendance:", error);
