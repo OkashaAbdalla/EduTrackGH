@@ -18,6 +18,7 @@ const {
   getDashboardStats,
 } = require('../controllers/headteacherController');
 const { unlockAttendanceForHeadteacher } = require('../controllers/headteacher.classrooms.controller');
+const { getSchoolLocation, setSchoolLocation } = require('../controllers/headteacher.location.controller');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
 
@@ -43,5 +44,9 @@ router.get('/compliance', getTeachersCompliance);
 
 // Dashboard stats
 router.get('/dashboard-stats', getDashboardStats);
+
+// School GPS boundary for attendance
+router.get('/school-location', getSchoolLocation);
+router.put('/set-location', setSchoolLocation);
 
 module.exports = router;
