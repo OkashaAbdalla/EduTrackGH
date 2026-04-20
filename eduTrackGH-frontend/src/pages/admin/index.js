@@ -9,3 +9,4 @@ export { default as ManageHeadteachers } from './ManageHeadteachers';
 export { default as ManageSchools } from './ManageSchools';
 export { default as SystemSettings } from './SystemSettings';
 export { default as AttendanceAudit } from './AttendanceAudit';
+export { default as GesCalendarManagement } from './GesCalendarManagement';
