@@ -6,7 +6,7 @@ const Classroom = require("../models/Classroom");
 const Student = require("../models/Student");
 const DailyAttendance = require("../models/DailyAttendance");
 const { uploadAttendancePhoto } = require("../utils/cloudinary");
-const { getTermDateRange } = require("../utils/gesCalendar");
+const { getTermDateRange } = require("../services/calendarRuntime");
 const { approvedInClassroom } = require("../utils/studentQuery");
 
 const getClassroomDailyHistory = async (req, res) => {
@@ -29,7 +29,7 @@ const getClassroomDailyHistory = async (req, res) => {
     let query = { classroomId, studentId: { $in: studentIds } };
     const termUpper = typeof term === "string" ? term.trim().toUpperCase() : "";
     if (termUpper === "TERM_1" || termUpper === "TERM_2" || termUpper === "TERM_3") {
-      const range = getTermDateRange(termUpper);
+      const range = await getTermDateRange(termUpper);
       if (range) {
         const start = new Date(`${range.start}T00:00:00.000Z`);
         const end = new Date(`${range.end}T23:59:59.999Z`);

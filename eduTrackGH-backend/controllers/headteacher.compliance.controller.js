@@ -3,9 +3,11 @@
  * GET /api/headteacher/compliance?date=YYYY-MM-DD
  */
 
+const mongoose = require('mongoose');
 const Classroom = require('../models/Classroom');
 const DailyAttendance = require('../models/DailyAttendance');
 const { getClassroomLevelFilter } = require('../services/headteacherService');
+const { getEngine } = require('../services/calendarRuntime');
 
 function getSchoolId(req) {
   return req.user?.school || null;
@@ -50,17 +52,64 @@ const getTeachersCompliance = async (req, res) => {
     }
 
     const teachers = Array.from(teacherMap.values());
-    const result = [];
+    const classroomById = new Map(classrooms.map((c) => [c._id.toString(), c]));
 
-    for (const t of teachers) {
-      const attendanceForDate = await DailyAttendance.find({
-        classroomId: { $in: t.classroomIds },
+    // One calendar engine load + sync checks (avoids repeated async/DB cache work per teacher).
+    const engine = await getEngine();
+
+    const classroomIdStrings = new Set();
+    teachers.forEach((t) => {
+      t.classroomIds.forEach((cid) => classroomIdStrings.add(cid.toString()));
+    });
+    const uniqueObjectIds = [...classroomIdStrings].map((id) => new mongoose.Types.ObjectId(id));
+
+    let allRecords = [];
+    if (uniqueObjectIds.length > 0) {
+      allRecords = await DailyAttendance.find({
+        classroomId: { $in: uniqueObjectIds },
         date: dateOnly,
-      }).sort({ markedAt: 1 });
+      })
+        .sort({ markedAt: 1 })
+        .lean();
+    }
 
-      const marked = attendanceForDate.length > 0;
-      const earliest = attendanceForDate[0];
-      const markedAt = marked && earliest?.markedAt ? earliest.markedAt.toISOString() : null;
+    const recordsByClassroom = new Map();
+    for (const r of allRecords) {
+      const k = r.classroomId.toString();
+      if (!recordsByClassroom.has(k)) recordsByClassroom.set(k, []);
+      recordsByClassroom.get(k).push(r);
+    }
+
+    const result = [];
+    for (const t of teachers) {
+      let schoolDayExpected = false;
+      let schoolDayReason = null;
+      for (const cid of t.classroomIds) {
+        const cls = classroomById.get(cid.toString());
+        if (!cls) continue;
+        const level = cls.grade || cls.level || '';
+        const decision = engine.getSchoolDayDecision(dateStr, level);
+        if (decision.isSchoolDay) {
+          schoolDayExpected = true;
+          schoolDayReason = "school_day";
+          break;
+        }
+        if (!schoolDayReason) schoolDayReason = decision.reason || "not_school_day";
+      }
+
+      const merged = [];
+      for (const cid of t.classroomIds) {
+        merged.push(...(recordsByClassroom.get(cid.toString()) || []));
+      }
+      merged.sort((a, b) => {
+        const ta = a.markedAt ? new Date(a.markedAt).getTime() : new Date(a.date).getTime();
+        const tb = b.markedAt ? new Date(b.markedAt).getTime() : new Date(b.date).getTime();
+        return ta - tb;
+      });
+
+      const marked = merged.length > 0;
+      const earliest = merged[0];
+      const markedAt = marked && earliest?.markedAt ? new Date(earliest.markedAt).toISOString() : null;
 
       result.push({
         id: t.id,
@@ -69,6 +118,8 @@ const getTeachersCompliance = async (req, res) => {
         assignedClasses: t.assignedClasses,
         marked,
         markedAt,
+        schoolDayExpected,
+        schoolDayReason,
       });
     }
 

@@ -179,7 +179,14 @@ const updateSchool = async (req, res) => {
           ? nextJhsId
           : null;
 
-    Object.assign(school, rest);
+    const { location: locUpdate, ...restFields } = rest;
+    if (locUpdate && typeof locUpdate === 'object') {
+      school.location = school.location || {};
+      ['region', 'district', 'address'].forEach((k) => {
+        if (locUpdate[k] !== undefined) school.location[k] = locUpdate[k];
+      });
+    }
+    Object.assign(school, restFields);
     await school.save();
     const updatedSchool = await School.findById(id)
       .populate('headteacher', 'fullName email phone schoolLevel')

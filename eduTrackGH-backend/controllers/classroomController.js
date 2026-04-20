@@ -13,7 +13,7 @@ const getTeacherClassrooms = async (req, res) => {
 
     // Find all classrooms where this teacher is assigned
     const classrooms = await Classroom.find({ teacherId })
-      .populate("schoolId", "name")
+      .populate("schoolId", "name location")
       .select("_id name grade schoolId studentCount");
 
     res.json({

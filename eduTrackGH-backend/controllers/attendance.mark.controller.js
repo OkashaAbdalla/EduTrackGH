@@ -7,8 +7,9 @@ const { emitAttendanceSubmitted, emitComplianceUpdated } = require("../utils/soc
 
 const markDailyAttendance = async (req, res) => {
   try {
-    const { classroomId, date, attendanceData } = req.body;
+    const { classroomId, date, attendanceData, latitude, longitude } = req.body;
     const teacherId = req.user._id;
+    const clientIp = req.headers["x-forwarded-for"]?.split(",")?.[0]?.trim() || req.ip || "";
 
     if (!classroomId || !date || !Array.isArray(attendanceData) || attendanceData.length === 0) {
       return res.status(400).json({
@@ -17,21 +18,14 @@ const markDailyAttendance = async (req, res) => {
       });
     }
 
-    // Hard guard: attendance cannot be marked on weekends.
-    const dateObj = new Date(`${date}T00:00:00Z`);
-    const dayOfWeek = dateObj.getUTCDay(); // 0 = Sun, 6 = Sat
-    if (dayOfWeek === 0 || dayOfWeek === 6) {
-      return res.status(400).json({
-        success: false,
-        message: "Attendance cannot be marked on Saturday or Sunday",
-      });
-    }
-
     const { savedRecords, schoolId } = await markDaily({
       classroomId,
       date,
       attendanceData,
       teacherId,
+      teacherLatitude: latitude,
+      teacherLongitude: longitude,
+      geoAudit: { ip: clientIp },
     });
 
     const schoolIdStr = schoolId?.toString?.();
