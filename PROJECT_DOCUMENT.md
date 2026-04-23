@@ -266,3 +266,86 @@ When helping with this project:
 - **Backend:** Node/Express/MongoDB; JWT; role-based routes; key models: User, School, Classroom, Student, DailyAttendance, Notification.
 - **Frontend:** React/Vite; AuthContext + ProtectedRoute + getRoleRedirectPath; pages and services aligned with backend; no role selection in UI.
 - Use this document and the file locations in Section 5 to navigate the repo and suggest changes or next steps.
+
+---
+
+## 11. Recent Major Updates (New)
+
+### 11.1 GES Calendar (Database-Driven + Runtime Engine)
+
+- Added dynamic GES calendar management (admin CRUD + activate academic year) backed by MongoDB.
+- Added runtime calendar engine with in-memory cache, TTL, and invalidation:
+  - backend: `services/calendarRuntime.js`
+  - frontend: `utils/gesCalendarEngine.js`, `context/CalendarContext.jsx`
+- School-day decisions now use centralized rules:
+  - weekend (Sat/Sun),
+  - term window,
+  - before resumption,
+  - holidays,
+  - vacation,
+  - BECE (JHS3).
+- Compliance and attendance logic now consume the same calendar decision path to avoid conflicting behavior.
+
+### 11.2 Attendance/Compliance Performance Improvements
+
+- Calendar API and attendance/compliance use shared cached engine (avoids repeated DB hits).
+- Added lean reads and index improvements for calendar lookups.
+- Removed expensive repeated calendar fetch patterns in hot paths.
+- Frontend calendar fetch deduped and non-blocking (fallback engine available immediately).
+
+### 11.3 Parent Monitoring (Real Data, No Mocks)
+
+- Added parent monitoring endpoints:
+  - `GET /api/parent/attendance-overview`
+  - `GET /api/parent/attendance-records?studentId=...&month=YYYY-MM`
+- Parent dashboard and children attendance pages now use real attendance records.
+- Attendance overview includes:
+  - total school days (term-aware),
+  - present,
+  - absent,
+  - late,
+  - attendance percentage,
+  - simple status (good / needs improvement).
+
+### 11.4 Parent Notifications Expanded
+
+- Notification model supports: `present`, `absence`, `late`, `warning`.
+- Notification APIs include unread count + bulk mark-read:
+  - `GET /api/notifications` (includes `unreadCount`)
+  - `PATCH /api/notifications/:id/read`
+  - `PATCH /api/notifications/read-all`
+- Parent notification pipeline is async and deduped:
+  - creates DB notifications,
+  - sends email asynchronously,
+  - warns on repeated absences (threshold-based),
+  - does not block attendance save on email failure.
+
+### 11.5 Parent Dashboard Sound Alerts
+
+- Parent dashboard and notifications page poll for unread notification changes.
+- Plays a loud multi-beep alert (Web Audio API) when unread count increases.
+- Browser autoplay restrictions may require at least one user interaction before sound.
+
+### 11.6 Parent–Student Linking Fixes
+
+- Implemented email-authoritative parent-child reconciliation to prevent cross-parent contamination.
+- Student registration/approval now normalizes parent email and links to parent `User` safely.
+- Parent monitoring endpoint can reconcile links by canonical parent email when needed.
+- Result: parent dashboards show only children whose `student.parentEmail` matches parent account email.
+
+### 11.7 Forgot Password / Reset Password (Parent Only)
+
+- Added secure parent password reset flow:
+  - `POST /api/auth/forgot-password`
+  - `POST /api/auth/reset-password`
+- Security behavior:
+  - generic forgot response (no account enumeration),
+  - secure random token,
+  - token hash stored (`passwordResetTokenHash`), raw token never persisted,
+  - token expiry (30 minutes),
+  - single-use token invalidation after successful reset,
+  - password updated through existing hashing pipeline.
+- Added frontend public pages/routes:
+  - `/forgot-password`
+  - `/reset-password`
+- Login page now links to Forgot Password.
