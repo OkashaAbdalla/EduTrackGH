@@ -32,6 +32,14 @@ import {
   AttendanceAudit,
   SystemSettings,
   GesCalendarManagement,
+  AdminUsers,
+  AdminStudents,
+  AdminClassrooms,
+  AdminGpsAudit,
+  AdminAuditLogs,
+  AdminAlerts,
+  AdminAnalytics,
+  AdminNotificationControl,
 } from './pages/admin';
 import { ProtectedRoute } from './components/common';
 import { ROUTES, ROLES } from './utils/constants';
@@ -87,6 +95,14 @@ function App() {
           <Route path={ROUTES.ATTENDANCE_AUDIT} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AttendanceAudit /></ProtectedRoute>} />
           <Route path={ROUTES.GES_CALENDAR} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><GesCalendarManagement /></ProtectedRoute>} />
           <Route path={ROUTES.SYSTEM_SETTINGS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><SystemSettings /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_USERS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminUsers /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_STUDENTS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminStudents /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_CLASSROOMS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminClassrooms /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_GPS_AUDIT} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminGpsAudit /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_AUDIT_LOGS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminAuditLogs /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_ALERTS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminAlerts /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_ANALYTICS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminAnalytics /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_NOTIFICATION_CONTROL} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminNotificationControl /></ProtectedRoute>} />
           
           {/* Catch all - redirect to home */}
           <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />

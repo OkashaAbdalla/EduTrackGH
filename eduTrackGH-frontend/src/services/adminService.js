@@ -167,6 +167,86 @@ const adminService = {
     cacheService.invalidate('/admin/headteachers');
     return response.data;
   },
+
+  getSystemOverview: async () => {
+    const response = await apiClient.get('/admin/system-overview');
+    return response.data;
+  },
+
+  getGpsSettings: async () => {
+    const response = await apiClient.get('/admin/gps-settings');
+    return response.data;
+  },
+
+  updateGpsSettings: async (payload) => {
+    const response = await apiClient.put('/admin/gps-settings', payload);
+    return response.data;
+  },
+
+  getGpsLogs: async (params = {}) => {
+    const response = await apiClient.get('/admin/gps-logs', { params });
+    return response.data;
+  },
+
+  getAlerts: async () => {
+    const response = await apiClient.get('/admin/alerts');
+    return response.data;
+  },
+
+  getUsers: async (params = {}) => {
+    const response = await apiClient.get('/admin/users', { params });
+    return response.data;
+  },
+
+  updateUserStatus: async (id, payload) => {
+    const response = await apiClient.patch(`/admin/users/${id}/status`, payload);
+    return response.data;
+  },
+
+  getStudents: async (params = {}) => {
+    const response = await apiClient.get('/admin/students', { params });
+    return response.data;
+  },
+
+  getStudentById: async (id) => {
+    const response = await apiClient.get(`/admin/students/${id}`);
+    return response.data;
+  },
+
+  getClassroomsGlobal: async () => {
+    const response = await apiClient.get('/admin/classrooms');
+    return response.data;
+  },
+
+  getClassroomById: async (id) => {
+    const response = await apiClient.get(`/admin/classrooms/${id}`);
+    return response.data;
+  },
+
+  getAuditLogs: async () => {
+    const response = await apiClient.get('/admin/audit-logs');
+    return response.data;
+  },
+
+  getAnalytics: async () => {
+    const response = await apiClient.get('/admin/analytics');
+    return response.data;
+  },
+
+  getNotificationSettingsControl: async () => {
+    const response = await apiClient.get('/admin/notification-settings');
+    return response.data;
+  },
+
+  updateNotificationSettingsControl: async (payload) => {
+    const response = await apiClient.put('/admin/notification-settings', payload);
+    return response.data;
+  },
+
+  exportSystemData: async () => {
+    const response = await apiClient.get('/admin/export');
+    return response.data;
+  },
 };
 
 export default adminService;

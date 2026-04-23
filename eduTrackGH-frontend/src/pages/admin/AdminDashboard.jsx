@@ -17,6 +17,9 @@ const AdminDashboard = () => {
     totalHeadteachers: 0,
     totalTeachers: 0,
     totalStudents: 0,
+    attendanceRate: 0,
+    activeSchools: 0,
+    inactiveSchools: 0,
   });
   const [loading, setLoading] = useState(true);
 
@@ -34,7 +37,12 @@ const AdminDashboard = () => {
         // Always fetch fresh data in background
         const response = await adminService.getStats(false);
         if (response.success && response.stats) {
-          setStats(response.stats);
+          setStats((prev) => ({ ...prev, ...response.stats }));
+        }
+
+        const overview = await adminService.getSystemOverview();
+        if (overview?.overview) {
+          setStats((prev) => ({ ...prev, ...overview.overview }));
         }
       } catch (error) {
         console.error('Failed to load stats:', error);
@@ -124,6 +132,21 @@ const AdminDashboard = () => {
             </Card>
           </div>
         )}
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <Card className="p-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Overall Attendance Rate</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.attendanceRate || 0}%</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Active Schools</p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.activeSchools || 0}</p>
+          </Card>
+          <Card className="p-4">
+            <p className="text-sm text-gray-500 dark:text-gray-400">Inactive Schools</p>
+            <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.inactiveSchools || 0}</p>
+          </Card>
+        </div>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-5">

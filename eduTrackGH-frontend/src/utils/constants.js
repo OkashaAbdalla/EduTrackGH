@@ -62,6 +62,14 @@ export const ROUTES = {
   ATTENDANCE_AUDIT: '/admin/attendance-audit',
   SYSTEM_SETTINGS: '/admin/settings',
   GES_CALENDAR: '/admin/ges-calendar',
+  ADMIN_USERS: '/admin/users',
+  ADMIN_STUDENTS: '/admin/students',
+  ADMIN_CLASSROOMS: '/admin/classrooms',
+  ADMIN_GPS_AUDIT: '/admin/gps-audit',
+  ADMIN_AUDIT_LOGS: '/admin/audit-logs',
+  ADMIN_ALERTS: '/admin/alerts',
+  ADMIN_ANALYTICS: '/admin/analytics',
+  ADMIN_NOTIFICATION_CONTROL: '/admin/notification-control',
 };
 
 // ========================================
