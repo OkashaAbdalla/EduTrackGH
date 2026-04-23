@@ -7,37 +7,57 @@ import { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
+import parentService from '../../services/parentService';
 
 const ChildrenAttendance = () => {
   const { childId } = useParams();
   const [selectedChild, setSelectedChild] = useState(childId || '');
   const [selectedMonth, setSelectedMonth] = useState(new Date().toISOString().slice(0, 7));
   const [records, setRecords] = useState([]);
+  const [studentInfo, setStudentInfo] = useState(null);
+  const [children, setChildren] = useState([]);
   const [loading, setLoading] = useState(false);
 
-  // Mock children
-  const children = [
-    { id: 1, name: 'Kofi Mensah', class: 'Primary 4' },
-    { id: 2, name: 'Ama Mensah', class: 'JHS 2' },
-  ];
-
-  // Mock attendance records
-  const mockRecords = [
-    { date: '2024-02-01', status: 'present' },
-    { date: '2024-02-02', status: 'present' },
-    { date: '2024-02-03', status: 'absent' },
-    { date: '2024-02-04', status: 'present' },
-    { date: '2024-02-05', status: 'late' },
-  ];
+  useEffect(() => {
+    const loadChildren = async () => {
+      try {
+        const overview = await parentService.getAttendanceOverview();
+        const list = overview?.children || [];
+        setChildren(list);
+        if (!selectedChild && list.length > 0) {
+          setSelectedChild(list[0].studentId);
+        }
+      } catch (error) {
+        setChildren([]);
+      }
+    };
+    loadChildren();
+  }, [childId, selectedChild]);
 
   useEffect(() => {
-    if (selectedChild) {
-      setLoading(true);
-      setTimeout(() => {
-        setRecords(mockRecords);
+    if (!selectedChild) return;
+    const load = async () => {
+      try {
+        setLoading(true);
+        const response = await parentService.getChildAttendanceRecords({
+          studentId: selectedChild,
+          month: selectedMonth,
+        });
+        if (response.success) {
+          setRecords(response.records || []);
+          setStudentInfo(response.student || null);
+        } else {
+          setRecords([]);
+          setStudentInfo(null);
+        }
+      } catch (error) {
+        setRecords([]);
+        setStudentInfo(null);
+      } finally {
         setLoading(false);
-      }, 500);
-    }
+      }
+    };
+    load();
   }, [selectedChild, selectedMonth]);
 
   const getStatusBadge = (status) => {
@@ -65,25 +85,14 @@ const ChildrenAttendance = () => {
       <div className="space-y-6 max-w-5xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Children Attendance</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">View detailed attendance records</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            {studentInfo ? `${studentInfo.name} • ${studentInfo.className}` : 'View detailed attendance records'}
+          </p>
         </div>
 
         {/* Filters */}
         <Card className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Child</label>
-              <select
-                value={selectedChild}
-                onChange={(e) => setSelectedChild(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
-              >
-                <option value="">Choose a child...</option>
-                {children.map(child => (
-                  <option key={child.id} value={child.id}>{child.name} - {child.class}</option>
-                ))}
-              </select>
-            </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Month</label>
               <input
@@ -92,6 +101,21 @@ const ChildrenAttendance = () => {
                 onChange={(e) => setSelectedMonth(e.target.value)}
                 className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
               />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Select Child</label>
+              <select
+                value={selectedChild}
+                onChange={(e) => setSelectedChild(e.target.value)}
+                className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+              >
+                <option value="">Choose a child...</option>
+                {children.map((child) => (
+                  <option key={child.studentId} value={child.studentId}>
+                    {child.studentName} - {child.className}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
         </Card>
@@ -115,8 +139,8 @@ const ChildrenAttendance = () => {
 
             <Card className="p-6">
               <div className="space-y-3">
-                {records.map((record, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                {records.map((record) => (
+                  <div key={`${record.date}-${record.status}`} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
                     <span className="font-medium text-gray-900 dark:text-white">{formatDate(record.date)}</span>
                     <span className={`px-4 py-1.5 rounded-full text-sm font-medium capitalize ${getStatusBadge(record.status)}`}>
                       {record.status}
@@ -126,6 +150,11 @@ const ChildrenAttendance = () => {
               </div>
             </Card>
           </>
+        )}
+        {selectedChild && !loading && records.length === 0 && (
+          <Card className="p-6">
+            <p className="text-gray-600 dark:text-gray-400">No attendance records found for this period.</p>
+          </Card>
         )}
       </div>
     </DashboardLayout>

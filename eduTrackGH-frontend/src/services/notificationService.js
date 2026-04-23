@@ -25,6 +25,16 @@ const notificationService = {
       return { success: false, message: error.response?.data?.message || error.message };
     }
   },
+
+  markAllAsRead: async () => {
+    try {
+      const response = await apiClient.patch('/notifications/read-all');
+      return response.data;
+    } catch (error) {
+      console.error('Error marking all notifications read:', error);
+      return { success: false, message: error.response?.data?.message || error.message };
+    }
+  },
 };
 
 export default notificationService;

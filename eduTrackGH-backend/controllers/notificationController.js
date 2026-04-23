@@ -9,10 +9,13 @@ const Student = require("../models/Student");
 const getMyNotifications = async (req, res) => {
   try {
     const parentId = req.user._id;
-    const notifications = await Notification.find({ parentId })
+    const [notifications, unreadCount] = await Promise.all([
+      Notification.find({ parentId })
       .populate("studentId", "fullName studentIdNumber")
       .sort({ createdAt: -1 })
-      .limit(100);
+      .limit(100),
+      Notification.countDocuments({ parentId, read: false }),
+    ]);
 
     const list = notifications.map((n) => ({
       id: n._id,
@@ -21,10 +24,18 @@ const getMyNotifications = async (req, res) => {
       message: n.message,
       date: n.date.toISOString().split("T")[0],
       read: n.read,
+      status:
+        n.type === "absence"
+          ? "Absent"
+          : n.type === "late"
+          ? "Late"
+          : n.type === "present"
+          ? "Present"
+          : "Warning",
       createdAt: n.createdAt,
     }));
 
-    res.json({ success: true, notifications: list });
+    res.json({ success: true, notifications: list, unreadCount });
   } catch (error) {
     console.error("getMyNotifications error:", error);
     res.status(500).json({ success: false, message: "Failed to get notifications" });
@@ -48,4 +59,14 @@ const markAsRead = async (req, res) => {
   }
 };
 
-module.exports = { getMyNotifications, markAsRead };
+const markAllAsRead = async (req, res) => {
+  try {
+    const parentId = req.user._id;
+    await Notification.updateMany({ parentId, read: false }, { $set: { read: true } });
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to update notifications" });
+  }
+};
+
+module.exports = { getMyNotifications, markAsRead, markAllAsRead };

@@ -3,27 +3,73 @@
  * Purpose: View children's attendance for smartphone parents
  */
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { ROUTES } from '../../utils/constants';
 import { Card } from '../../components/common';
+import parentService from '../../services/parentService';
+import notificationService from '../../services/notificationService';
 
 const ParentDashboard = () => {
   const [children, setChildren] = useState([]);
+  const [term, setTerm] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const previousUnreadRef = useRef(0);
+
+  const playAlertSound = () => {
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const beep = (freq, start, duration) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.value = freq;
+        gain.gain.value = 0.85;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(ctx.currentTime + start);
+        osc.stop(ctx.currentTime + start + duration);
+      };
+      beep(880, 0, 0.18);
+      beep(1240, 0.2, 0.18);
+      beep(1560, 0.4, 0.2);
+    } catch (e) {
+      // Browser may block autoplay sound until user interaction.
+    }
+  };
 
   useEffect(() => {
-    // TODO: Replace with real API call
-    const fetchChildren = async () => {
-      await new Promise(resolve => setTimeout(resolve, 800));
-      setChildren([
-        { id: 1, name: 'Kofi Mensah', class: 'Primary 4', attendanceRate: 95, recentAbsences: 0 },
-        { id: 2, name: 'Ama Mensah', class: 'JHS 2', attendanceRate: 88, recentAbsences: 2 },
-      ]);
-      setLoading(false);
+    const loadDashboard = async (withSound = false) => {
+      try {
+        if (!withSound) setLoading(true);
+        const [overview, notifRes] = await Promise.all([
+          parentService.getAttendanceOverview(),
+          notificationService.getMyNotifications(),
+        ]);
+        setChildren(overview?.children || []);
+        setTerm(overview?.term || null);
+        setNotifications((notifRes?.notifications || []).slice(0, 5));
+        const latestUnread = notifRes?.unreadCount || 0;
+        setUnreadCount(latestUnread);
+        if (withSound && latestUnread > previousUnreadRef.current) {
+          playAlertSound();
+        }
+        previousUnreadRef.current = latestUnread;
+      } catch (error) {
+        setChildren([]);
+        setTerm(null);
+        setNotifications([]);
+        setUnreadCount(0);
+      } finally {
+        if (!withSound) setLoading(false);
+      }
     };
-    fetchChildren();
+    loadDashboard(false);
+    const pollId = setInterval(() => loadDashboard(true), 15000);
+    return () => clearInterval(pollId);
   }, []);
 
   if (loading) {
@@ -43,38 +89,54 @@ const ParentDashboard = () => {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Parent Dashboard</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Monitor your children's attendance and receive alerts</p>
+          {term && (
+            <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">
+              Active term: {term.name} ({term.start} to {term.end})
+            </p>
+          )}
         </div>
 
         {/* Children List */}
         <div>
           {children.map((child) => (
-            <Link key={child.id} to={`${ROUTES.CHILDREN_ATTENDANCE}/${child.id}`} className="block mb-6">
+            <Link key={child.studentId} to={`${ROUTES.CHILDREN_ATTENDANCE}/${child.studentId}`} className="block mb-6">
               <Card variant="action" hover className="p-8 group cursor-pointer transition-shadow duration-300 hover:shadow-xl">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-4 flex-1">
                     <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
-                      <span className="text-2xl font-bold text-white">{child.name.charAt(0)}</span>
+                      <span className="text-2xl font-bold text-white">{(child.studentName || 'C').charAt(0)}</span>
                     </div>
                     <div className="flex-1">
-                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{child.name}</h3>
-                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{child.class}</p>
+                      <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-1">{child.studentName}</h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{child.className}</p>
                       <div className="flex items-center space-x-6">
                         <div className="flex items-center space-x-2">
                           <div className="w-2 h-2 bg-green-500 rounded-full"></div>
                           <div>
                             <p className="text-xs text-gray-500 dark:text-gray-500">Attendance Rate</p>
-                            <p className="text-lg font-bold text-green-600 dark:text-green-400">{child.attendanceRate}%</p>
+                            <p className="text-lg font-bold text-green-600 dark:text-green-400">
+                              {child.attendancePercentage}%
+                            </p>
                           </div>
                         </div>
-                        {child.recentAbsences > 0 && (
-                          <div className="flex items-center space-x-2">
-                            <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                            <div>
-                              <p className="text-xs text-gray-500 dark:text-gray-500">Recent Absences</p>
-                              <p className="text-lg font-bold text-red-600 dark:text-red-400">{child.recentAbsences}</p>
-                            </div>
+                        <div className="flex items-center space-x-2">
+                          <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                          <div>
+                            <p className="text-xs text-gray-500 dark:text-gray-500">Absent</p>
+                            <p className="text-lg font-bold text-red-600 dark:text-red-400">{child.absent}</p>
                           </div>
-                        )}
+                        </div>
+                      </div>
+                      <div className="mt-3">
+                        <div className="w-full h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div
+                            className="h-2 bg-green-600 dark:bg-green-500"
+                            style={{ width: `${Math.min(child.attendancePercentage || 0, 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 dark:text-gray-500 mt-1">
+                          Present: {child.present} • Late: {child.late} • Total school days: {child.totalSchoolDays}
+                        </p>
                       </div>
                     </div>
                   </div>
@@ -87,7 +149,38 @@ const ParentDashboard = () => {
               </Card>
             </Link>
           ))}
+          {children.length === 0 && (
+            <Card className="p-6">
+              <p className="text-gray-600 dark:text-gray-400">No linked children found for this parent account.</p>
+            </Card>
+          )}
         </div>
+
+        <Card className="p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Notifications</h2>
+            <Link to={ROUTES.PARENT_NOTIFICATIONS} className="text-sm font-semibold text-green-600 dark:text-green-400">
+              View all
+            </Link>
+          </div>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">Unread alerts: {unreadCount}</p>
+          <div className="space-y-2">
+            {notifications.map((notif) => (
+              <div
+                key={notif.id}
+                className={`rounded-lg p-3 border ${notif.read ? 'border-gray-200 dark:border-gray-700' : 'border-green-400'}`}
+              >
+                <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                  {notif.child} • {notif.status || 'Update'}
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">{notif.message}</p>
+              </div>
+            ))}
+            {notifications.length === 0 && (
+              <p className="text-sm text-gray-500 dark:text-gray-500">No notifications yet.</p>
+            )}
+          </div>
+        </Card>
 
         {/* Quick Actions */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
