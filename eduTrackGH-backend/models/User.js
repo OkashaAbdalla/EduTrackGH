@@ -73,6 +73,15 @@ const userSchema = new mongoose.Schema({
   verificationToken: {
     type: String,
   },
+  passwordResetTokenHash: {
+    type: String,
+    default: '',
+    select: false,
+  },
+  passwordResetExpiresAt: {
+    type: Date,
+    select: false,
+  },
   // Account status
   isActive: {
     type: Boolean,
@@ -128,5 +137,7 @@ userSchema.methods.getPublicProfile = function() {
     avatarUrl: this.avatarUrl,
   };
 };
+
+userSchema.index({ passwordResetTokenHash: 1 });
 
 module.exports = mongoose.model('User', userSchema);

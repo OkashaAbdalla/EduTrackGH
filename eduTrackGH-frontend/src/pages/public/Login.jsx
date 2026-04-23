@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Login Page with Toast Notifications
  */
 
@@ -140,6 +140,14 @@ const Login = () => {
           </span>
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent translate-x-[-200%] group-hover:translate-x-[200%] transition-transform duration-700"></div>
         </button>
+        <div className="text-right">
+          <Link
+            to={ROUTES.FORGOT_PASSWORD}
+            className="text-sm font-semibold text-green-600 dark:text-green-400 hover:underline"
+          >
+            Forgot password?
+          </Link>
+        </div>
       </form>
 
       <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">

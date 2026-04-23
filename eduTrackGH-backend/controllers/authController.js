@@ -232,6 +232,100 @@ const resendVerification = async (req, res) => {
   }
 };
 
+const forgotPassword = async (req, res) => {
+  try {
+    const email = String(req.body?.email || '').toLowerCase().trim();
+    const genericMessage = 'If this email exists, a reset link has been sent.';
+    if (!email) return res.json({ success: true, message: genericMessage });
+
+    const user = await User.findOne({ email, role: 'parent' }).select('_id fullName email role');
+    if (!user) return res.json({ success: true, message: genericMessage });
+
+    const rawToken = crypto.randomBytes(32).toString('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
+
+    await User.updateOne(
+      { _id: user._id },
+      {
+        $set: {
+          passwordResetTokenHash: tokenHash,
+          passwordResetExpiresAt: expiresAt,
+        },
+      }
+    );
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+    setImmediate(() => {
+      sendEmail({
+        to: user.email,
+        subject: 'Reset Your Password - EduTrack GH',
+        html: `
+          <!DOCTYPE html>
+          <html>
+          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+            <div style="max-width: 600px; margin: 0 auto; padding: 16px;">
+              <h2 style="color:#006838;">Password Reset Request</h2>
+              <p>Hello ${user.fullName || 'Parent'},</p>
+              <p>We received a request to reset your EduTrack GH parent account password.</p>
+              <p>
+                Click this link to reset your password:
+                <br />
+                <a href="${resetLink}">${resetLink}</a>
+              </p>
+              <p>This link expires in 30 minutes and can only be used once.</p>
+              <p>If you did not request this, you can ignore this email.</p>
+            </div>
+          </body>
+          </html>
+        `,
+      }).catch((err) => console.error('forgotPassword email error:', err.message));
+    });
+
+    return res.json({ success: true, message: genericMessage });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to process request' });
+  }
+};
+
+const resetPassword = async (req, res) => {
+  try {
+    const token = String(req.body?.token || '').trim();
+    const newPassword = String(req.body?.password || '');
+    const confirmPassword = String(req.body?.confirmPassword || '');
+
+    if (!token || !newPassword || !confirmPassword) {
+      return res.status(400).json({ success: false, message: 'token, password and confirmPassword are required' });
+    }
+    if (newPassword !== confirmPassword) {
+      return res.status(400).json({ success: false, message: 'Passwords do not match' });
+    }
+    if (newPassword.length < 8) {
+      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
+    }
+
+    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const user = await User.findOne({
+      role: 'parent',
+      passwordResetTokenHash: tokenHash,
+      passwordResetExpiresAt: { $gt: new Date() },
+    }).select('+password +passwordResetTokenHash +passwordResetExpiresAt');
+
+    if (!user) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired reset token' });
+    }
+
+    user.password = newPassword;
+    user.passwordResetTokenHash = '';
+    user.passwordResetExpiresAt = undefined;
+    await user.save();
+
+    return res.json({ success: true, message: 'Password reset successful. You can now log in.' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to reset password' });
+  }
+};
+
 /**
  * Admin-only login - MUST be called from isolated admin endpoint only.
  * Rejects non-admin users even with correct credentials.
@@ -283,6 +377,8 @@ module.exports = {
   getMe,
   logout,
   resendVerification,
+  forgotPassword,
+  resetPassword,
   uploadProfilePhotoHandler,
   deleteProfilePhotoHandler,
 };

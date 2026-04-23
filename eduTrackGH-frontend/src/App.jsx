@@ -12,7 +12,7 @@
 
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, ToastProvider, AuthProvider, SocketProvider, CalendarProvider } from './context';
-import { Landing, Login, Register, VerifyEmail } from './pages/public';
+import { Landing, Login, Register, VerifyEmail, ForgotPassword, ResetPassword } from './pages/public';
 import {
   TeacherDashboard,
   MarkAttendance,
@@ -48,6 +48,8 @@ function App() {
           {/* Public Routes */}
           <Route path={ROUTES.HOME} element={<Landing />} />
           <Route path={ROUTES.LOGIN} element={<Login />} />
+          <Route path={ROUTES.FORGOT_PASSWORD} element={<ForgotPassword />} />
+          <Route path={ROUTES.RESET_PASSWORD} element={<ResetPassword />} />
           <Route path={ROUTES.REGISTER} element={<Register />} />
           <Route path={ROUTES.VERIFY_EMAIL} element={<VerifyEmail />} />
           

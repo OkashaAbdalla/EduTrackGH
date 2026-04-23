@@ -14,6 +14,8 @@ const {
   getMe,
   logout,
   resendVerification,
+  forgotPassword,
+  resetPassword,
   uploadProfilePhotoHandler,
   deleteProfilePhotoHandler,
 } = require('../controllers/authController');
@@ -31,6 +33,8 @@ router.post('/login', loginLimiter, validationRules.login, validate, login);
 router.post('/verify-email', verifyEmail);
 router.post('/resend-verification', resendVerification);
 router.post('/verification-status', checkVerificationStatus);
+router.post('/forgot-password', forgotPassword);
+router.post('/reset-password', resetPassword);
 
 // Protected routes
 router.get('/me', protect, getMe);
