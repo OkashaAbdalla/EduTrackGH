@@ -25,6 +25,8 @@ export const ROLES = {
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
+  FORGOT_PASSWORD: '/forgot-password',
+  RESET_PASSWORD: '/reset-password',
   REGISTER: '/register',
   VERIFY_EMAIL: '/verify-email',
   

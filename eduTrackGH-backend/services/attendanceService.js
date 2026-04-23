@@ -2,15 +2,14 @@
  * Attendance service – mark daily attendance, notifications, locking, flags
  */
 
-const User = require("../models/User");
 const Classroom = require("../models/Classroom");
 const Student = require("../models/Student");
 const DailyAttendance = require("../models/DailyAttendance");
 const AttendanceFlag = require("../models/AttendanceFlag");
-const Notification = require("../models/Notification");
 const { sendSms } = require("../utils/sendSms");
 const { handleAbsenceNotification } = require("../services/emailService");
 const { getSchoolDayDecision } = require("./calendarRuntime");
+const { queueParentAttendanceAlert, dateToIso } = require("./parentNotificationService");
 const { approvedInClassroom } = require("../utils/studentQuery");
 const School = require("../models/School");
 const { haversineMeters, isGeoFenceActive } = require("../utils/geo");
@@ -210,6 +209,7 @@ async function markDailyAttendance({
         : undefined;
 
     const existing = await DailyAttendance.findOne({ classroomId, date: dateOnly, studentId });
+    const previousStatus = existing?.status || null;
     if (existing) {
       if (existing.isLocked) throw { status: 403, message: "Attendance is locked for this classroom and date. Contact admin to unlock." };
       existing.status = status;
@@ -237,27 +237,32 @@ async function markDailyAttendance({
       savedRecords.push(record);
     }
 
-    if (status === "absent" || status === "late") {
-      const parent = await User.findOne({ role: "parent", children: studentId });
+    if (status === "absent" || status === "late" || status === "present") {
       const msg =
         status === "absent"
           ? `${student.fullName} was absent from school on ${dateOnly.toLocaleDateString()}. - EduTrack GH`
-          : `${student.fullName} arrived late to school on ${dateOnly.toLocaleDateString()}. - EduTrack GH`;
-      if (parent) {
-        await Notification.create({
-          parentId: parent._id,
+          : status === "late"
+          ? `${student.fullName} arrived late to school on ${dateOnly.toLocaleDateString()}. - EduTrack GH`
+          : `${student.fullName} was present in school on ${dateOnly.toLocaleDateString()}. - EduTrack GH`;
+      if (smsEnabled && student.parentPhone && (status === "absent" || status === "late")) {
+        sendSms(student.parentPhone, msg)
+          .then((r) => !r.success && console.warn("SMS failed", student.parentPhone, r.message))
+          .catch((e) => console.warn("SMS error", student.parentPhone, e.message));
+      }
+      const normalizedIso = dateToIso(dateOnly);
+      if (normalizedIso && status !== previousStatus) {
+        queueParentAttendanceAlert({
           studentId,
-          type: status === "absent" ? "absence" : "late",
-          message: msg,
-          channel: "sms",
-          date: dateOnly,
+          classroomId,
+          schoolId,
+          dateIso: normalizedIso,
+          status,
         });
-        if (smsEnabled && student.parentPhone) {
-          sendSms(student.parentPhone, msg).then((r) => !r.success && console.warn("SMS failed", student.parentPhone, r.message)).catch((e) => console.warn("SMS error", student.parentPhone, e.message));
-        }
-        if (status === "absent") {
-          handleAbsenceNotification({ studentId, classroomId, date: dateOnly }).catch((e) => console.warn("handleAbsenceNotification error:", e.message));
-        }
+      }
+      if (status === "absent" && status !== previousStatus) {
+        handleAbsenceNotification({ studentId, classroomId, date: dateOnly }).catch((e) =>
+          console.warn("handleAbsenceNotification error:", e.message)
+        );
       }
     }
   }

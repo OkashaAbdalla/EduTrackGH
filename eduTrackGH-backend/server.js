@@ -49,6 +49,7 @@ app.use("/api/reports", require("./routes/reportsRoutes"));
 app.use("/api/messages", require("./routes/teacherMessageRoutes"));
 app.use("/api/chat", require("./routes/chatRoutes"));
 app.use("/api/calendar", require("./routes/calendarRoutes"));
+app.use("/api/parent", require("./routes/parentRoutes"));
 
 // Health check
 app.get("/api/health", (req, res) => {

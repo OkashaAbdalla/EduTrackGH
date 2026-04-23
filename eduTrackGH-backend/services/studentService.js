@@ -6,7 +6,7 @@
 const Student = require('../models/Student');
 const Classroom = require('../models/Classroom');
 const Parent = require('../models/Parent');
-const { findOrCreateParent, linkStudentToParent } = require('./parentService');
+const { findOrCreateParent, linkStudentToParent, linkStudentToParentUser } = require('./parentService');
 
 const studentPopulate = [
   { path: 'parent', select: 'fullName email phone' },
@@ -28,6 +28,7 @@ function addStudentToClassroom(classroom, studentId) {
 async function proposeStudent({ teacherId, body }) {
   const { fullName, dateOfBirth, gender, classroomId, grade, parentPhone, parentName, parentEmail, studentId, admissionNumber } = body || {};
   const admission = (admissionNumber || studentId || '').trim();
+  const normalizedParentEmail = parentEmail ? String(parentEmail).toLowerCase().trim() : '';
 
   const classroom = await Classroom.findById(classroomId).populate('schoolId', '_id name');
   if (!classroom) throw { status: 404, message: 'Classroom not found' };
@@ -39,7 +40,7 @@ async function proposeStudent({ teacherId, body }) {
   const existing = await Student.findOne({ schoolId, admissionNumber: admission });
   if (existing) throw { status: 400, message: 'A student with this admission number already exists in this school' };
 
-  const parent = await findOrCreateParent({ fullName: parentName, email: parentEmail, phone: parentPhone });
+  const parent = await findOrCreateParent({ fullName: parentName, email: normalizedParentEmail, phone: parentPhone });
 
   const student = await Student.create({
     studentId: admission.toUpperCase(),
@@ -52,7 +53,7 @@ async function proposeStudent({ teacherId, body }) {
     grade: grade || classroom.grade,
     parentPhone: parentPhone || '',
     parentName: parentName || '',
-    parentEmail: parentEmail || '',
+    parentEmail: normalizedParentEmail || '',
     parent: parent._id,
     admissionNumber: admission,
     status: 'pending',
@@ -63,6 +64,11 @@ async function proposeStudent({ teacherId, body }) {
   });
 
   await linkStudentToParent(parent._id, student._id);
+  await linkStudentToParentUser({
+    studentId: student._id,
+    parentEmail: normalizedParentEmail || parent?.email,
+    parentPhone: parentPhone || parent?.phone,
+  });
 
   return Student.findById(student._id).populate(studentPopulate);
 }
@@ -73,6 +79,7 @@ async function proposeStudent({ teacherId, body }) {
 async function registerStudentByHeadteacher({ headteacherId, schoolId, body }) {
   const { fullName, dateOfBirth, gender, classroomId, grade, parentPhone, parentName, parentEmail, studentId, admissionNumber } = body || {};
   const admission = (admissionNumber || studentId || '').trim();
+  const normalizedParentEmail = parentEmail ? String(parentEmail).toLowerCase().trim() : '';
 
   const classroom = await Classroom.findById(classroomId);
   if (!classroom) throw { status: 404, message: 'Classroom not found' };
@@ -83,7 +90,7 @@ async function registerStudentByHeadteacher({ headteacherId, schoolId, body }) {
   const existing = await Student.findOne({ schoolId, admissionNumber: admission });
   if (existing) throw { status: 400, message: 'A student with this admission number already exists in this school' };
 
-  const parent = await findOrCreateParent({ fullName: parentName, email: parentEmail, phone: parentPhone });
+  const parent = await findOrCreateParent({ fullName: parentName, email: normalizedParentEmail, phone: parentPhone });
 
   const student = await Student.create({
     studentId: admission.toUpperCase(),
@@ -96,7 +103,7 @@ async function registerStudentByHeadteacher({ headteacherId, schoolId, body }) {
     grade: grade || classroom.grade,
     parentPhone: parentPhone || '',
     parentName: parentName || '',
-    parentEmail: parentEmail || '',
+    parentEmail: normalizedParentEmail || '',
     parent: parent._id,
     admissionNumber: admission,
     status: 'active',
@@ -109,6 +116,11 @@ async function registerStudentByHeadteacher({ headteacherId, schoolId, body }) {
 
   if (addStudentToClassroom(classroom, student._id)) await classroom.save();
   await linkStudentToParent(parent._id, student._id);
+  await linkStudentToParentUser({
+    studentId: student._id,
+    parentEmail: normalizedParentEmail || parent?.email,
+    parentPhone: parentPhone || parent?.phone,
+  });
 
   return Student.findById(student._id).populate(studentPopulate);
 }
@@ -179,6 +191,11 @@ async function approveStudent({ studentId, headteacherId, schoolId }) {
   if (addStudentToClassroom(classroom, student._id)) await classroom.save();
   const parentId = student.parent && (student.parent._id || student.parent);
   if (parentId) await linkStudentToParent(parentId, student._id);
+  await linkStudentToParentUser({
+    studentId: student._id,
+    parentEmail: student.parentEmail || student.parent?.email,
+    parentPhone: student.parentPhone || student.parent?.phone,
+  });
 
   return student;
 }
