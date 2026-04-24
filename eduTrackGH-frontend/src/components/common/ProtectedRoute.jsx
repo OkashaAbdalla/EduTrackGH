@@ -4,13 +4,14 @@
  * Redirects to login if user is not authenticated; to role dashboard if wrong role
  */
 
-import { Navigate } from 'react-router-dom';
+import { Navigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '../../context';
 import { ROUTES, ROLES } from '../../utils/constants';
 import { getRoleRedirectPath } from '../../utils/loginHelpers';
 
 const ProtectedRoute = ({ children, requiredRole = null }) => {
   const { isAuthenticated, user, loading } = useAuthContext();
+  const location = useLocation();
 
   if (loading) {
     return (
@@ -21,11 +22,17 @@ const ProtectedRoute = ({ children, requiredRole = null }) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to={requiredRole === ROLES.ADMIN ? ROUTES.ADMIN_LOGIN : ROUTES.LOGIN} replace />;
+    return <Navigate to={requiredRole === ROLES.ADMIN || requiredRole === ROLES.SUPER_ADMIN ? ROUTES.ADMIN_LOGIN : ROUTES.LOGIN} replace />;
   }
 
   if (requiredRole && user?.role !== requiredRole) {
+    if (requiredRole === ROLES.ADMIN || requiredRole === ROLES.SUPER_ADMIN) {
+      return <Navigate to={ROUTES.ADMIN_LOGIN} replace />;
+    }
     const dashboardRoute = getRoleRedirectPath(user?.role);
+    if (dashboardRoute === location.pathname) {
+      return <Navigate to={ROUTES.LOGIN} replace />;
+    }
     return <Navigate to={dashboardRoute} replace />;
   }
 

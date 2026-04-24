@@ -14,18 +14,23 @@ import { validateLoginForm, getRoleRedirectPath } from '../../utils/loginHelpers
 const AdminLogin = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
-  const { adminLogin, user, isAuthenticated } = useAuthContext();
+  const { adminLogin, user, isAuthenticated, logout } = useAuthContext();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
-  // Security: if a non-admin is already logged in, never show admin login UI.
+  // Keep this route stable: stale/wrong role should not bounce to public login.
   useEffect(() => {
-    if (isAuthenticated && user?.role && user.role !== 'admin') {
-      const redirect = getRoleRedirectPath(user.role);
-      navigate(redirect, { replace: true });
+    if (isAuthenticated && user?.role) {
+      if (user.role === 'super_admin') {
+        navigate(ROUTES.ADMIN_DASHBOARD, { replace: true });
+        return;
+      }
+      // Prevent redirect loops for non-super-admin accounts
+      navigate(getRoleRedirectPath(user.role), { replace: true });
+      logout();
     }
-  }, [isAuthenticated, user, navigate]);
+  }, [isAuthenticated, user, navigate, logout]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,6 +50,13 @@ const AdminLogin = () => {
     try {
       const result = await adminLogin(formData.email, formData.password);
       if (result.success) {
+        const role = String(result?.user?.role || '').toLowerCase().trim();
+        if (role !== 'super_admin') {
+          showToast('Super admin access is required for this portal.', 'error');
+          logout();
+          navigate(getRoleRedirectPath(role), { replace: true });
+          return;
+        }
         showToast('Admin login successful. Redirecting...', 'success');
         setTimeout(() => navigate(ROUTES.ADMIN_DASHBOARD), 800);
       } else {

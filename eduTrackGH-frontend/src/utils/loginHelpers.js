@@ -26,6 +26,7 @@ export const validateLoginForm = (formData) => {
 
 export const getRoleRedirectPath = (role) => {
   const r = typeof role === 'string' ? role.toLowerCase().trim() : '';
+  if (r === ROLES.SUPER_ADMIN) return ROUTES.ADMIN_DASHBOARD;
   if (r === ROLES.ADMIN) return ROUTES.ADMIN_DASHBOARD;
   if (r === ROLES.HEADTEACHER) return ROUTES.HEADTEACHER_DASHBOARD;
   if (r === ROLES.TEACHER) return ROUTES.TEACHER_DASHBOARD;

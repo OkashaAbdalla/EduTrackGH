@@ -17,6 +17,7 @@ export const ROLES = {
   HEADTEACHER: 'headteacher',   // School-level admin (one school)
   PARENT: 'parent',             // Linked primarily by phone number
   ADMIN: 'admin',               // System-level super admin (all schools)
+  SUPER_ADMIN: 'super_admin',   // Control-center admin (highest privileges)
 };
 
 // ========================================
@@ -25,6 +26,7 @@ export const ROLES = {
 export const ROUTES = {
   HOME: '/',
   LOGIN: '/login',
+  ADMIN_LOGIN: `/${import.meta.env.VITE_ADMIN_LOGIN_PATH || 'secure-admin'}`,
   FORGOT_PASSWORD: '/forgot-password',
   RESET_PASSWORD: '/reset-password',
   REGISTER: '/register',
@@ -70,6 +72,8 @@ export const ROUTES = {
   ADMIN_ALERTS: '/admin/alerts',
   ADMIN_ANALYTICS: '/admin/analytics',
   ADMIN_NOTIFICATION_CONTROL: '/admin/notification-control',
+  ADMIN_AUTH_LOGS: '/admin/auth-logs',
+  ADMIN_VIEW_AS: '/admin/view-as',
 };
 
 // ========================================
