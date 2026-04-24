@@ -247,6 +247,21 @@ const adminService = {
     const response = await apiClient.get('/admin/export');
     return response.data;
   },
+
+  getAuthLogs: async (params = {}) => {
+    const response = await apiClient.get('/admin/auth-logs', { params });
+    return response.data;
+  },
+
+  getViewAsProfile: async (role, id) => {
+    const response = await apiClient.get(`/admin/view-as/${role}/${id}`);
+    return response.data;
+  },
+
+  getViewAsDashboard: async (role, id) => {
+    const response = await apiClient.get(`/admin/view-as/${role}/${id}/dashboard`);
+    return response.data;
+  },
 };
 
 export default adminService;

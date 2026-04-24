@@ -6,6 +6,7 @@ const DailyAttendance = require('../models/DailyAttendance');
 const AttendanceFlag = require('../models/AttendanceFlag');
 const Notification = require('../models/Notification');
 const AdminConfig = require('../models/AdminConfig');
+const AuthAuditLog = require('../models/AuthAuditLog');
 const { sendEmail, emailTemplates } = require('../utils/sendEmail');
 
 const DEFAULT_GPS_SETTINGS = { defaultRadius: 100, maxRadius: 300, gpsEnforced: true };
@@ -536,6 +537,243 @@ const getAdminExport = async (_req, res) => {
   }
 };
 
+const getAuthLogs = async (req, res) => {
+  try {
+    const role = req.query.role ? String(req.query.role).toLowerCase().trim() : '';
+    const action = req.query.action ? String(req.query.action).toUpperCase().trim() : '';
+    const search = req.query.search ? String(req.query.search).toLowerCase().trim() : '';
+    const startDate = req.query.startDate ? new Date(req.query.startDate) : null;
+    const endDate = req.query.endDate ? new Date(req.query.endDate) : null;
+    const page = Math.max(Number(req.query.page) || 1, 1);
+    const limit = Math.min(Math.max(Number(req.query.limit) || 25, 1), 100);
+    const skip = (page - 1) * limit;
+
+    const query = {};
+    if (role) query.role = role;
+    if (action) query.action = action;
+    if (search) query.email = { $regex: search, $options: 'i' };
+    if (startDate || endDate) {
+      query.timestamp = {};
+      if (startDate && !Number.isNaN(startDate.getTime())) query.timestamp.$gte = startDate;
+      if (endDate && !Number.isNaN(endDate.getTime())) query.timestamp.$lte = endDate;
+    }
+
+    const [total, logs] = await Promise.all([
+      AuthAuditLog.countDocuments(query),
+      AuthAuditLog.find(query)
+        .sort({ timestamp: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+    ]);
+
+    return res.json({ success: true, total, page, limit, logs });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to get auth logs' });
+  }
+};
+
+const getViewAsProfile = async (req, res) => {
+  try {
+    const { role, id } = req.params;
+    const normalizedRole = String(role || '').toLowerCase().trim();
+    if (!['teacher', 'headteacher', 'parent'].includes(normalizedRole)) {
+      return res.status(400).json({ success: false, message: 'Invalid role for view-as' });
+    }
+    const candidate = await User.findById(id).select('role');
+    if (!candidate) {
+      return res.status(404).json({ success: false, message: 'User not found' });
+    }
+    if (String(candidate.role || '').toLowerCase() !== normalizedRole) {
+      return res.status(400).json({
+        success: false,
+        message: `Role mismatch: selected "${normalizedRole}" but user is "${candidate.role}".`,
+      });
+    }
+
+    const user = await User.findOne({ _id: id, role: normalizedRole })
+      .select('fullName email phone role isActive isVerified school schoolId classroomIds children createdAt')
+      .populate('school', 'name schoolLevel')
+      .populate('schoolId', 'name schoolLevel')
+      .populate('classroomIds', 'name grade')
+      .lean();
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    return res.json({ success: true, readOnly: true, banner: `Viewing as ${normalizedRole} (Read-Only Mode)`, user });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to load view-as profile' });
+  }
+};
+
+const getViewAsDashboard = async (req, res) => {
+  try {
+    const { role, id } = req.params;
+    const normalizedRole = String(role || '').toLowerCase().trim();
+    if (!['teacher', 'headteacher', 'parent'].includes(normalizedRole)) {
+      return res.status(400).json({ success: false, message: 'Invalid role for view-as dashboard' });
+    }
+
+    const user = await User.findOne({ _id: id, role: normalizedRole })
+      .select('fullName email role school schoolId classroomIds children')
+      .populate('school', 'name schoolLevel')
+      .populate('schoolId', 'name schoolLevel')
+      .lean();
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+
+    if (normalizedRole === 'teacher') {
+      const classroomIds = user.classroomIds || [];
+      const classrooms = await Classroom.find({ _id: { $in: classroomIds } })
+        .select('name grade students schoolId')
+        .populate('schoolId', 'name')
+        .lean();
+      const classroomIdList = classrooms.map((c) => c._id);
+      const [attendanceAgg, recentAttendance] = await Promise.all([
+        DailyAttendance.aggregate([
+          { $match: { classroomId: { $in: classroomIdList } } },
+          {
+            $group: {
+              _id: '$status',
+              count: { $sum: 1 },
+            },
+          },
+        ]),
+        DailyAttendance.find({ classroomId: { $in: classroomIdList } })
+          .select('date status classroomId studentId')
+          .populate('classroomId', 'name grade')
+          .populate('studentId', 'fullName admissionNumber')
+          .sort({ date: -1, createdAt: -1 })
+          .limit(15)
+          .lean(),
+      ]);
+      return res.json({
+        success: true,
+        role: normalizedRole,
+        readOnly: true,
+        dashboard: {
+          summary: {
+            classrooms: classrooms.length,
+            students: classrooms.reduce((acc, c) => acc + (Array.isArray(c.students) ? c.students.length : 0), 0),
+            attendanceByStatus: attendanceAgg,
+          },
+          classrooms: classrooms.map((c) => ({
+            id: String(c._id),
+            name: c.name,
+            grade: c.grade,
+            school: c.schoolId?.name || '',
+            studentCount: Array.isArray(c.students) ? c.students.length : 0,
+          })),
+          recentAttendance,
+        },
+      });
+    }
+
+    if (normalizedRole === 'headteacher') {
+      const schoolId = user.school || user.schoolId;
+      if (!schoolId) {
+        return res.json({
+          success: true,
+          role: normalizedRole,
+          readOnly: true,
+          dashboard: { summary: { classrooms: 0, teachers: 0, students: 0, attendanceRate: 0 }, recentAttendance: [] },
+        });
+      }
+      const [classrooms, teachersCount, studentsCount, attendanceAgg, recentAttendance] = await Promise.all([
+        Classroom.find({ schoolId }).select('name grade students teacherId').populate('teacherId', 'fullName').lean(),
+        User.countDocuments({ role: 'teacher', schoolId, isActive: true }),
+        Student.countDocuments({ schoolId, isActive: true }),
+        DailyAttendance.aggregate([
+          { $match: { schoolId } },
+          {
+            $group: {
+              _id: null,
+              total: { $sum: 1 },
+              presentOrLate: { $sum: { $cond: [{ $in: ['$status', ['present', 'late']] }, 1, 0] } },
+            },
+          },
+        ]),
+        DailyAttendance.find({ schoolId })
+          .select('date status classroomId studentId markedBy')
+          .populate('classroomId', 'name grade')
+          .populate('studentId', 'fullName admissionNumber')
+          .populate('markedBy', 'fullName')
+          .sort({ date: -1, createdAt: -1 })
+          .limit(20)
+          .lean(),
+      ]);
+      const total = attendanceAgg?.[0]?.total || 0;
+      const attendanceRate = total ? Math.round(((attendanceAgg[0]?.presentOrLate || 0) / total) * 100) : 0;
+      return res.json({
+        success: true,
+        role: normalizedRole,
+        readOnly: true,
+        dashboard: {
+          summary: {
+            classrooms: classrooms.length,
+            teachers: teachersCount,
+            students: studentsCount,
+            attendanceRate,
+          },
+          classrooms: classrooms.map((c) => ({
+            id: String(c._id),
+            name: c.name,
+            grade: c.grade,
+            teacher: c.teacherId?.fullName || '',
+            studentCount: Array.isArray(c.students) ? c.students.length : 0,
+          })),
+          recentAttendance,
+        },
+      });
+    }
+
+    const children = user.children || [];
+    const [students, notifications, attendanceAgg] = await Promise.all([
+      Student.find({ _id: { $in: children } })
+        .select('fullName admissionNumber grade classroom schoolId')
+        .populate('classroom', 'name grade')
+        .populate('schoolId', 'name')
+        .lean(),
+      Notification.find({ parentId: user._id })
+        .select('type message date read createdAt studentId')
+        .populate('studentId', 'fullName')
+        .sort({ createdAt: -1 })
+        .limit(20)
+        .lean(),
+      DailyAttendance.aggregate([
+        { $match: { studentId: { $in: children } } },
+        {
+          $group: {
+            _id: '$status',
+            count: { $sum: 1 },
+          },
+        },
+      ]),
+    ]);
+
+    return res.json({
+      success: true,
+      role: normalizedRole,
+      readOnly: true,
+      dashboard: {
+        summary: {
+          children: students.length,
+          unreadNotifications: notifications.filter((n) => !n.read).length,
+          attendanceByStatus: attendanceAgg,
+        },
+        children: students.map((s) => ({
+          id: String(s._id),
+          fullName: s.fullName,
+          admissionNumber: s.admissionNumber || '',
+          grade: s.grade || s.classroom?.grade || '',
+          classroom: s.classroom?.name || '',
+          school: s.schoolId?.name || '',
+        })),
+        notifications,
+      },
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to load view-as dashboard' });
+  }
+};
+
 module.exports = {
   getGpsSettings,
   updateGpsSettings,
@@ -553,4 +791,7 @@ module.exports = {
   getNotificationSettings,
   updateNotificationSettings,
   getAdminExport,
+  getAuthLogs,
+  getViewAsProfile,
+  getViewAsDashboard,
 };

@@ -39,6 +39,9 @@ const {
   getNotificationSettings,
   updateNotificationSettings,
   getAdminExport,
+  getAuthLogs,
+  getViewAsProfile,
+  getViewAsDashboard,
 } = require('../controllers/adminController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
@@ -46,7 +49,7 @@ const { validationRules, validate } = require('../utils/validators');
 
 // All routes are protected and admin-only
 router.use(protect);
-router.use(authorize('admin', 'super_admin'));
+router.use(authorize('super_admin'));
 
 // Headteacher management
 router.post('/headteachers', createHeadteacher);
@@ -96,5 +99,8 @@ router.get('/analytics', getAnalytics);
 router.get('/notification-settings', getNotificationSettings);
 router.put('/notification-settings', updateNotificationSettings);
 router.get('/export', getAdminExport);
+router.get('/auth-logs', getAuthLogs);
+router.get('/view-as/:role/:id', getViewAsProfile);
+router.get('/view-as/:role/:id/dashboard', getViewAsDashboard);
 
 module.exports = router;
