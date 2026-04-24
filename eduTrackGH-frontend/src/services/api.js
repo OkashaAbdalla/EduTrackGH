@@ -37,7 +37,19 @@ const apiClient = axios.create({
 // Implements request deduplication for GET requests
 apiClient.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('auth_token');
+    const sessionToken = sessionStorage.getItem('auth_token');
+    let token = sessionToken;
+    if (!token) {
+      const localRole = localStorage.getItem('user_role');
+      if (localRole === 'admin' || localRole === 'super_admin') {
+        ['auth_token', 'user_role', 'user_email', 'user_name', 'user_schoolLevel'].forEach((k) =>
+          localStorage.removeItem(k)
+        );
+        token = null;
+      } else {
+        token = localStorage.getItem('auth_token');
+      }
+    }
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -61,7 +73,8 @@ apiClient.interceptors.response.use(
   (error) => {
     // Handle common errors
     if (error.response?.status === 401) {
-      const wasAdmin = localStorage.getItem('user_role') === 'admin';
+      const role = sessionStorage.getItem('user_role') || localStorage.getItem('user_role');
+      const wasAdmin = role === 'admin' || role === 'super_admin';
       const adminLoginPath = import.meta.env.VITE_ADMIN_LOGIN_PATH || 'secure-admin';
       const wasAdminRequest = error.config?.url?.includes(adminLoginPath);
       const isAuthLoginRequest =
@@ -72,11 +85,10 @@ apiClient.interceptors.response.use(
       if (isAuthLoginRequest || isProfilePhotoRequest) {
         return Promise.reject(error);
       }
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('user_role');
-      localStorage.removeItem('user_email');
-      localStorage.removeItem('user_name');
-      localStorage.removeItem('user_schoolLevel');
+      ['auth_token', 'user_role', 'user_email', 'user_name', 'user_schoolLevel'].forEach((k) => {
+        localStorage.removeItem(k);
+        sessionStorage.removeItem(k);
+      });
       window.location.href = wasAdmin || wasAdminRequest ? ROUTES.ADMIN_LOGIN : ROUTES.LOGIN;
     }
 

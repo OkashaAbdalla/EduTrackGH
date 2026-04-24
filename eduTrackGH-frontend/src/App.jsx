@@ -40,6 +40,8 @@ import {
   AdminAlerts,
   AdminAnalytics,
   AdminNotificationControl,
+  AdminAuthLogs,
+  AdminViewAs,
 } from './pages/admin';
 import { ProtectedRoute } from './components/common';
 import { ROUTES, ROLES } from './utils/constants';
@@ -88,21 +90,24 @@ function App() {
           <Route path={ROUTES.PARENT_NOTIFICATIONS} element={<ProtectedRoute requiredRole={ROLES.PARENT}><Notifications /></ProtectedRoute>} />
           
           {/* Admin Routes - Protected */}
-          <Route path={ROUTES.ADMIN_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminDashboard /></ProtectedRoute>} />
-          <Route path={ROUTES.MANAGE_SCHOOLS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><ManageSchools /></ProtectedRoute>} />
-          <Route path={ROUTES.CREATE_HEADTEACHER} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><CreateHeadteacher /></ProtectedRoute>} />
-          <Route path={ROUTES.MANAGE_HEADTEACHERS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><ManageHeadteachers /></ProtectedRoute>} />
-          <Route path={ROUTES.ATTENDANCE_AUDIT} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AttendanceAudit /></ProtectedRoute>} />
-          <Route path={ROUTES.GES_CALENDAR} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><GesCalendarManagement /></ProtectedRoute>} />
-          <Route path={ROUTES.SYSTEM_SETTINGS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><SystemSettings /></ProtectedRoute>} />
-          <Route path={ROUTES.ADMIN_USERS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminUsers /></ProtectedRoute>} />
-          <Route path={ROUTES.ADMIN_STUDENTS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminStudents /></ProtectedRoute>} />
-          <Route path={ROUTES.ADMIN_CLASSROOMS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminClassrooms /></ProtectedRoute>} />
-          <Route path={ROUTES.ADMIN_GPS_AUDIT} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminGpsAudit /></ProtectedRoute>} />
-          <Route path={ROUTES.ADMIN_AUDIT_LOGS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminAuditLogs /></ProtectedRoute>} />
-          <Route path={ROUTES.ADMIN_ALERTS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminAlerts /></ProtectedRoute>} />
-          <Route path={ROUTES.ADMIN_ANALYTICS} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminAnalytics /></ProtectedRoute>} />
-          <Route path={ROUTES.ADMIN_NOTIFICATION_CONTROL} element={<ProtectedRoute requiredRole={ROLES.ADMIN}><AdminNotificationControl /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AdminDashboard /></ProtectedRoute>} />
+          <Route path={ROUTES.MANAGE_SCHOOLS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><ManageSchools /></ProtectedRoute>} />
+          <Route path={ROUTES.CREATE_HEADTEACHER} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><CreateHeadteacher /></ProtectedRoute>} />
+          <Route path={ROUTES.MANAGE_HEADTEACHERS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><ManageHeadteachers /></ProtectedRoute>} />
+          <Route path={ROUTES.ATTENDANCE_AUDIT} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AttendanceAudit /></ProtectedRoute>} />
+          <Route path={ROUTES.GES_CALENDAR} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><GesCalendarManagement /></ProtectedRoute>} />
+          <Route path={ROUTES.SYSTEM_SETTINGS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><SystemSettings /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_USERS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AdminUsers /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_STUDENTS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AdminStudents /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_CLASSROOMS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AdminClassrooms /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_GPS_AUDIT} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AdminGpsAudit /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_AUDIT_LOGS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AdminAuditLogs /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_ALERTS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AdminAlerts /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_ANALYTICS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AdminAnalytics /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_NOTIFICATION_CONTROL} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AdminNotificationControl /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_AUTH_LOGS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AdminAuthLogs /></ProtectedRoute>} />
+          <Route path={ROUTES.ADMIN_VIEW_AS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AdminViewAs /></ProtectedRoute>} />
+          <Route path={`${ROUTES.ADMIN_VIEW_AS}/:role/:id`} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AdminViewAs /></ProtectedRoute>} />
           
           {/* Catch all - redirect to home */}
           <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />

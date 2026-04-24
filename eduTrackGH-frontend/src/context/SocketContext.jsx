@@ -23,7 +23,19 @@ export const SocketProvider = ({ children }) => {
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
-    const token = localStorage.getItem('auth_token');
+    const sessionToken = sessionStorage.getItem('auth_token');
+    let token = sessionToken;
+    if (!token) {
+      const localRole = localStorage.getItem('user_role');
+      if (localRole === 'admin' || localRole === 'super_admin') {
+        ['auth_token', 'user_role', 'user_email', 'user_name', 'user_schoolLevel'].forEach((k) =>
+          localStorage.removeItem(k)
+        );
+        token = null;
+      } else {
+        token = localStorage.getItem('auth_token');
+      }
+    }
     if (!isAuthenticated || !token) {
       // Ensure we disconnect on logout
       if (socket) socket.disconnect();

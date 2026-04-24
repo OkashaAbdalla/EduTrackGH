@@ -19,13 +19,13 @@ const {
 
 router.get("/active", protect, getActiveCalendar);
 
-router.post("/actions/activate-year", protect, authorize("admin"), activateAcademicYear);
-router.post("/actions/seed-default", protect, authorize("admin"), seedDefaultCalendar);
+router.post("/actions/activate-year", protect, authorize("admin", "super_admin"), activateAcademicYear);
+router.post("/actions/seed-default", protect, authorize("admin", "super_admin"), seedDefaultCalendar);
 
-router.get("/", protect, authorize("admin"), listCalendars);
-router.post("/", protect, authorize("admin"), createCalendar);
-router.get("/:id", protect, authorize("admin"), getCalendarById);
-router.put("/:id", protect, authorize("admin"), updateCalendar);
-router.delete("/:id", protect, authorize("admin"), deleteCalendar);
+router.get("/", protect, authorize("admin", "super_admin"), listCalendars);
+router.post("/", protect, authorize("admin", "super_admin"), createCalendar);
+router.get("/:id", protect, authorize("admin", "super_admin"), getCalendarById);
+router.put("/:id", protect, authorize("admin", "super_admin"), updateCalendar);
+router.delete("/:id", protect, authorize("admin", "super_admin"), deleteCalendar);
 
 module.exports = router;
