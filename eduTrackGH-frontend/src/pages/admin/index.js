@@ -18,3 +18,5 @@ export { default as AdminAuditLogs } from './AdminAuditLogs';
 export { default as AdminAlerts } from './AdminAlerts';
 export { default as AdminAnalytics } from './AdminAnalytics';
 export { default as AdminNotificationControl } from './AdminNotificationControl';
+export { default as AdminAuthLogs } from './AdminAuthLogs';
+export { default as AdminViewAs } from './AdminViewAs';
