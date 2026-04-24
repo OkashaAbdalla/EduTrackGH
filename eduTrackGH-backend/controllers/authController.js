@@ -4,9 +4,32 @@
 
 const crypto = require('crypto');
 const User = require('../models/User');
+const AuthAuditLog = require('../models/AuthAuditLog');
 const generateToken = require('../utils/generateToken');
 const { sendEmail, emailTemplates } = require('../utils/sendEmail');
 const { uploadProfilePhoto, deleteImage } = require('../utils/cloudinary');
+
+const getRequestMeta = (req) => ({
+  ipAddress:
+    req.headers['x-forwarded-for']?.split(',')?.[0]?.trim() ||
+    req.ip ||
+    req.socket?.remoteAddress ||
+    '',
+  userAgent: req.headers['user-agent'] || '',
+});
+
+const writeAuthAudit = ({ user, email, action, req }) => {
+  const meta = getRequestMeta(req);
+  return AuthAuditLog.create({
+    userId: user?._id || null,
+    email: String(email || user?.email || '').toLowerCase().trim(),
+    role: user?.role || null,
+    action,
+    ipAddress: meta.ipAddress,
+    userAgent: meta.userAgent,
+    timestamp: new Date(),
+  }).catch(() => {});
+};
 
 const register = async (req, res) => {
   try {
@@ -60,11 +83,13 @@ const login = async (req, res) => {
 
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
+      writeAuthAudit({ email, action: 'FAILED_LOGIN', req });
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
     // SECURITY: Block admin login on public endpoint - must use admin-only endpoint
     if (user.role === 'admin') {
+      writeAuthAudit({ user, action: 'FAILED_LOGIN', req });
       return res.status(403).json({
         success: false,
         message: 'Administrators must use the secure admin portal.',
@@ -73,6 +98,7 @@ const login = async (req, res) => {
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
+      writeAuthAudit({ user, action: 'FAILED_LOGIN', req });
       return res.status(401).json({ success: false, message: 'Invalid email or password' });
     }
 
@@ -81,6 +107,7 @@ const login = async (req, res) => {
     }
 
     const token = generateToken(user._id);
+    writeAuthAudit({ user, action: 'LOGIN', req });
 
     res.json({
       success: true,
@@ -199,6 +226,7 @@ const deleteProfilePhotoHandler = async (req, res) => {
 };
 
 const logout = async (req, res) => {
+  writeAuthAudit({ user: req.user, action: 'LOGOUT', req });
   res.json({ success: true, message: 'Logged out successfully' });
 };
 
@@ -319,6 +347,7 @@ const resetPassword = async (req, res) => {
     user.passwordResetTokenHash = '';
     user.passwordResetExpiresAt = undefined;
     await user.save();
+    writeAuthAudit({ user, action: 'PASSWORD_RESET', req });
 
     return res.json({ success: true, message: 'Password reset successful. You can now log in.' });
   } catch (error) {
@@ -336,10 +365,12 @@ const adminLogin = async (req, res) => {
 
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
+      writeAuthAudit({ email, action: 'FAILED_LOGIN', req });
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
-    if (user.role !== 'admin') {
+    if (!['admin', 'super_admin'].includes(user.role)) {
+      writeAuthAudit({ user, action: 'FAILED_LOGIN', req });
       return res.status(403).json({
         success: false,
         message: 'Access denied. This endpoint is for administrators only.',
@@ -348,6 +379,7 @@ const adminLogin = async (req, res) => {
 
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
+      writeAuthAudit({ user, action: 'FAILED_LOGIN', req });
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
@@ -356,6 +388,7 @@ const adminLogin = async (req, res) => {
     }
 
     const token = generateToken(user._id);
+    writeAuthAudit({ user, action: 'LOGIN', req });
 
     res.json({
       success: true,
