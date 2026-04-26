@@ -6,8 +6,10 @@
 const TeacherMessage = require('../models/TeacherMessage');
 const User = require('../models/User');
 const School = require('../models/School');
+const Classroom = require('../models/Classroom');
 const { sendEmail } = require('../utils/sendEmail');
 const { emitUnlockRequest } = require('../utils/socketServer');
+const { getSchoolDayDecision } = require('../services/calendarRuntime');
 
 // Teacher: create attendance unlock request for headteacher
 const createAttendanceUnlockRequest = async (req, res) => {
@@ -36,6 +38,16 @@ const createAttendanceUnlockRequest = async (req, res) => {
     }
 
     const school = await School.findById(schoolId).select('name');
+    const classroom = await Classroom.findById(classroomId).select('grade teacherId schoolId').lean();
+    if (!classroom) {
+      return res.status(404).json({ success: false, message: 'Classroom not found' });
+    }
+    if (String(classroom.schoolId) !== String(schoolId)) {
+      return res.status(403).json({ success: false, message: 'Classroom does not belong to your school' });
+    }
+    if (classroom.teacherId && String(classroom.teacherId) !== String(teacher._id)) {
+      return res.status(403).json({ success: false, message: 'You are not assigned to this classroom' });
+    }
 
     // Normalize attendance date to UTC day
     let dateOnly;
@@ -45,6 +57,24 @@ const createAttendanceUnlockRequest = async (req, res) => {
     } else {
       dateOnly = new Date(attendanceDate);
       dateOnly.setUTCHours(0, 0, 0, 0);
+    }
+
+    const dayDecision = await getSchoolDayDecision(dateOnly, classroom.grade || '');
+    if (!dayDecision.isSchoolDay) {
+      const reasonToMessage = {
+        weekend: 'Unlock requests are not allowed for weekends.',
+        before_resumption: 'Unlock requests are not allowed before school resumption.',
+        holiday: 'Unlock requests are not allowed on holidays.',
+        term_ended: 'Unlock requests are not allowed outside the active term.',
+        vacation: 'Unlock requests are not allowed during vacation.',
+        bece: 'Unlock requests are not allowed during BECE days for this class.',
+        invalid_date: 'Invalid date selected for unlock request.',
+      };
+      return res.status(400).json({
+        success: false,
+        message: reasonToMessage[dayDecision.reason] || 'Unlock requests are not allowed for this date.',
+        reason: dayDecision.reason,
+      });
     }
 
     const doc = await TeacherMessage.create({
@@ -111,7 +141,27 @@ const getAttendanceUnlockRequestsForHeadteacher = async (req, res) => {
       .sort({ createdAt: -1 })
       .limit(100);
 
-    const list = messages.map((m) => ({
+    const invalidMessageIds = [];
+    const filteredMessages = [];
+
+    for (const m of messages) {
+      const classLevelRef = m.classroomId?.grade || '';
+      const dayDecision = await getSchoolDayDecision(m.attendanceDate, classLevelRef);
+      if (!dayDecision.isSchoolDay) {
+        invalidMessageIds.push(m._id);
+        continue;
+      }
+      filteredMessages.push(m);
+    }
+
+    if (invalidMessageIds.length > 0) {
+      await TeacherMessage.updateMany(
+        { _id: { $in: invalidMessageIds }, status: 'pending' },
+        { $set: { status: 'resolved' } }
+      );
+    }
+
+    const list = filteredMessages.map((m) => ({
       id: m._id,
       type: m.type,
       status: m.status,

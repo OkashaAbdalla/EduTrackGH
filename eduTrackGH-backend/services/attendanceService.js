@@ -49,17 +49,35 @@ async function runFlagDetection(classroomId, schoolId, dateOnly, savedRecords) {
     }
 
     const today = new Date(dateOnly);
-    let consecutive100 = 0;
+    const checkDates = [];
     for (let d = 0; d < 15; d++) {
       const checkDate = new Date(today);
       checkDate.setDate(checkDate.getDate() - d);
       checkDate.setHours(0, 0, 0, 0);
-      const dayRecords = await DailyAttendance.find({
-        classroomId,
-        date: checkDate,
-        studentId: { $in: studentIdsArr },
-      });
-      const presentCount = dayRecords.filter((r) => r.status === "present").length;
+      checkDates.push(checkDate);
+    }
+
+    const records = await DailyAttendance.find({
+      classroomId,
+      date: { $in: checkDates },
+      studentId: { $in: studentIdsArr },
+    })
+      .select("date status")
+      .lean();
+
+    const dayPresentCounts = new Map();
+    for (const r of records) {
+      const d = new Date(r.date);
+      d.setHours(0, 0, 0, 0);
+      const key = d.getTime();
+      if (!dayPresentCounts.has(key)) dayPresentCounts.set(key, 0);
+      if (r.status === "present") dayPresentCounts.set(key, dayPresentCounts.get(key) + 1);
+    }
+
+    let consecutive100 = 0;
+    for (const checkDate of checkDates) {
+      const key = checkDate.getTime();
+      const presentCount = dayPresentCounts.get(key) || 0;
       if (studentIdsArr.length > 0 && presentCount === studentIdsArr.length) consecutive100++;
       else break;
     }
@@ -127,14 +145,13 @@ async function markDailyAttendance({
       radiusM: fenceLoc.radius,
     };
     if (dist > fenceLoc.radius) {
-      console.warn("[geo-fence]", JSON.stringify({ ...auditLine }));
+      console.warn("[geo-fence] outside allowed radius", JSON.stringify({ ...auditLine }));
       throw {
         status: 403,
         message: "You are outside the allowed school location",
         code: "GEO_OUTSIDE",
       };
     }
-    console.log("[geo-fence]", JSON.stringify(auditLine));
   }
 
   // Normalize the incoming date so that the stored calendar day
@@ -179,12 +196,28 @@ async function markDailyAttendance({
 
   const savedRecords = [];
   const smsEnabled = process.env.SMS_ENABLED === "true";
+  const validStatuses = new Set(["present", "late", "absent"]);
+  const candidateStudentIds = [
+    ...new Set(
+      (attendanceData || [])
+        .map((row) => row?.studentId)
+        .filter((id) => typeof id === "string" || id?.toString)
+        .map((id) => id.toString())
+    ),
+  ];
+
+  const [students, existingAttendanceRows] = await Promise.all([
+    Student.find({ _id: { $in: candidateStudentIds } }),
+    DailyAttendance.find({ classroomId, date: dateOnly, studentId: { $in: candidateStudentIds } }),
+  ]);
+  const studentsById = new Map(students.map((s) => [s._id.toString(), s]));
+  const existingByStudentId = new Map(existingAttendanceRows.map((r) => [r.studentId.toString(), r]));
 
   for (const row of attendanceData) {
     const { studentId, status } = row;
-    if (!studentId || !["present", "late", "absent"].includes(status)) continue;
+    if (!studentId || !validStatuses.has(status)) continue;
 
-    const student = await Student.findById(studentId);
+    const student = studentsById.get(studentId.toString());
     if (!studentInClassroom(student, classroomId)) continue;
     if (student.isApproved === false) continue;
 
@@ -208,7 +241,7 @@ async function markDailyAttendance({
         ? { latitude: row.location.latitude, longitude: row.location.longitude }
         : undefined;
 
-    const existing = await DailyAttendance.findOne({ classroomId, date: dateOnly, studentId });
+    const existing = existingByStudentId.get(studentId.toString());
     const previousStatus = existing?.status || null;
     if (existing) {
       if (existing.isLocked) throw { status: 403, message: "Attendance is locked for this classroom and date. Contact admin to unlock." };
@@ -220,6 +253,7 @@ async function markDailyAttendance({
       if (location) existing.location = location;
       await existing.save();
       savedRecords.push(existing);
+      existingByStudentId.set(studentId.toString(), existing);
     } else {
       const record = await DailyAttendance.create({
         classroomId,
@@ -235,6 +269,7 @@ async function markDailyAttendance({
         location,
       });
       savedRecords.push(record);
+      existingByStudentId.set(studentId.toString(), record);
     }
 
     if (status === "absent" || status === "late" || status === "present") {

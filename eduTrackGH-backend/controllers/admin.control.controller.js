@@ -42,8 +42,12 @@ async function setConfig(key, value) {
 }
 
 const getGpsSettings = async (_req, res) => {
-  const settings = await getConfig('gps_settings', DEFAULT_GPS_SETTINGS);
-  return res.json({ success: true, settings });
+  try {
+    const settings = await getConfig('gps_settings', DEFAULT_GPS_SETTINGS);
+    return res.json({ success: true, settings });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to get GPS settings' });
+  }
 };
 
 const updateGpsSettings = async (req, res) => {
@@ -515,8 +519,12 @@ const updateNotificationSettings = async (req, res) => {
 };
 
 const getNotificationSettings = async (_req, res) => {
-  const settings = await getConfig('notification_settings', DEFAULT_NOTIFICATION_SETTINGS);
-  return res.json({ success: true, settings });
+  try {
+    const settings = await getConfig('notification_settings', DEFAULT_NOTIFICATION_SETTINGS);
+    return res.json({ success: true, settings });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to get notification settings' });
+  }
 };
 
 const getAdminExport = async (_req, res) => {
