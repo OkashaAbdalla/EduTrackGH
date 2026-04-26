@@ -4,7 +4,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { headteacherService } from '../services';
-import { useToast } from '../context';
+import { useConfirm, useToast } from '../context';
 
 export function generateSecurePassword() {
   const uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
@@ -27,6 +27,7 @@ const initialFormData = { fullName: '', email: '', phone: '', password: '' };
 
 export function useManageTeachers() {
   const { showToast } = useToast();
+  const { requestConfirmation } = useConfirm();
   const [teachers, setTeachers] = useState([]);
   const [classrooms, setClassrooms] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -140,9 +141,13 @@ export function useManageTeachers() {
   const handleDeleteTeacher = useCallback(async (teacher) => {
     const id = teacher?._id || teacher?.id;
     if (!id) return;
-    const ok = window.confirm(
-      `Delete this teacher permanently?\n\n${teacher.fullName || 'Teacher'} (${teacher.email || ''})\n\nThis cannot be undone.`,
-    );
+    const ok = await requestConfirmation({
+      title: 'Delete Teacher',
+      message: `Delete this teacher permanently?\n\n${teacher.fullName || 'Teacher'} (${teacher.email || ''})\n\nThis cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      tone: 'danger',
+    });
     if (!ok) return;
     setDeletingId(id);
     try {
@@ -163,7 +168,7 @@ export function useManageTeachers() {
     } finally {
       setDeletingId(null);
     }
-  }, [showToast]);
+  }, [requestConfirmation, showToast]);
 
   const handleAssignClassroom = useCallback(async (e) => {
     e.preventDefault();

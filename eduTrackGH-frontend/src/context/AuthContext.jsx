@@ -95,14 +95,11 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await authService.login({ email, password });
-      console.log('Login response:', response);
 
       if (response.success) {
         const { token, user: userData } = response;
-        console.log('Login successful - User data:', userData);
 
         if (!token || !userData) {
-          console.error('Missing token or userData in response');
           return { success: false, message: 'Invalid response from server' };
         }
 
@@ -122,14 +119,11 @@ export const AuthProvider = ({ children }) => {
           schoolLevel: userData.schoolLevel,
         });
         setIsAuthenticated(true);
-        console.log('Auth state updated, isAuthenticated:', true);
 
         return { success: true, user: { ...userData, role } };
       }
-      console.warn('Login failed:', response.message);
       return { success: false, message: response.message };
     } catch (error) {
-      console.error('Login error:', error);
       return { success: false, message: error.response?.data?.message || 'Login failed' };
     }
   };

@@ -15,7 +15,12 @@ const defaultSocketContext = {
 
 const SocketContext = createContext(defaultSocketContext);
 
-const SOCKET_URL = (import.meta.env.VITE_API_URL || 'http://localhost:5000').replace(/\/api\/?$/, '');
+const rawApiUrl = import.meta.env.VITE_API_URL;
+const apiUrl = rawApiUrl || (import.meta.env.DEV ? 'http://localhost:5000/api' : '');
+if (!apiUrl) {
+  throw new Error('VITE_API_URL must be configured for production builds.');
+}
+const SOCKET_URL = apiUrl.replace(/\/api\/?$/, '');
 
 export const SocketProvider = ({ children }) => {
   const { isAuthenticated } = useAuthContext();
