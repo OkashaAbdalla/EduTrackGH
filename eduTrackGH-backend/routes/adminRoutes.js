@@ -45,22 +45,30 @@ const {
 } = require('../controllers/adminController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
-const { validationRules, validate } = require('../utils/validators');
+const {
+  validateCreateHeadteacher,
+  validateCreateTeacher,
+  validateUpdateTeacher,
+  validateCreateSchool,
+  validateUpdateSchool,
+  validateUpdateAdminUserStatus,
+  validateObjectBody,
+} = require('../middleware/requestValidation');
 
 // All routes are protected and admin-only
 router.use(protect);
 router.use(authorize('super_admin'));
 
 // Headteacher management
-router.post('/headteachers', createHeadteacher);
+router.post('/headteachers', validateCreateHeadteacher, createHeadteacher);
 router.get('/headteachers', getHeadteachers);
 router.patch('/headteachers/:id/assign-school', require('../controllers/admin.users.controller').assignHeadteacherToSchool);
 router.delete('/headteachers/:id', require('../controllers/admin.users.controller').deleteHeadteacher);
 
 // Teacher management
-router.post('/teachers', createTeacher);
+router.post('/teachers', validateCreateTeacher, createTeacher);
 router.get('/teachers', getTeachers);
-router.put('/teachers/:id', updateTeacher);
+router.put('/teachers/:id', validateUpdateTeacher, updateTeacher);
 router.patch('/teachers/:id/toggle-status', toggleTeacherStatus);
 
 // System statistics
@@ -68,13 +76,13 @@ router.get('/stats', getStats);
 
 // School management
 router.get('/schools', getSchools);
-router.post('/schools', createSchool);
-router.put('/schools/:id', updateSchool);
+router.post('/schools', validateCreateSchool, createSchool);
+router.put('/schools/:id', validateUpdateSchool, updateSchool);
 router.patch('/schools/:id/toggle-status', toggleSchoolStatus);
 
 // System settings
 router.get('/settings', getSystemSettings);
-router.put('/settings', updateSystemSettings);
+router.put('/settings', validateObjectBody('Settings payload is required'), updateSystemSettings);
 
 // Phase 7: Attendance audit & flags; Phase 3: Unlock
 router.get('/schools/:schoolId/classrooms', getSchoolClassrooms);
@@ -84,11 +92,11 @@ router.patch('/unlock-attendance/:classroomId/:date', unlockAttendance);
 
 // Super Admin control layer
 router.get('/gps-settings', getGpsSettings);
-router.put('/gps-settings', updateGpsSettings);
+router.put('/gps-settings', validateObjectBody('GPS settings payload is required'), updateGpsSettings);
 router.get('/gps-logs', getGpsLogs);
 router.get('/alerts', getAdminAlerts);
 router.get('/users', getAdminUsers);
-router.patch('/users/:id/status', updateAdminUserStatus);
+router.patch('/users/:id/status', validateUpdateAdminUserStatus, updateAdminUserStatus);
 router.get('/students', getAdminStudents);
 router.get('/students/:id', getAdminStudentById);
 router.get('/classrooms', getAdminClassrooms);
@@ -97,7 +105,7 @@ router.get('/system-overview', getSystemOverview);
 router.get('/audit-logs', getAuditLogs);
 router.get('/analytics', getAnalytics);
 router.get('/notification-settings', getNotificationSettings);
-router.put('/notification-settings', updateNotificationSettings);
+router.put('/notification-settings', validateObjectBody('Notification settings payload is required'), updateNotificationSettings);
 router.get('/export', getAdminExport);
 router.get('/auth-logs', getAuthLogs);
 router.get('/view-as/:role/:id', getViewAsProfile);
