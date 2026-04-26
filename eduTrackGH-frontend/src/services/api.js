@@ -18,8 +18,12 @@ import { ROUTES } from '../utils/constants';
 // ========================================
 // BASE URL CONFIGURATION (Vite: set VITE_API_URL in .env / Vercel)
 // ========================================
-const BASE_URL =
-  import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+const rawApiUrl = import.meta.env.VITE_API_URL;
+const BASE_URL = rawApiUrl || (import.meta.env.DEV ? 'http://localhost:5000/api' : '');
+
+if (!BASE_URL) {
+  throw new Error('VITE_API_URL must be configured for production builds.');
+}
 
 const apiClient = axios.create({
   baseURL: BASE_URL,

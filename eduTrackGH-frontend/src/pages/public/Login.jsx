@@ -37,23 +37,18 @@ const Login = () => {
 
     try {
       const result = await login(formData.email, formData.password);
-      console.log('Login result:', result);
 
       if (result.success) {
         showToast('Login successful! Redirecting...', 'success');
         const redirectPath = getRoleRedirectPath(result.user.role);
-        console.log('User role:', result.user.role, 'Redirecting to:', redirectPath);
 
         setTimeout(() => {
-          console.log('Navigating to:', redirectPath);
           navigate(redirectPath);
         }, 1000);
       } else {
-        console.warn('Login failed:', result.message);
         showToast(result.message || 'Invalid email or password', 'error');
       }
     } catch (err) {
-      console.error('Login exception:', err);
       showToast('Invalid email or password', 'error');
     } finally {
       setLoading(false);
