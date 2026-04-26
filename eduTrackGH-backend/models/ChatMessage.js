@@ -20,6 +20,5 @@ const chatMessageSchema = new mongoose.Schema(
 );
 
 chatMessageSchema.index({ headteacherId: 1, teacherId: 1 });
-chatMessageSchema.index({ teacherId: 1, headteacherId: 1 });
 
 module.exports = mongoose.model('ChatMessage', chatMessageSchema);

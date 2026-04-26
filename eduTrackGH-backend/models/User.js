@@ -33,7 +33,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['teacher', 'headteacher', 'parent', 'admin'],
+    enum: ['teacher', 'headteacher', 'parent', 'admin', 'super_admin'],
     default: 'parent', // Default to parent for public registration
   },
   // Headteacher-specific: Primary or JHS level

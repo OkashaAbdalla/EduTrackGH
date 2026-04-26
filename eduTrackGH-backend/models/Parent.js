@@ -17,7 +17,6 @@ const parentSchema = new mongoose.Schema(
       type: String,
       trim: true,
       lowercase: true,
-      sparse: true,
     },
     phone: {
       type: String,

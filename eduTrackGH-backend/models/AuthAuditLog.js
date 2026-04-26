@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 const authAuditLogSchema = new mongoose.Schema(
   {
     userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-    email: { type: String, trim: true, lowercase: true, index: true },
+    email: { type: String, trim: true, lowercase: true },
     role: { type: String, trim: true, index: true },
     action: {
       type: String,
