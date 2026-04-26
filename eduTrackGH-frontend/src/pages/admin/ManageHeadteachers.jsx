@@ -5,11 +5,12 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { useToast } from '../../context';
+import { useConfirm, useToast } from '../../context';
 import adminService from '../../services/adminService';
 
 const ManageHeadteachers = () => {
   const { showToast } = useToast();
+  const { requestConfirmation } = useConfirm();
   const [headteachers, setHeadteachers] = useState([]);
   const [schools, setSchools] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -63,9 +64,13 @@ const ManageHeadteachers = () => {
   };
 
   const handleDelete = async (headteacherId, email) => {
-    const ok = window.confirm(
-      `Delete this headteacher permanently?\n\n${email || headteacherId}\n\nThis cannot be undone.`,
-    );
+    const ok = await requestConfirmation({
+      title: 'Delete Headteacher',
+      message: `Delete this headteacher permanently?\n\n${email || headteacherId}\n\nThis cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      tone: 'danger',
+    });
     if (!ok) return;
     setDeletingId(headteacherId);
     try {

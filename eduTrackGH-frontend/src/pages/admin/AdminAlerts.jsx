@@ -5,9 +5,30 @@ import adminService from '../../services/adminService';
 
 const AdminAlerts = () => {
   const [alerts, setAlerts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    adminService.getAlerts().then((r) => setAlerts(r.alerts || []));
+    let mounted = true;
+    const loadAlerts = async () => {
+      try {
+        setLoading(true);
+        setError('');
+        const r = await adminService.getAlerts();
+        if (!mounted) return;
+        setAlerts(r.alerts || []);
+      } catch (_err) {
+        if (!mounted) return;
+        setError('Failed to load alerts. Please retry.');
+        setAlerts([]);
+      } finally {
+        if (mounted) setLoading(false);
+      }
+    };
+    loadAlerts();
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   return (
@@ -15,6 +36,12 @@ const AdminAlerts = () => {
       <div className="space-y-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Alerts</h1>
         <Card className="p-0 overflow-x-auto">
+          {loading ? (
+            <div className="p-4 text-sm text-gray-600 dark:text-gray-300">Loading alerts...</div>
+          ) : null}
+          {error ? (
+            <div className="p-4 text-sm text-red-600 dark:text-red-400">{error}</div>
+          ) : null}
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800/50">
               <tr>
@@ -26,7 +53,10 @@ const AdminAlerts = () => {
             </thead>
             <tbody>
               {alerts.map((a, i) => (
-                <tr key={`${a.type}-${i}`} className="border-t dark:border-gray-800">
+                <tr
+                  key={`${a.type || 'alert'}-${a.createdAt || ''}-${a.school || ''}-${a.classroom || ''}-${i}`}
+                  className="border-t dark:border-gray-800"
+                >
                   <td className="px-3 py-2">{a.type}</td>
                   <td className="px-3 py-2">{a.message}</td>
                   <td className="px-3 py-2">{a.school}</td>

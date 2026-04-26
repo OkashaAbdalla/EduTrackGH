@@ -7,7 +7,7 @@ import { Link } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import { ROUTES } from '../../utils/constants';
-import { useToast, useCalendar } from '../../context';
+import { useToast, useCalendar, useConfirm } from '../../context';
 import calendarService from '../../services/calendarService';
 
 const TERM_OPTIONS = [
@@ -27,6 +27,7 @@ function isoInput(d) {
 
 const GesCalendarManagement = () => {
   const { showToast } = useToast();
+  const { requestConfirmation } = useConfirm();
   const { refresh: refreshCalendarContext } = useCalendar();
   const [loading, setLoading] = useState(true);
   const [flat, setFlat] = useState([]);
@@ -130,7 +131,14 @@ const GesCalendarManagement = () => {
   };
 
   const remove = async (id) => {
-    if (!window.confirm('Soft-delete this calendar row?')) return;
+    const ok = await requestConfirmation({
+      title: 'Delete Calendar Row',
+      message: 'Soft-delete this calendar row?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      tone: 'danger',
+    });
+    if (!ok) return;
     try {
       await calendarService.deleteCalendar(id);
       showToast('Removed', 'success');
