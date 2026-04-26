@@ -159,13 +159,76 @@ VITE_API_URL=http://localhost:5000/api
 VITE_ADMIN_LOGIN_PATH=secure-admin-CHANGE_ME
 ```
 
-On **Vercel**, set `VITE_API_URL` to your deployed API (e.g. `https://your-service.onrender.com/api`).
+Set `VITE_API_URL` to your deployed backend API (e.g. `https://your-backend.onrender.com/api`).
 
-### Deploy (Render + Vercel)
+## Deployment (Render for Both Backend and Frontend)
 
-- **Render (API):** Root directory `eduTrackGH-backend`, build `npm install`, start `npm start`. Set `MONGODB_URI`, `JWT_SECRET`, `JWT_EXPIRES_IN`, `FRONTEND_URL` (your Vercel URL), `ADMIN_LOGIN_PATH` (same as frontend), and email/Cloudinary keys as needed.
-- **Vercel (SPA):** Root directory `eduTrackGH-frontend`, build `npm run build`, output `dist`. Set `VITE_API_URL` and `VITE_ADMIN_LOGIN_PATH` to match the backend.
-- Optional: use `render.yaml` at the repo root as a Render Blueprint for the API service.
+Use Render for **both** services:
+- Backend: Render **Web Service**
+- Frontend: Render **Static Site**
+- Database: MongoDB Atlas
+
+### Step 1: Deploy Backend (Render Web Service)
+
+1. In Render dashboard, click **New +** -> **Web Service**.
+2. Connect this GitHub repository.
+3. Configure:
+   - **Name:** `edutrackgh-backend`
+   - **Root Directory:** `eduTrackGH-backend`
+   - **Build Command:** `npm install`
+   - **Start Command:** `npm start`
+4. Add environment variables:
+
+```env
+NODE_ENV=production
+MONGODB_URI=your_mongodb_uri
+JWT_SECRET=your_jwt_secret
+JWT_EXPIRES_IN=7d
+FRONTEND_URL=https://your-frontend-domain.onrender.com
+ADMIN_LOGIN_PATH=your-secure-admin-path
+EMAIL_SERVICE=gmail
+EMAIL_USER=your_email
+EMAIL_PASSWORD=your_email_app_password
+SMS_ENABLED=false
+```
+
+5. Deploy and copy backend URL, e.g.:
+   - `https://edutrackgh-backend.onrender.com`
+
+### Step 2: Deploy Frontend (Render Static Site)
+
+1. In Render dashboard, click **New +** -> **Static Site**.
+2. Connect this GitHub repository.
+3. Configure:
+   - **Name:** `edutrackgh-frontend`
+   - **Root Directory:** `eduTrackGH-frontend`
+   - **Build Command:** `npm install && npm run build`
+   - **Publish Directory:** `dist`
+4. Add environment variables:
+
+```env
+VITE_API_URL=https://edutrackgh-backend.onrender.com/api
+VITE_ADMIN_LOGIN_PATH=your-secure-admin-path
+```
+
+> `VITE_ADMIN_LOGIN_PATH` must match backend `ADMIN_LOGIN_PATH`.
+
+### Step 3: Final Wiring and Redeploy
+
+1. Update backend `FRONTEND_URL` to your actual frontend Render URL.
+2. Trigger a manual redeploy for backend.
+3. Verify backend health:
+   - `GET https://your-backend.onrender.com/api/health`
+4. Open frontend and verify login/attendance/admin flows.
+
+### Step 4: Post-Deploy Checklist
+
+- Confirm at least one user has `super_admin` role.
+- Keep `ADMIN_LOGIN_PATH` private and non-default.
+- Ensure MongoDB Atlas network allows Render connections.
+- Confirm `VITE_API_URL` points to `/api` path.
+- Test secure admin login route:
+  - `https://your-frontend.onrender.com/<VITE_ADMIN_LOGIN_PATH>`
 
 ## Project Status
 
