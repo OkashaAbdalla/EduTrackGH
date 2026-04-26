@@ -64,9 +64,9 @@ const HeadteacherDashboard = () => {
         setUnlockRequests(res.messages || []);
       }
     } catch (err) {
-      console.error('Failed to load unlock requests', err);
+      showToast(err?.response?.data?.message || 'Failed to load unlock requests', 'error');
     }
-  }, []);
+  }, [showToast]);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -277,8 +277,7 @@ const HeadteacherDashboard = () => {
                                 showToast(res.message || 'Failed to unlock attendance', 'error');
                               }
                             } catch (err) {
-                              console.error('Failed to unlock attendance', err);
-                              showToast('Failed to unlock attendance', 'error');
+                              showToast(err?.response?.data?.message || 'Failed to unlock attendance', 'error');
                             } finally {
                               setUnlockingId(null);
                             }

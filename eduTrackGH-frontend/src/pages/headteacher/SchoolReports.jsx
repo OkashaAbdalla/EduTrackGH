@@ -126,7 +126,10 @@ const SchoolReports = () => {
               </thead>
               <tbody>
                 {classReports.map((report, index) => (
-                  <tr key={index} className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30">
+                  <tr
+                    key={`${report.class || 'class'}-${selectedMonth}-${index}`}
+                    className="border-b border-gray-100 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-700/30"
+                  >
                     <td className="py-3 px-4 text-sm font-medium text-gray-900 dark:text-white">{report.class}</td>
                     <td className="py-3 px-4 text-center text-sm text-gray-700 dark:text-gray-300">{report.students}</td>
                     <td className="py-3 px-4 text-center">
