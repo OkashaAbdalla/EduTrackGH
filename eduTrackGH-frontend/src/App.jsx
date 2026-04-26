@@ -10,50 +10,61 @@
  * Note: Following architecture rules - this component only handles routing
  */
 
+import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ThemeProvider, ToastProvider, AuthProvider, SocketProvider, CalendarProvider } from './context';
+import { ThemeProvider, ToastProvider, ConfirmProvider, AuthProvider, SocketProvider, CalendarProvider } from './context';
 import { Landing, Login, Register, VerifyEmail, ForgotPassword, ResetPassword } from './pages/public';
-import {
-  TeacherDashboard,
-  MarkAttendance,
-  AttendanceHistory,
-  FlaggedStudents,
-  ManageStudents as TeacherManageStudents,
-  Chat as TeacherChat,
-} from './pages/teacher';
-import { HeadteacherDashboard, SchoolReports, TeacherCompliance, ManageClasses, ManageStudents, ManageTeachers as HeadteacherManageTeachers, Chat as HeadteacherChat } from './pages/headteacher';
-import { ParentDashboard, ChildrenAttendance, Notifications } from './pages/parent';
-import {
-  AdminLogin,
-  AdminDashboard,
-  CreateHeadteacher,
-  ManageSchools,
-  ManageHeadteachers,
-  AttendanceAudit,
-  SystemSettings,
-  GesCalendarManagement,
-  AdminUsers,
-  AdminStudents,
-  AdminClassrooms,
-  AdminGpsAudit,
-  AdminAuditLogs,
-  AdminAlerts,
-  AdminAnalytics,
-  AdminNotificationControl,
-  AdminAuthLogs,
-  AdminViewAs,
-} from './pages/admin';
+import { AdminLogin } from './pages/admin';
 import { ProtectedRoute } from './components/common';
 import { ROUTES, ROLES } from './utils/constants';
+
+const TeacherDashboard = lazy(() => import('./pages/teacher/TeacherDashboard'));
+const MarkAttendance = lazy(() => import('./pages/teacher/MarkAttendance'));
+const AttendanceHistory = lazy(() => import('./pages/teacher/AttendanceHistory'));
+const FlaggedStudents = lazy(() => import('./pages/teacher/FlaggedStudents'));
+const TeacherManageStudents = lazy(() => import('./pages/teacher/ManageStudents'));
+const TeacherChat = lazy(() => import('./pages/teacher/Chat'));
+
+const HeadteacherDashboard = lazy(() => import('./pages/headteacher/HeadteacherDashboard'));
+const SchoolReports = lazy(() => import('./pages/headteacher/SchoolReports'));
+const TeacherCompliance = lazy(() => import('./pages/headteacher/TeacherCompliance'));
+const ManageClasses = lazy(() => import('./pages/headteacher/ManageClasses'));
+const ManageStudents = lazy(() => import('./pages/headteacher/ManageStudents'));
+const HeadteacherManageTeachers = lazy(() => import('./pages/headteacher/ManageTeachers'));
+const HeadteacherChat = lazy(() => import('./pages/headteacher/Chat'));
+
+const ParentDashboard = lazy(() => import('./pages/parent/ParentDashboard'));
+const ChildrenAttendance = lazy(() => import('./pages/parent/ChildrenAttendance'));
+const Notifications = lazy(() => import('./pages/parent/Notifications'));
+
+const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
+const CreateHeadteacher = lazy(() => import('./pages/admin/CreateHeadteacher'));
+const ManageSchools = lazy(() => import('./pages/admin/ManageSchools'));
+const ManageHeadteachers = lazy(() => import('./pages/admin/ManageHeadteachers'));
+const AttendanceAudit = lazy(() => import('./pages/admin/AttendanceAudit'));
+const SystemSettings = lazy(() => import('./pages/admin/SystemSettings'));
+const GesCalendarManagement = lazy(() => import('./pages/admin/GesCalendarManagement'));
+const AdminUsers = lazy(() => import('./pages/admin/AdminUsers'));
+const AdminStudents = lazy(() => import('./pages/admin/AdminStudents'));
+const AdminClassrooms = lazy(() => import('./pages/admin/AdminClassrooms'));
+const AdminGpsAudit = lazy(() => import('./pages/admin/AdminGpsAudit'));
+const AdminAuditLogs = lazy(() => import('./pages/admin/AdminAuditLogs'));
+const AdminAlerts = lazy(() => import('./pages/admin/AdminAlerts'));
+const AdminAnalytics = lazy(() => import('./pages/admin/AdminAnalytics'));
+const AdminNotificationControl = lazy(() => import('./pages/admin/AdminNotificationControl'));
+const AdminAuthLogs = lazy(() => import('./pages/admin/AdminAuthLogs'));
+const AdminViewAs = lazy(() => import('./pages/admin/AdminViewAs'));
 
 function App() {
   return (
     <ThemeProvider>
       <ToastProvider>
+        <ConfirmProvider>
         <AuthProvider>
           <CalendarProvider>
           <SocketProvider>
           <Router>
+        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-600">Loading...</div>}>
         <Routes>
           {/* Public Routes */}
           <Route path={ROUTES.HOME} element={<Landing />} />
@@ -112,10 +123,12 @@ function App() {
           {/* Catch all - redirect to home */}
           <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
         </Routes>
+        </Suspense>
       </Router>
       </SocketProvider>
           </CalendarProvider>
         </AuthProvider>
+        </ConfirmProvider>
       </ToastProvider>
     </ThemeProvider>
   );
