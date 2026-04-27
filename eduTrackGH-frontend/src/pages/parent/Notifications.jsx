@@ -7,6 +7,12 @@ import { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import notificationService from '../../services/notificationService';
+import {
+  isNotificationSoundEnabled,
+  setNotificationSoundEnabled,
+  unlockNotificationSound,
+  playParentNotificationSound,
+} from '../../utils/notificationSound';
 
 const Notifications = () => {
   const [notifications, setNotifications] = useState([]);
@@ -14,27 +20,18 @@ const Notifications = () => {
   const [error, setError] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const previousUnreadRef = useRef(0);
+  const [soundEnabled, setSoundEnabled] = useState(() => isNotificationSoundEnabled());
 
-  const playAlertSound = () => {
-    try {
-      const ctx = new (window.AudioContext || window.webkitAudioContext)();
-      const beep = (freq, start, duration) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.type = 'square';
-        osc.frequency.value = freq;
-        gain.gain.value = 0.85;
-        osc.connect(gain);
-        gain.connect(ctx.destination);
-        osc.start(ctx.currentTime + start);
-        osc.stop(ctx.currentTime + start + duration);
-      };
-      beep(880, 0, 0.18);
-      beep(1240, 0.2, 0.18);
-      beep(1560, 0.4, 0.2);
-    } catch (e) {
-      // Browser may block autoplay sound until user interaction.
+  const handleEnableSound = async () => {
+    const unlocked = await unlockNotificationSound();
+    if (unlocked) {
+      setNotificationSoundEnabled(true);
+      setSoundEnabled(true);
+      await playParentNotificationSound();
+      return;
     }
+    setNotificationSoundEnabled(false);
+    setSoundEnabled(false);
   };
 
   const fetchNotifications = async (withSound = false) => {
@@ -48,8 +45,8 @@ const Notifications = () => {
         setNotifications(response.notifications);
         const latestUnread = response.unreadCount || 0;
         setUnreadCount(latestUnread);
-        if (withSound && latestUnread > previousUnreadRef.current) {
-          playAlertSound();
+        if (withSound && soundEnabled && latestUnread > previousUnreadRef.current) {
+          playParentNotificationSound();
         }
         previousUnreadRef.current = latestUnread;
       } else {
@@ -70,7 +67,7 @@ const Notifications = () => {
     fetchNotifications(false);
     const pollId = setInterval(() => fetchNotifications(true), 15000);
     return () => clearInterval(pollId);
-  }, []);
+  }, [soundEnabled]);
 
   const handleMarkAsRead = async (id) => {
     const response = await notificationService.markAsRead(id);
@@ -126,6 +123,15 @@ const Notifications = () => {
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">SMS and email alerts about your children</p>
           <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Unread: {unreadCount}</p>
+          <div className="mt-3">
+            <button
+              type="button"
+              onClick={handleEnableSound}
+              className="px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700"
+            >
+              {soundEnabled ? 'Notification Sound Enabled' : 'Enable Notification Sound'}
+            </button>
+          </div>
         </div>
         {notifications.length > 0 && (
           <button
