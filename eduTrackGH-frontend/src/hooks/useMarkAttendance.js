@@ -287,18 +287,22 @@ export function useMarkAttendance() {
         const { latitude: slat, longitude: slng, radius } = sch.location;
         const dist = haversineMeters(lat, lng, slat, slng);
         const d = Math.round(dist);
+        const accBuffer = Number.isFinite(accuracy) && accuracy > 0 ? Math.min(accuracy, 50) : 0;
+        const effectiveRadius = Number(radius) + accBuffer;
         setLastGoodGeo({ latitude: lat, longitude: lng, accuracy });
         if (import.meta?.env?.DEV) {
           // Debug stability of readings (DEV only)
           console.log({ lat, lng, accuracy, distance: d });
         }
         setGeoDistanceM(d);
-        if (dist <= radius) {
+        if (dist <= effectiveRadius) {
           setGeoSubmitState('ok');
           setGeoMessage(`You are within the school boundary (~${d}m from center).`);
         } else {
           setGeoSubmitState('blocked');
-          setGeoMessage(`You are about ${d}m from the school center. You must be within ${radius}m to submit.`);
+          setGeoMessage(
+            `You are about ${d}m from the school center. You must be within ${Math.round(effectiveRadius)}m to submit.`
+          );
         }
       })
       .catch(() => {
@@ -497,7 +501,9 @@ export function useMarkAttendance() {
           // Debug stability of readings (DEV only)
           console.log({ lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy, distance: Math.round(dist) });
         }
-        if (dist > sch.location.radius) {
+        const accBuffer = Number.isFinite(coords.accuracy) && coords.accuracy > 0 ? Math.min(coords.accuracy, 50) : 0;
+        const effectiveRadius = Number(sch.location.radius) + accBuffer;
+        if (dist > effectiveRadius) {
           showToast(
             `You must be within school premises to mark attendance. You are about ${Math.round(dist)}m from the school center.`,
             'error'

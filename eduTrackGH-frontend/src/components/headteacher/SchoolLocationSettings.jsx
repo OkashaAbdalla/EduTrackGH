@@ -7,16 +7,88 @@ import { Card } from '../common';
 import headteacherService from '../../services/headteacherService';
 import { useToast } from '../../context';
 
-function readCurrentPosition() {
+function readStablePosition({ samples = 4, maxAccuracyM = 25, timeoutMs = 12000, perSampleTimeoutMs = 6000 } = {}) {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error('Geolocation not supported'));
       return;
     }
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      timeout: 15000,
-    });
+
+    const good = [];
+    const startedAt = Date.now();
+    let watchId = null;
+
+    const finalize = () => {
+      if (!good.length) return null;
+      const avgLat = good.reduce((s, p) => s + p.latitude, 0) / good.length;
+      const avgLng = good.reduce((s, p) => s + p.longitude, 0) / good.length;
+      const avgAcc = good.reduce((s, p) => s + (p.accuracy || 0), 0) / good.length;
+      return { latitude: avgLat, longitude: avgLng, accuracy: avgAcc };
+    };
+
+    const cleanup = () => {
+      try {
+        if (watchId != null) navigator.geolocation.clearWatch(watchId);
+      } catch {
+        // ignore
+      }
+      clearTimeout(hardTimeout);
+    };
+
+    const done = (pos) => {
+      cleanup();
+      resolve(pos);
+    };
+
+    const fail = (err) => {
+      cleanup();
+      reject(err);
+    };
+
+    const accept = (p) => {
+      const latitude = Number(p?.coords?.latitude);
+      const longitude = Number(p?.coords?.longitude);
+      const accuracy = Number(p?.coords?.accuracy);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+      if (Number.isFinite(accuracy) && accuracy > maxAccuracyM) return; // too noisy
+      good.push({ latitude, longitude, accuracy: Number.isFinite(accuracy) ? accuracy : null });
+      if (good.length >= samples) {
+        const averaged = finalize();
+        if (averaged) done(averaged);
+      }
+    };
+
+    const hardTimeout = setTimeout(() => {
+      const averaged = finalize();
+      if (averaged) done(averaged);
+      else fail(new Error('Location timeout'));
+    }, timeoutMs);
+
+    try {
+      watchId = navigator.geolocation.watchPosition(
+        (p) => {
+          accept(p);
+          if (Date.now() - startedAt > perSampleTimeoutMs && good.length > 0) {
+            const averaged = finalize();
+            if (averaged) done(averaged);
+          }
+        },
+        (err) => {
+          const averaged = finalize();
+          if (averaged) done(averaged);
+          else fail(err || new Error('Location error'));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: perSampleTimeoutMs,
+          maximumAge: 0,
+        }
+      );
+    } catch (err) {
+      const averaged = finalize();
+      if (averaged) done(averaged);
+      else fail(err || new Error('Location error'));
+    }
   });
 }
 
@@ -56,12 +128,21 @@ export default function SchoolLocationSettings() {
   const handleUseCurrent = async () => {
     setLocating(true);
     try {
-      const p = await readCurrentPosition();
-      setLat(String(p.coords.latitude.toFixed(6)));
-      setLng(String(p.coords.longitude.toFixed(6)));
-      showToast('Coordinates filled from your current location', 'success');
+      const pos = await readStablePosition();
+      setLat(String(pos.latitude.toFixed(6)));
+      setLng(String(pos.longitude.toFixed(6)));
+      const acc = Number.isFinite(pos.accuracy) ? Math.round(pos.accuracy) : null;
+      showToast(
+        acc != null
+          ? `Coordinates captured (accuracy ~${acc}m)`
+          : 'Coordinates captured from your current location',
+        'success'
+      );
     } catch {
-      showToast('Could not read your location. Check browser permissions.', 'error');
+      showToast(
+        'Could not read a stable location. Go outside, turn on GPS/high accuracy, and try again.',
+        'error'
+      );
     } finally {
       setLocating(false);
     }
