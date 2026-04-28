@@ -7,7 +7,7 @@ const { emitAttendanceSubmitted, emitComplianceUpdated } = require("../utils/soc
 
 const markDailyAttendance = async (req, res) => {
   try {
-    const { classroomId, date, attendanceData, latitude, longitude } = req.body;
+    const { classroomId, date, attendanceData, latitude, longitude, accuracy } = req.body;
     const teacherId = req.user._id;
     const clientIp = req.headers["x-forwarded-for"]?.split(",")?.[0]?.trim() || req.ip || "";
 
@@ -25,6 +25,7 @@ const markDailyAttendance = async (req, res) => {
       teacherId,
       teacherLatitude: latitude,
       teacherLongitude: longitude,
+      teacherAccuracy: accuracy,
       geoAudit: { ip: clientIp },
     });
 

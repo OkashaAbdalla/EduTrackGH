@@ -113,6 +113,7 @@ async function markDailyAttendance({
   teacherId,
   teacherLatitude,
   teacherLongitude,
+  teacherAccuracy,
   geoAudit,
 }) {
   const classroom = await Classroom.findById(classroomId).populate("schoolId");
@@ -126,6 +127,9 @@ async function markDailyAttendance({
   if (isGeoFenceActive(fenceLoc)) {
     const tLat = teacherLatitude != null ? Number(teacherLatitude) : NaN;
     const tLng = teacherLongitude != null ? Number(teacherLongitude) : NaN;
+    const rawAccuracy = teacherAccuracy != null ? Number(teacherAccuracy) : 0;
+    const accuracyBuffer = Number.isFinite(rawAccuracy) && rawAccuracy > 0 ? Math.min(rawAccuracy, 50) : 0;
+    const effectiveRadius = Number(fenceLoc.radius) + accuracyBuffer;
     if (!Number.isFinite(tLat) || !Number.isFinite(tLng)) {
       throw {
         status: 400,
@@ -136,15 +140,17 @@ async function markDailyAttendance({
     const dist = haversineMeters(tLat, tLng, fenceLoc.latitude, fenceLoc.longitude);
     const auditLine = {
       event: "attendance_geo_check",
-      ok: dist <= fenceLoc.radius,
+      ok: dist <= effectiveRadius,
       ip: geoAudit?.ip || null,
       ts: new Date().toISOString(),
       teacherLat: tLat,
       teacherLng: tLng,
+      accuracyM: Math.round(accuracyBuffer),
       distanceM: Math.round(dist),
       radiusM: fenceLoc.radius,
+      effectiveRadiusM: Math.round(effectiveRadius),
     };
-    if (dist > fenceLoc.radius) {
+    if (dist > effectiveRadius) {
       console.warn("[geo-fence] outside allowed radius", JSON.stringify({ ...auditLine }));
       throw {
         status: 403,

@@ -357,7 +357,11 @@ export function useMarkAttendance() {
       }
       try {
         const p = await readPosition();
-        coords = { latitude: p.coords.latitude, longitude: p.coords.longitude };
+        coords = {
+          latitude: p.coords.latitude,
+          longitude: p.coords.longitude,
+          accuracy: p.coords.accuracy,
+        };
         const dist = haversineMeters(
           coords.latitude,
           coords.longitude,

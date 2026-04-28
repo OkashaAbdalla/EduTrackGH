@@ -61,6 +61,9 @@ const attendanceService = {
       if (coords.latitude != null && coords.longitude != null) {
         payload.latitude = coords.latitude;
         payload.longitude = coords.longitude;
+        if (coords.accuracy != null) {
+          payload.accuracy = coords.accuracy;
+        }
       }
       const response = await apiClient.post("/attendance/daily", payload);
       return response.data;
