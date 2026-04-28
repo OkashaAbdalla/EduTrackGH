@@ -11,16 +11,134 @@ import { isGeoFenceConfigured, haversineMeters } from '../utils/geo';
 
 const CAPTURE_QUALITY = 0.82;
 
-function readPosition() {
+const LAST_GOOD_GEO_KEY = 'edutrack_last_good_geo_v1';
+
+function safeParseJson(value) {
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}
+
+function getLastGoodGeo(maxAgeMs = 60_000) {
+  const raw = localStorage.getItem(LAST_GOOD_GEO_KEY);
+  const parsed = raw ? safeParseJson(raw) : null;
+  if (!parsed || typeof parsed !== 'object') return null;
+  const { latitude, longitude, accuracy, ts } = parsed;
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude) || !Number.isFinite(ts)) return null;
+  if (Date.now() - ts > maxAgeMs) return null;
+  return { latitude, longitude, accuracy: Number.isFinite(accuracy) ? accuracy : null };
+}
+
+function setLastGoodGeo({ latitude, longitude, accuracy }) {
+  localStorage.setItem(
+    LAST_GOOD_GEO_KEY,
+    JSON.stringify({
+      latitude,
+      longitude,
+      accuracy: Number.isFinite(accuracy) ? accuracy : null,
+      ts: Date.now(),
+    })
+  );
+}
+
+function readStablePosition({
+  samples = 4,
+  maxAccuracyM = 25,
+  timeoutMs = 12_000,
+  perSampleTimeoutMs = 6_000,
+} = {}) {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error('no geolocation'));
       return;
     }
-    navigator.geolocation.getCurrentPosition(resolve, reject, {
-      enableHighAccuracy: true,
-      timeout: 15000,
-    });
+
+    const good = [];
+    const startedAt = Date.now();
+
+    const done = (pos) => {
+      try {
+        if (watchId != null) navigator.geolocation.clearWatch(watchId);
+      } catch {
+        // ignore
+      }
+      clearTimeout(hardTimeout);
+      resolve(pos);
+    };
+
+    const fail = (err) => {
+      try {
+        if (watchId != null) navigator.geolocation.clearWatch(watchId);
+      } catch {
+        // ignore
+      }
+      clearTimeout(hardTimeout);
+      reject(err);
+    };
+
+    const finalizeFromGood = () => {
+      if (!good.length) return null;
+      const avgLat = good.reduce((s, p) => s + p.latitude, 0) / good.length;
+      const avgLng = good.reduce((s, p) => s + p.longitude, 0) / good.length;
+      const avgAcc = good.reduce((s, p) => s + (p.accuracy || 0), 0) / good.length;
+      return { latitude: avgLat, longitude: avgLng, accuracy: avgAcc };
+    };
+
+    const accept = (p) => {
+      const latitude = Number(p?.coords?.latitude);
+      const longitude = Number(p?.coords?.longitude);
+      const accuracy = Number(p?.coords?.accuracy);
+      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
+      if (Number.isFinite(accuracy) && accuracy > maxAccuracyM) return; // noisy reading
+      good.push({ latitude, longitude, accuracy: Number.isFinite(accuracy) ? accuracy : null });
+      if (good.length >= samples) {
+        const averaged = finalizeFromGood();
+        if (averaged) done(averaged);
+      }
+    };
+
+    // Try to use a very recent cached good reading first (reduces refresh jitter).
+    const cached = getLastGoodGeo(30_000);
+    if (cached && Number.isFinite(cached.latitude) && Number.isFinite(cached.longitude)) {
+      // Still continue sampling in background for a better reading, but use cached quickly.
+      // If we get at least 1 good fresh sample, we will return the averaged fresh result instead.
+      good.push({ latitude: cached.latitude, longitude: cached.longitude, accuracy: cached.accuracy });
+    }
+
+    const hardTimeout = setTimeout(() => {
+      const averaged = finalizeFromGood();
+      if (averaged) done(averaged);
+      else fail(new Error('geo timeout'));
+    }, timeoutMs);
+
+    let watchId = null;
+    try {
+      watchId = navigator.geolocation.watchPosition(
+        (p) => {
+          accept(p);
+          if (Date.now() - startedAt > perSampleTimeoutMs && good.length > 0) {
+            const averaged = finalizeFromGood();
+            if (averaged) done(averaged);
+          }
+        },
+        (err) => {
+          const averaged = finalizeFromGood();
+          if (averaged) done(averaged);
+          else fail(err || new Error('geo error'));
+        },
+        {
+          enableHighAccuracy: true,
+          timeout: perSampleTimeoutMs,
+          maximumAge: 5_000,
+        }
+      );
+    } catch (err) {
+      const averaged = finalizeFromGood();
+      if (averaged) done(averaged);
+      else fail(err || new Error('geo error'));
+    }
   });
 }
 
@@ -161,13 +279,19 @@ export function useMarkAttendance() {
     setGeoSubmitState('checking');
     setGeoMessage('Verifying your location…');
     setGeoDistanceM(null);
-    readPosition()
-      .then((p) => {
-        const lat = p.coords.latitude;
-        const lng = p.coords.longitude;
+    readStablePosition()
+      .then((pos) => {
+        const lat = pos.latitude;
+        const lng = pos.longitude;
+        const accuracy = pos.accuracy;
         const { latitude: slat, longitude: slng, radius } = sch.location;
         const dist = haversineMeters(lat, lng, slat, slng);
         const d = Math.round(dist);
+        setLastGoodGeo({ latitude: lat, longitude: lng, accuracy });
+        if (import.meta?.env?.DEV) {
+          // Debug stability of readings (DEV only)
+          console.log({ lat, lng, accuracy, distance: d });
+        }
         setGeoDistanceM(d);
         if (dist <= radius) {
           setGeoSubmitState('ok');
@@ -356,18 +480,23 @@ export function useMarkAttendance() {
         return;
       }
       try {
-        const p = await readPosition();
+        const pos = await readStablePosition();
         coords = {
-          latitude: p.coords.latitude,
-          longitude: p.coords.longitude,
-          accuracy: p.coords.accuracy,
+          latitude: pos.latitude,
+          longitude: pos.longitude,
+          accuracy: pos.accuracy,
         };
+        setLastGoodGeo(coords);
         const dist = haversineMeters(
           coords.latitude,
           coords.longitude,
           sch.location.latitude,
           sch.location.longitude
         );
+        if (import.meta?.env?.DEV) {
+          // Debug stability of readings (DEV only)
+          console.log({ lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy, distance: Math.round(dist) });
+        }
         if (dist > sch.location.radius) {
           showToast(
             `You must be within school premises to mark attendance. You are about ${Math.round(dist)}m from the school center.`,
