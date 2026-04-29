@@ -125,10 +125,11 @@ async function markDailyAttendance({
   const schoolDoc = await School.findById(schoolId).select("location").lean();
   const fenceLoc = schoolDoc?.location;
   if (isGeoFenceActive(fenceLoc)) {
+    const MAX_BUFFER_M = 10;
     const tLat = teacherLatitude != null ? Number(teacherLatitude) : NaN;
     const tLng = teacherLongitude != null ? Number(teacherLongitude) : NaN;
     const rawAccuracy = teacherAccuracy != null ? Number(teacherAccuracy) : 0;
-    const accuracyBuffer = Number.isFinite(rawAccuracy) && rawAccuracy > 0 ? Math.min(rawAccuracy, 50) : 0;
+    const accuracyBuffer = Number.isFinite(rawAccuracy) && rawAccuracy > 0 ? Math.min(rawAccuracy, MAX_BUFFER_M) : 0;
     const effectiveRadius = Number(fenceLoc.radius) + accuracyBuffer;
     if (!Number.isFinite(tLat) || !Number.isFinite(tLng)) {
       throw {
@@ -137,7 +138,7 @@ async function markDailyAttendance({
         code: "GEO_REQUIRED",
       };
     }
-    const dist = haversineMeters(tLat, tLng, fenceLoc.latitude, fenceLoc.longitude);
+    const dist = Math.abs(haversineMeters(tLat, tLng, fenceLoc.latitude, fenceLoc.longitude));
     const auditLine = {
       event: "attendance_geo_check",
       ok: dist <= effectiveRadius,
