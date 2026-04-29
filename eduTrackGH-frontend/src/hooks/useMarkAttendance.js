@@ -44,7 +44,7 @@ function setLastGoodGeo({ latitude, longitude, accuracy }) {
 }
 
 function readStablePosition({
-  samples = 4,
+  samples = 3,
   maxAccuracyM = 25,
   timeoutMs = 12_000,
   perSampleTimeoutMs = 6_000,
@@ -285,23 +285,32 @@ export function useMarkAttendance() {
         const lng = pos.longitude;
         const accuracy = pos.accuracy;
         const { latitude: slat, longitude: slng, radius } = sch.location;
-        const dist = haversineMeters(lat, lng, slat, slng);
+        const MAX_BUFFER_M = 10;
+        const dist = Math.abs(haversineMeters(lat, lng, slat, slng));
         const d = Math.round(dist);
-        const accBuffer = Number.isFinite(accuracy) && accuracy > 0 ? Math.min(accuracy, 50) : 0;
+        const accBuffer = Number.isFinite(accuracy) && accuracy > 0 ? Math.min(accuracy, MAX_BUFFER_M) : 0;
         const effectiveRadius = Number(radius) + accBuffer;
+        const accText = Number.isFinite(accuracy) ? ` GPS accuracy: ±${Math.round(accuracy)}m.` : '';
         setLastGoodGeo({ latitude: lat, longitude: lng, accuracy });
         if (import.meta?.env?.DEV) {
           // Debug stability of readings (DEV only)
           console.log({ lat, lng, accuracy, distance: d });
         }
         setGeoDistanceM(d);
-        if (dist <= effectiveRadius) {
+        if (dist <= Number(radius)) {
           setGeoSubmitState('ok');
-          setGeoMessage(`You are within the school boundary (~${d}m from center).`);
+          setGeoMessage(`Within school boundary (≈ ${d}m from center).${accText}`);
+        } else if (dist <= effectiveRadius) {
+          setGeoSubmitState('ok');
+          setGeoMessage(
+            `Close to school boundary (≈ ${d}m). GPS accuracy may affect this reading. Allowed up to ≈ ${Math.round(
+              effectiveRadius
+            )}m.${accText}`
+          );
         } else {
           setGeoSubmitState('blocked');
           setGeoMessage(
-            `You are about ${d}m from the school center. You must be within ${Math.round(effectiveRadius)}m to submit.`
+            `You are outside the allowed school area (≈ ${d}m). You must be within ≈ ${Math.round(effectiveRadius)}m to submit.${accText}`
           );
         }
       })
@@ -491,24 +500,34 @@ export function useMarkAttendance() {
           accuracy: pos.accuracy,
         };
         setLastGoodGeo(coords);
-        const dist = haversineMeters(
+        const MAX_BUFFER_M = 10;
+        const dist = Math.abs(
+          haversineMeters(
           coords.latitude,
           coords.longitude,
           sch.location.latitude,
           sch.location.longitude
+          )
         );
         if (import.meta?.env?.DEV) {
           // Debug stability of readings (DEV only)
           console.log({ lat: coords.latitude, lng: coords.longitude, accuracy: coords.accuracy, distance: Math.round(dist) });
         }
-        const accBuffer = Number.isFinite(coords.accuracy) && coords.accuracy > 0 ? Math.min(coords.accuracy, 50) : 0;
+        const accBuffer = Number.isFinite(coords.accuracy) && coords.accuracy > 0 ? Math.min(coords.accuracy, MAX_BUFFER_M) : 0;
         const effectiveRadius = Number(sch.location.radius) + accBuffer;
         if (dist > effectiveRadius) {
           showToast(
-            `You must be within school premises to mark attendance. You are about ${Math.round(dist)}m from the school center.`,
+            `You are outside the allowed school area (≈ ${Math.round(dist)}m). You must be within ≈ ${Math.round(effectiveRadius)}m to submit.`,
             'error'
           );
           return;
+        }
+        if (dist > Number(sch.location.radius)) {
+          const accText = Number.isFinite(coords.accuracy) ? ` (GPS ±${Math.round(coords.accuracy)}m)` : '';
+          showToast(
+            `Close to school boundary. GPS accuracy may affect this reading. Submitting anyway.${accText}`,
+            'info'
+          );
         }
       } catch {
         showToast('You must be within school premises to mark attendance. Allow location access and try again.', 'error');
