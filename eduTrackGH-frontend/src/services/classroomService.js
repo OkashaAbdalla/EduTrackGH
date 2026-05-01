@@ -33,11 +33,11 @@ const classroomService = {
   },
 
   // Get students in a classroom
-  getClassroomStudents: async (classroomId) => {
+  // includePendingProposals: teacher manage/proposal UI only; attendance should omit this (approved roster only).
+  getClassroomStudents: async (classroomId, { includePendingProposals = false } = {}) => {
     try {
-      const response = await apiClient.get(
-        `/classrooms/${classroomId}/students`,
-      );
+      const params = includePendingProposals ? { includePendingProposals: true } : undefined;
+      const response = await apiClient.get(`/classrooms/${classroomId}/students`, { params });
       return response.data;
     } catch (error) {
       console.error("Error fetching classroom students:", error);
