@@ -137,6 +137,26 @@ const studentSchema = new mongoose.Schema({
     type: String,
     trim: true,
   },
+  // Teacher-proposed changes to an existing (approved) student — applied only after headteacher approval
+  pendingEdit: {
+    proposedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+    },
+    proposedAt: {
+      type: Date,
+    },
+    fullName: { type: String, trim: true },
+    dateOfBirth: { type: Date },
+    gender: { type: String },
+    parentName: { type: String, trim: true },
+    parentEmail: { type: String, trim: true, lowercase: true },
+    parentPhone: { type: String, trim: true },
+    classroomId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Classroom',
+    },
+  },
 }, {
   timestamps: true,
 });

@@ -27,8 +27,31 @@ function approvedInClassroomIds(classroomIds) {
   };
 }
 
+/**
+ * Teacher "Manage students" / proposal awareness: official roster plus this teacher's own
+ * unapproved rows in that class (pending or rejected), so they can open Edit for corrections.
+ * Does not expose other teachers' pending proposals.
+ */
+function teacherClassroomWithOwnPending(classroomId, teacherObjectId) {
+  return {
+    $and: [
+      { $or: [{ classroomId }, { classroom: classroomId }] },
+      {
+        $or: [
+          approvedOnly(),
+          {
+            isApproved: false,
+            $or: [{ createdBy: teacherObjectId }, { proposedBy: teacherObjectId }],
+          },
+        ],
+      },
+    ],
+  };
+}
+
 module.exports = {
   approvedOnly,
   approvedInClassroom,
   approvedInClassroomIds,
+  teacherClassroomWithOwnPending,
 };

@@ -7,11 +7,65 @@ const Student = require('../models/Student');
 const Classroom = require('../models/Classroom');
 const Parent = require('../models/Parent');
 const { findOrCreateParent, linkStudentToParent, linkStudentToParentUser } = require('./parentService');
+const crypto = require('crypto');
 
 const studentPopulate = [
   { path: 'parent', select: 'fullName email phone' },
   { path: 'classroom', select: 'name grade' },
+  { path: 'pendingEdit.proposedBy', select: 'fullName email' },
 ];
+
+function pick(obj, keys) {
+  const out = {};
+  keys.forEach((k) => {
+    if (Object.prototype.hasOwnProperty.call(obj || {}, k)) out[k] = obj[k];
+  });
+  return out;
+}
+
+function normalizeGender(g) {
+  if (!g) return g;
+  const v = String(g).trim();
+  if (!v) return '';
+  const up = v.toUpperCase();
+  if (up === 'MALE' || up === 'M') return 'MALE';
+  if (up === 'FEMALE' || up === 'F') return 'FEMALE';
+  return v;
+}
+
+const STUDENT_PATCH_KEYS = [
+  'fullName',
+  'dateOfBirth',
+  'gender',
+  'classroomId',
+  'parentName',
+  'parentEmail',
+  'parentPhone',
+];
+
+/**
+ * Mutates student document; does not save. Used for direct updates and applying approved pending edits.
+ */
+async function applyStudentPatchToDocument(student, body) {
+  const allowed = pick(body || {}, STUDENT_PATCH_KEYS);
+  if (typeof allowed.fullName === 'string') student.fullName = allowed.fullName.trim();
+  if (allowed.dateOfBirth) student.dateOfBirth = new Date(allowed.dateOfBirth);
+  if (allowed.gender != null && allowed.gender !== '') student.gender = normalizeGender(allowed.gender);
+  if (typeof allowed.parentName === 'string') student.parentName = allowed.parentName.trim();
+  if (typeof allowed.parentEmail === 'string') student.parentEmail = allowed.parentEmail.trim().toLowerCase();
+  if (typeof allowed.parentPhone === 'string') student.parentPhone = allowed.parentPhone.trim();
+
+  if (allowed.classroomId) {
+    const nextClassroom = await Classroom.findById(allowed.classroomId).select('_id schoolId grade');
+    if (!nextClassroom) throw { status: 400, message: 'Classroom not found' };
+    if (nextClassroom.schoolId?.toString?.() !== student.schoolId?.toString?.()) {
+      throw { status: 400, message: 'Classroom does not belong to the same school' };
+    }
+    student.classroom = nextClassroom._id;
+    student.classroomId = nextClassroom._id;
+    if (!student.grade && nextClassroom.grade) student.grade = nextClassroom.grade;
+  }
+}
 
 function addStudentToClassroom(classroom, studentId) {
   const idStr = studentId.toString();
@@ -22,12 +76,25 @@ function addStudentToClassroom(classroom, studentId) {
   return true;
 }
 
+async function generateUniqueAdmissionNumber({ schoolId }) {
+  // Short, human-friendly, unique per school. Not exposed as a required UI field.
+  // Example: STU-6F3A9C2B
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const candidate = `STU-${crypto.randomBytes(4).toString('hex')}`.toUpperCase();
+    // admissionNumber is unique per school (sparse index). Ensure no collision.
+    // eslint-disable-next-line no-await-in-loop
+    const exists = await Student.findOne({ schoolId, admissionNumber: candidate }).select('_id').lean();
+    if (!exists) return candidate;
+  }
+  // fallback: timestamp-based
+  return `STU-${Date.now().toString(36).toUpperCase()}`;
+}
+
 /**
  * Propose a new student (teacher). Returns created student populated.
  */
 async function proposeStudent({ teacherId, body }) {
   const { fullName, dateOfBirth, gender, classroomId, grade, parentPhone, parentName, parentEmail, studentId, admissionNumber } = body || {};
-  const admission = (admissionNumber || studentId || '').trim();
   const normalizedParentEmail = parentEmail ? String(parentEmail).toLowerCase().trim() : '';
 
   const classroom = await Classroom.findById(classroomId).populate('schoolId', '_id name');
@@ -37,6 +104,7 @@ async function proposeStudent({ teacherId, body }) {
   }
 
   const schoolId = classroom.schoolId?._id || classroom.schoolId;
+  const admission = (admissionNumber || studentId || '').trim() || (await generateUniqueAdmissionNumber({ schoolId }));
   const existing = await Student.findOne({ schoolId, admissionNumber: admission });
   if (existing) throw { status: 400, message: 'A student with this admission number already exists in this school' };
 
@@ -78,7 +146,6 @@ async function proposeStudent({ teacherId, body }) {
  */
 async function registerStudentByHeadteacher({ headteacherId, schoolId, body }) {
   const { fullName, dateOfBirth, gender, classroomId, grade, parentPhone, parentName, parentEmail, studentId, admissionNumber } = body || {};
-  const admission = (admissionNumber || studentId || '').trim();
   const normalizedParentEmail = parentEmail ? String(parentEmail).toLowerCase().trim() : '';
 
   const classroom = await Classroom.findById(classroomId);
@@ -87,6 +154,7 @@ async function registerStudentByHeadteacher({ headteacherId, schoolId, body }) {
     throw { status: 403, message: 'Classroom does not belong to your school' };
   }
 
+  const admission = (admissionNumber || studentId || '').trim() || (await generateUniqueAdmissionNumber({ schoolId }));
   const existing = await Student.findOne({ schoolId, admissionNumber: admission });
   if (existing) throw { status: 400, message: 'A student with this admission number already exists in this school' };
 
@@ -137,7 +205,52 @@ async function getStudentsForHeadteacher(schoolId, classroomId = null) {
     .populate('classroom', 'name grade')
     .populate('parent', 'fullName email phone')
     .populate('proposedBy', 'fullName email')
+    .populate({ path: 'pendingEdit.proposedBy', select: 'fullName email' })
     .sort({ fullName: 1 });
+}
+
+/**
+ * Students with a teacher-submitted record change awaiting headteacher approval.
+ */
+async function getPendingStudentEditsForHeadteacher(schoolId) {
+  return Student.find({
+    schoolId,
+    'pendingEdit.proposedAt': { $exists: true },
+  })
+    .populate('classroom', 'name grade')
+    .populate('parent', 'fullName email phone')
+    .populate({ path: 'pendingEdit.proposedBy', select: 'fullName email' })
+    .sort({ 'pendingEdit.proposedAt': -1 });
+}
+
+async function approvePendingStudentEdit({ studentId, schoolId }) {
+  const student = await Student.findById(studentId);
+  if (!student) throw { status: 404, message: 'Student not found' };
+  if (student.schoolId.toString() !== schoolId.toString()) {
+    throw { status: 403, message: 'Student does not belong to your school' };
+  }
+  if (!student.pendingEdit || !student.pendingEdit.proposedAt) {
+    throw { status: 400, message: 'No pending edit to approve' };
+  }
+  const pe = student.pendingEdit.toObject ? student.pendingEdit.toObject() : { ...student.pendingEdit };
+  await applyStudentPatchToDocument(student, pe);
+  student.set('pendingEdit', undefined);
+  await student.save();
+  return Student.findById(student._id).populate(studentPopulate);
+}
+
+async function rejectPendingStudentEdit({ studentId, schoolId }) {
+  const student = await Student.findById(studentId);
+  if (!student) throw { status: 404, message: 'Student not found' };
+  if (student.schoolId.toString() !== schoolId.toString()) {
+    throw { status: 403, message: 'Student does not belong to your school' };
+  }
+  if (!student.pendingEdit || !student.pendingEdit.proposedAt) {
+    throw { status: 400, message: 'No pending edit to reject' };
+  }
+  student.set('pendingEdit', undefined);
+  await student.save();
+  return Student.findById(student._id).populate(studentPopulate);
 }
 
 /**
@@ -223,6 +336,12 @@ module.exports = {
   registerStudentByHeadteacher,
   getStudentsForHeadteacher,
   getPendingStudentsForHeadteacher,
+  getPendingStudentEditsForHeadteacher,
+  approvePendingStudentEdit,
+  rejectPendingStudentEdit,
   approveStudent,
   rejectStudent,
+  applyStudentPatchToDocument,
+  STUDENT_PATCH_KEYS,
+  pick,
 };
