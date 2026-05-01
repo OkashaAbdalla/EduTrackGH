@@ -83,10 +83,19 @@ const getClassroomStudents = async (req, res) => {
       return res.status(403).json({ success: false, message: "Unauthorized" });
     }
 
-    const { approvedInClassroom } = require("../utils/studentQuery");
+    const includePending =
+      String(req.query.includePendingProposals || "").toLowerCase() === "true" ||
+      req.query.includePendingProposals === "1";
+    const { approvedInClassroom, teacherClassroomWithOwnPending } = require("../utils/studentQuery");
+    const filter = includePending
+      ? teacherClassroomWithOwnPending(classroom._id, teacherId)
+      : approvedInClassroom(classroom._id);
     const students = await require("../models/Student")
-      .find(approvedInClassroom(classroom._id))
-      .select("_id fullName studentId gender isFlagged");
+      .find(filter)
+      .select(
+        "_id fullName gender parentEmail parentPhone parentName parent status isApproved createdAt dateOfBirth pendingEdit",
+      )
+      .sort({ createdAt: -1 });
 
     res.json({
       success: true,
