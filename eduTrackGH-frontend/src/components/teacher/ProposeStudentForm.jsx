@@ -12,7 +12,6 @@ const ProposeStudentForm = ({ isOpen, onClose, classrooms = [], onSuccess }) => 
   const { showToast } = useToast();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
-    studentId: '',
     fullName: '',
     dateOfBirth: '',
     gender: '',
@@ -24,8 +23,8 @@ const ProposeStudentForm = ({ isOpen, onClose, classrooms = [], onSuccess }) => 
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.studentId || !formData.fullName || !formData.classroomId) {
-      showToast('Student ID, name, and classroom are required', 'error');
+    if (!formData.fullName || !formData.classroomId) {
+      showToast('Student name and classroom are required', 'error');
       return;
     }
 
@@ -35,7 +34,6 @@ const ProposeStudentForm = ({ isOpen, onClose, classrooms = [], onSuccess }) => 
       if (result.success) {
         showToast('Student proposed successfully. Awaiting headteacher approval.', 'success');
         setFormData({
-          studentId: '',
           fullName: '',
           dateOfBirth: '',
           gender: '',
@@ -66,14 +64,6 @@ const ProposeStudentForm = ({ isOpen, onClose, classrooms = [], onSuccess }) => 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormInput
-            label="Student ID"
-            name="studentId"
-            value={formData.studentId}
-            onChange={handleChange}
-            placeholder="e.g., P1-2026-001"
-            required
-          />
-          <FormInput
             label="Full Name"
             name="fullName"
             value={formData.fullName}
@@ -81,6 +71,7 @@ const ProposeStudentForm = ({ isOpen, onClose, classrooms = [], onSuccess }) => 
             placeholder="Student's full name"
             required
           />
+          <div className="hidden md:block" />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
