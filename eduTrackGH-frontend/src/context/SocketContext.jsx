@@ -6,6 +6,9 @@
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { io } from 'socket.io-client';
 import { useAuthContext } from './AuthContext';
+import { assertProductionApiConfigured, getSocketBaseUrl } from '../utils/envApi';
+
+assertProductionApiConfigured();
 
 // Provide a non-null default so consumers can safely destructure
 const defaultSocketContext = {
@@ -14,13 +17,6 @@ const defaultSocketContext = {
 };
 
 const SocketContext = createContext(defaultSocketContext);
-
-const rawApiUrl = import.meta.env.VITE_API_URL;
-const apiUrl = rawApiUrl || (import.meta.env.DEV ? 'http://localhost:5000/api' : '');
-if (!apiUrl) {
-  throw new Error('VITE_API_URL must be configured for production builds.');
-}
-const SOCKET_URL = apiUrl.replace(/\/api\/?$/, '');
 
 export const SocketProvider = ({ children }) => {
   const { isAuthenticated } = useAuthContext();
@@ -49,14 +45,30 @@ export const SocketProvider = ({ children }) => {
       return;
     }
 
-    const s = io(SOCKET_URL, {
+    const socketUrl = getSocketBaseUrl();
+    if (!socketUrl) {
+      if (import.meta.env.DEV) console.warn('[socket] Missing socket URL; set VITE_API_URL or enable dev proxy.');
+      setSocket(null);
+      setConnected(false);
+      return;
+    }
+
+    const s = io(socketUrl, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      // Polling first: Brave / strict networks sometimes block or delay WS upgrade; fallback works reliably.
+      transports: ['polling', 'websocket'],
+      reconnection: true,
+      reconnectionAttempts: 12,
+      reconnectionDelay: 750,
+      timeout: 20000,
     });
 
     s.on('connect', () => setConnected(true));
     s.on('disconnect', () => setConnected(false));
-    s.on('connect_error', () => setConnected(false));
+    s.on('connect_error', (err) => {
+      setConnected(false);
+      if (import.meta.env.DEV) console.warn('[socket] connect_error', err?.message || err);
+    });
 
     setSocket(s);
     return () => {

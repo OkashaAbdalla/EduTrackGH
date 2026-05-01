@@ -14,13 +14,11 @@
 
 import axios from 'axios';
 import { ROUTES } from '../utils/constants';
+import { assertProductionApiConfigured, getApiBaseUrl } from '../utils/envApi';
 
-// ========================================
-// BASE URL CONFIGURATION (Vite: set VITE_API_URL in .env / Vercel)
-// ========================================
-const rawApiUrl = import.meta.env.VITE_API_URL;
-const BASE_URL = rawApiUrl || (import.meta.env.DEV ? 'http://localhost:5000/api' : '');
+assertProductionApiConfigured();
 
+const BASE_URL = getApiBaseUrl();
 if (!BASE_URL) {
   throw new Error('VITE_API_URL must be configured for production builds.');
 }
@@ -31,6 +29,8 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
   },
+  // JWT is sent via Authorization header; keep false unless backend sets cookies.
+  withCredentials: false,
 });
 
 
@@ -94,6 +94,11 @@ apiClient.interceptors.response.use(
         sessionStorage.removeItem(k);
       });
       window.location.href = wasAdmin || wasAdminRequest ? ROUTES.ADMIN_LOGIN : ROUTES.LOGIN;
+    }
+
+    // Surface network / CORS failures (Brave shields, offline) instead of silent hangs
+    if (!error.response && error.request && import.meta.env.DEV) {
+      console.warn('[api]', error.message || 'Network error', error.config?.baseURL, error.config?.url);
     }
 
     return Promise.reject(error);
