@@ -57,6 +57,7 @@ const HeadteacherDashboard = () => {
     fetchStats();
   }, []);
 
+
   const fetchUnlockRequests = useCallback(async () => {
     try {
       const res = await messageService.getAttendanceUnlockRequests();

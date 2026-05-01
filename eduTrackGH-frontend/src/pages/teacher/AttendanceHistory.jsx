@@ -176,7 +176,7 @@ const AttendanceHistory = () => {
 
   const exportCsv = () => {
     if (!historyRows.length) return;
-    const headers = ['No.', 'Name', 'Roll Number'];
+    const headers = ['No.', 'Name'];
     weeks.forEach((w, wi) => {
       w.days.forEach((d) =>
         headers.push(`W${wi + 1}_${d.monthAbbr || ''}${d.year || ''}_${d.dayName}${d.day}`)
@@ -186,7 +186,7 @@ const AttendanceHistory = () => {
     headers.push('TERM_P', 'TERM_A', 'TERM_L', 'RATE');
 
     const rows = historyRows.map((row, idx) => {
-      const out = [idx + 1, `"${row.name}"`, row.rollNumber || ''];
+      const out = [idx + 1, `"${row.name}"`];
       let termP = 0;
       let termA = 0;
       let termL = 0;
@@ -226,7 +226,7 @@ const AttendanceHistory = () => {
 
   const exportExcel = () => {
     if (!historyRows.length) return;
-    let html = '<table><tr><th>No.</th><th>Name</th><th>Roll Number</th>';
+    let html = '<table><tr><th>No.</th><th>Name</th>';
     weeks.forEach((w, wi) => {
       w.days.forEach((d) => {
         html += `<th>W${wi + 1} ${d.monthAbbr || ''} ${d.year || ''} ${d.day} ${d.dayName}</th>`;
@@ -236,7 +236,7 @@ const AttendanceHistory = () => {
     html += '<th>Term P</th><th>Term A</th><th>Term L</th><th>Rate</th></tr>';
 
     historyRows.forEach((row, idx) => {
-      html += `<tr><td>${idx + 1}</td><td>${row.name}</td><td>${row.rollNumber || ''}</td>`;
+      html += `<tr><td>${idx + 1}</td><td>${row.name}</td>`;
       let termP = 0;
       let termA = 0;
       let termL = 0;
@@ -488,7 +488,6 @@ const AttendanceHistory = () => {
                           className={`sticky left-10 z-10 border-r border-gray-200 px-3 py-2 text-left dark:border-slate-800 ${idx % 2 === 0 ? 'bg-gray-50 dark:bg-slate-900' : 'bg-white dark:bg-slate-950'}`}
                         >
                           <div className="truncate text-sm font-bold text-gray-900 dark:text-slate-100">{row.name}</div>
-                          <div className="font-mono text-[10px] text-gray-500 dark:text-slate-500">{row.rollNumber || '-'}</div>
                         </td>
                         {weeks.flatMap((w) => {
                           let wP = 0;
