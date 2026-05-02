@@ -43,102 +43,85 @@ function setLastGoodGeo({ latitude, longitude, accuracy }) {
   );
 }
 
-function readStablePosition({
-  samples = 3,
-  maxAccuracyM = 25,
-  timeoutMs = 12_000,
-  perSampleTimeoutMs = 6_000,
-} = {}) {
+/**
+ * Fast position for fence checks. `watchPosition` + multi-sample often took 8–18s. We use `getCurrentPosition`
+ * (first fix wins) and a 13s cap. Same fence rules in callers (haversine + radius). Wi‑Fi/desktop fixes allowed.
+ * Reuses a localStorage fix from the last 20s so “preview + submit” does not wait twice.
+ * Use { bypassCache: true } when the user taps “Refresh location” so a new fix is requested.
+ */
+const ATTENDANCE_GEO_MAX_MS = 13_000;
+
+function coordsFromGeolocationPosition(position) {
+  const latitude = Number(position?.coords?.latitude);
+  const longitude = Number(position?.coords?.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  const accuracy = Number(position?.coords?.accuracy);
+  return {
+    latitude,
+    longitude,
+    accuracy: Number.isFinite(accuracy) ? accuracy : null,
+  };
+}
+
+function readStablePosition({ bypassCache = false } = {}) {
   return new Promise((resolve, reject) => {
     if (!navigator.geolocation) {
       reject(new Error('no geolocation'));
       return;
     }
 
-    const good = [];
     const startedAt = Date.now();
+    const remainingMs = () => ATTENDANCE_GEO_MAX_MS - (Date.now() - startedAt);
 
-    const done = (pos) => {
-      try {
-        if (watchId != null) navigator.geolocation.clearWatch(watchId);
-      } catch {
-        // ignore
-      }
-      clearTimeout(hardTimeout);
-      resolve(pos);
+    const getOnce = (geoOpts, budgetCapMs) => {
+      const cap = Math.min(budgetCapMs, Math.max(500, remainingMs() - 100));
+      if (cap < 450) return Promise.reject(new Error('timeout'));
+      return new Promise((res, rej) => {
+        const t = setTimeout(() => rej(new Error('timeout')), cap + 150);
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            clearTimeout(t);
+            res(pos);
+          },
+          (err) => {
+            clearTimeout(t);
+            rej(err || new Error('geo'));
+          },
+          { ...geoOpts, timeout: cap }
+        );
+      });
     };
 
-    const fail = (err) => {
-      try {
-        if (watchId != null) navigator.geolocation.clearWatch(watchId);
-      } catch {
-        // ignore
-      }
-      clearTimeout(hardTimeout);
-      reject(err);
-    };
-
-    const finalizeFromGood = () => {
-      if (!good.length) return null;
-      const avgLat = good.reduce((s, p) => s + p.latitude, 0) / good.length;
-      const avgLng = good.reduce((s, p) => s + p.longitude, 0) / good.length;
-      const avgAcc = good.reduce((s, p) => s + (p.accuracy || 0), 0) / good.length;
-      return { latitude: avgLat, longitude: avgLng, accuracy: avgAcc };
-    };
-
-    const accept = (p) => {
-      const latitude = Number(p?.coords?.latitude);
-      const longitude = Number(p?.coords?.longitude);
-      const accuracy = Number(p?.coords?.accuracy);
-      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
-      if (Number.isFinite(accuracy) && accuracy > maxAccuracyM) return; // noisy reading
-      good.push({ latitude, longitude, accuracy: Number.isFinite(accuracy) ? accuracy : null });
-      if (good.length >= samples) {
-        const averaged = finalizeFromGood();
-        if (averaged) done(averaged);
-      }
-    };
-
-    // Try to use a very recent cached good reading first (reduces refresh jitter).
-    const cached = getLastGoodGeo(30_000);
-    if (cached && Number.isFinite(cached.latitude) && Number.isFinite(cached.longitude)) {
-      // Still continue sampling in background for a better reading, but use cached quickly.
-      // If we get at least 1 good fresh sample, we will return the averaged fresh result instead.
-      good.push({ latitude: cached.latitude, longitude: cached.longitude, accuracy: cached.accuracy });
-    }
-
-    const hardTimeout = setTimeout(() => {
-      const averaged = finalizeFromGood();
-      if (averaged) done(averaged);
-      else fail(new Error('geo timeout'));
-    }, timeoutMs);
-
-    let watchId = null;
-    try {
-      watchId = navigator.geolocation.watchPosition(
-        (p) => {
-          accept(p);
-          if (Date.now() - startedAt > perSampleTimeoutMs && good.length > 0) {
-            const averaged = finalizeFromGood();
-            if (averaged) done(averaged);
-          }
-        },
-        (err) => {
-          const averaged = finalizeFromGood();
-          if (averaged) done(averaged);
-          else fail(err || new Error('geo error'));
-        },
-        {
-          enableHighAccuracy: true,
-          timeout: perSampleTimeoutMs,
-          maximumAge: 5_000,
+    (async () => {
+      if (!bypassCache) {
+        const recent = getLastGoodGeo(20_000);
+        if (recent) {
+          resolve(recent);
+          return;
         }
-      );
-    } catch (err) {
-      const averaged = finalizeFromGood();
-      if (averaged) done(averaged);
-      else fail(err || new Error('geo error'));
-    }
+      }
+
+      const attempts = [
+        { opts: { enableHighAccuracy: true, maximumAge: 0 }, budget: 5000 },
+        { opts: { enableHighAccuracy: false, maximumAge: 600000 }, budget: 4000 },
+        { opts: { enableHighAccuracy: false, maximumAge: 0 }, budget: 3500 },
+      ];
+
+      for (const { opts, budget } of attempts) {
+        if (remainingMs() < 400) break;
+        try {
+          const pos = await getOnce(opts, budget);
+          const c = coordsFromGeolocationPosition(pos);
+          if (c) {
+            resolve(c);
+            return;
+          }
+        } catch {
+          /* next */
+        }
+      }
+      reject(new Error('geo timeout'));
+    })();
   });
 }
 
@@ -273,13 +256,13 @@ export function useMarkAttendance() {
     );
   }, [selectedClass, selectedDate]);
 
-  const runGeoPreview = useCallback(() => {
+  const runGeoPreview = useCallback(({ bypassCache = false } = {}) => {
     const sch = selectedClassroom?.schoolId;
     if (!needsGeoFence || !sch?.location) return;
     setGeoSubmitState('checking');
     setGeoMessage('Verifying your location…');
     setGeoDistanceM(null);
-    readStablePosition()
+    readStablePosition({ bypassCache })
       .then((pos) => {
         const lat = pos.latitude;
         const lng = pos.longitude;
@@ -316,10 +299,16 @@ export function useMarkAttendance() {
       })
       .catch(() => {
         setGeoSubmitState('unavailable');
-        setGeoMessage('Location access is required to submit attendance while the school boundary is set. Allow location in your browser and try again.');
+        setGeoMessage(
+          'Could not verify location (permission blocked, or PC/Wi‑Fi signal too weak). Allow location for this site or tap Refresh location.'
+        );
         setGeoDistanceM(null);
       });
   }, [needsGeoFence, selectedClassroom]);
+
+  const refreshGeoPreview = useCallback(() => {
+    runGeoPreview({ bypassCache: true });
+  }, [runGeoPreview]);
 
   const startCamera = useCallback(async () => {
     setCameraError(null);
@@ -530,7 +519,10 @@ export function useMarkAttendance() {
           );
         }
       } catch {
-        showToast('You must be within school premises to mark attendance. Allow location access and try again.', 'error');
+        showToast(
+          'Could not read your location. Allow location for this site, wait a few seconds, and try again (PCs may need a moment on Wi‑Fi).',
+          'error'
+        );
         return;
       }
     }
@@ -608,7 +600,7 @@ export function useMarkAttendance() {
     geoSubmitState,
     geoMessage,
     geoDistanceM,
-    refreshGeoPreview: runGeoPreview,
+    refreshGeoPreview,
     submitBlockedByGeo,
   };
 }
