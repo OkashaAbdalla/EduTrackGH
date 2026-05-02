@@ -7,89 +7,101 @@ import { Card } from '../common';
 import headteacherService from '../../services/headteacherService';
 import { useToast } from '../../context';
 
-function readStablePosition({ samples = 4, maxAccuracyM = 25, timeoutMs = 12000, perSampleTimeoutMs = 6000 } = {}) {
-  return new Promise((resolve, reject) => {
-    if (!navigator.geolocation) {
-      reject(new Error('Geolocation not supported'));
-      return;
-    }
+/** Hard cap for “Use current location” — user requirement: must not exceed ~13s. */
+const SCHOOL_LOCATION_GEO_MAX_MS = 13000;
 
-    const good = [];
-    const startedAt = Date.now();
-    let watchId = null;
+function coordsFromGeolocationPosition(position) {
+  const latitude = Number(position?.coords?.latitude);
+  const longitude = Number(position?.coords?.longitude);
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return null;
+  const acc = Number(position?.coords?.accuracy);
+  return {
+    latitude,
+    longitude,
+    accuracy: Number.isFinite(acc) ? acc : null,
+  };
+}
 
-    const finalize = () => {
-      if (!good.length) return null;
-      const avgLat = good.reduce((s, p) => s + p.latitude, 0) / good.length;
-      const avgLng = good.reduce((s, p) => s + p.longitude, 0) / good.length;
-      const avgAcc = good.reduce((s, p) => s + (p.accuracy || 0), 0) / good.length;
-      return { latitude: avgLat, longitude: avgLng, accuracy: avgAcc };
-    };
+/**
+ * School boundary setup only (not teacher attendance checks).
+ *
+ * Order matters: **phone / GPS first** (`enableHighAccuracy: true`) so mobiles get a real GNSS fix when available.
+ * If that times out or fails (typical on desktop), fall back to **network / Wi‑Fi** paths.
+ * Teacher “Mark attendance” still uses stricter `watchPosition` + high accuracy in `useMarkAttendance.js` — unchanged.
+ *
+ * All attempts share one 13s budget.
+ */
+async function readStablePositionForSchoolSetup() {
+  if (!navigator.geolocation) {
+    throw new Error('Geolocation not supported');
+  }
+  if (typeof window !== 'undefined' && window.isSecureContext === false) {
+    const e = new Error('Geolocation requires HTTPS (or localhost).');
+    e.code = 'INSECURE_CONTEXT';
+    throw e;
+  }
 
-    const cleanup = () => {
-      try {
-        if (watchId != null) navigator.geolocation.clearWatch(watchId);
-      } catch {
-        // ignore
-      }
-      clearTimeout(hardTimeout);
-    };
+  const startedAt = Date.now();
+  const remainingMs = () => SCHOOL_LOCATION_GEO_MAX_MS - (Date.now() - startedAt);
 
-    const done = (pos) => {
-      cleanup();
-      resolve(pos);
-    };
-
-    const fail = (err) => {
-      cleanup();
-      reject(err);
-    };
-
-    const accept = (p) => {
-      const latitude = Number(p?.coords?.latitude);
-      const longitude = Number(p?.coords?.longitude);
-      const accuracy = Number(p?.coords?.accuracy);
-      if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) return;
-      if (Number.isFinite(accuracy) && accuracy > maxAccuracyM) return; // too noisy
-      good.push({ latitude, longitude, accuracy: Number.isFinite(accuracy) ? accuracy : null });
-      if (good.length >= samples) {
-        const averaged = finalize();
-        if (averaged) done(averaged);
-      }
-    };
-
-    const hardTimeout = setTimeout(() => {
-      const averaged = finalize();
-      if (averaged) done(averaged);
-      else fail(new Error('Location timeout'));
-    }, timeoutMs);
-
-    try {
-      watchId = navigator.geolocation.watchPosition(
-        (p) => {
-          accept(p);
-          if (Date.now() - startedAt > perSampleTimeoutMs && good.length > 0) {
-            const averaged = finalize();
-            if (averaged) done(averaged);
-          }
+  /**
+   * @param {GeolocationPositionOptions & { _budgetMs?: number }} opts _budgetMs caps this single call (not passed to API)
+   */
+  const getOnce = (opts) => {
+    const { _budgetMs = 5000, ...geoOpts } = opts;
+    const budget = Math.min(Math.max(_budgetMs, 1500), Math.max(800, remainingMs()));
+    return new Promise((resolve, reject) => {
+      const timer = setTimeout(() => {
+        reject(Object.assign(new Error('timeout'), { code: 3 }));
+      }, budget + 300);
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          clearTimeout(timer);
+          resolve(pos);
         },
         (err) => {
-          const averaged = finalize();
-          if (averaged) done(averaged);
-          else fail(err || new Error('Location error'));
+          clearTimeout(timer);
+          reject(err || new Error('Position error'));
         },
-        {
-          enableHighAccuracy: true,
-          timeout: perSampleTimeoutMs,
-          maximumAge: 0,
-        }
+        { ...geoOpts, timeout: budget }
       );
-    } catch (err) {
-      const averaged = finalize();
-      if (averaged) done(averaged);
-      else fail(err || new Error('Location error'));
+    });
+  };
+
+  let lastErr = new Error('Location unavailable');
+  const attempts = [
+    // 1) Phones / tablets: GPS & sensors (same intent as attendance high-accuracy mode)
+    {
+      enableHighAccuracy: true,
+      maximumAge: 0,
+      _budgetMs: 5500,
+    },
+    // 2) Desktop / Wi‑Fi: cached network position (fast when GPS not available)
+    {
+      enableHighAccuracy: false,
+      maximumAge: 600000,
+      _budgetMs: 4000,
+    },
+    // 3) Fresh network fix (no cache)
+    {
+      enableHighAccuracy: false,
+      maximumAge: 0,
+      _budgetMs: 3500,
+    },
+  ];
+
+  for (const a of attempts) {
+    if (remainingMs() < 900) break;
+    try {
+      const pos = await getOnce(a);
+      const c = coordsFromGeolocationPosition(pos);
+      if (c) return c;
+    } catch (e) {
+      lastErr = e;
     }
-  });
+  }
+
+  throw lastErr;
 }
 
 export default function SchoolLocationSettings() {
@@ -128,21 +140,30 @@ export default function SchoolLocationSettings() {
   const handleUseCurrent = async () => {
     setLocating(true);
     try {
-      const pos = await readStablePosition();
+      const pos = await readStablePositionForSchoolSetup();
       setLat(String(pos.latitude.toFixed(6)));
       setLng(String(pos.longitude.toFixed(6)));
-      const acc = Number.isFinite(pos.accuracy) ? Math.round(pos.accuracy) : null;
-      showToast(
-        acc != null
-          ? `Coordinates captured (accuracy ~${acc}m)`
-          : 'Coordinates captured from your current location',
-        'success'
-      );
-    } catch {
-      showToast(
-        'Could not read a stable location. Go outside, turn on GPS/high accuracy, and try again.',
-        'error'
-      );
+      showToast('Location captured.', 'success');
+    } catch (err) {
+      const code = err?.code;
+      const denied = code === 1;
+      const timedOut = code === 3 || err?.message === 'timeout';
+      const insecure = err?.code === 'INSECURE_CONTEXT';
+      let msg =
+        'Could not read your location. Allow location for this site, use HTTPS, or enter coordinates manually.';
+      if (insecure) {
+        msg = 'Geolocation needs a secure connection (HTTPS) except on localhost. Open the app over HTTPS or use manual coordinates.';
+      } else if (denied) {
+        msg =
+          'Location permission denied. Click the lock icon in the address bar → Site settings → Location → Allow, then try again.';
+      } else if (timedOut) {
+        msg =
+          'Location request timed out. Try again near a window, disable strict privacy blocking for this site, or enter lat/lng from a map.';
+      } else if (code === 2) {
+        msg =
+          'Position unavailable (browser could not determine location). Check OS location services and try again, or enter coordinates manually.';
+      }
+      showToast(msg, 'error');
     } finally {
       setLocating(false);
     }
