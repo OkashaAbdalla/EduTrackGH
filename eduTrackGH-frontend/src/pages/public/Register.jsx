@@ -32,7 +32,12 @@ const Register = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const validationErrors = validateRegisterForm(formData);
+    const normalizedFormData = {
+      ...formData,
+      phone: formData.phone.trim()
+    };
+
+    const validationErrors = validateRegisterForm(normalizedFormData);
     if (Object.keys(validationErrors).length > 0) {
       setErrors(validationErrors);
       showToast('Please fix the errors in the form', 'error');
@@ -42,7 +47,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const result = await register(formData);
+      const result = await register(normalizedFormData);
       
       if (result.success) {
         localStorage.setItem('pendingVerificationEmail', formData.email);
@@ -80,13 +85,13 @@ const Register = () => {
           required
         />
         <FormInput
-          label="Phone Number"
+          label="Phone Number (Optional)"
           name="phone"
           value={formData.phone}
           onChange={handleChange}
           placeholder="e.g. 0241234567 or +233241234567"
           error={errors.phone}
-          required
+          hint="Leave blank if you do not want to add it now."
         />
         <FormInput
           label="Email"

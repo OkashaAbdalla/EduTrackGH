@@ -6,7 +6,17 @@
 
 import { useState } from 'react';
 
-const FormInput = ({ label, type = 'text', name, value, onChange, placeholder, required = false, error = '' }) => {
+const FormInput = ({
+  label,
+  type = 'text',
+  name,
+  value,
+  onChange,
+  placeholder,
+  required = false,
+  error = '',
+  hint = ''
+}) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPasswordField = type === 'password';
   const inputType = isPasswordField && showPassword ? 'text' : type;
@@ -66,6 +76,11 @@ const FormInput = ({ label, type = 'text', name, value, onChange, placeholder, r
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>{error}</span>
+        </p>
+      )}
+      {!error && hint && (
+        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+          {hint}
         </p>
       )}
     </div>
