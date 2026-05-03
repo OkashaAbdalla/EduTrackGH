@@ -55,22 +55,23 @@ const register = async (req, res) => {
       fullName, email, phone, password, role: 'parent', verificationToken,
     });
 
-    // Try to send verification email (don't fail registration if email fails)
-    try {
-      const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
-      await sendEmail({
-        to: email,
-        subject: 'Verify Your Email - EduTrack GH',
-        html: emailTemplates.verification(fullName, verificationLink),
-      });
-    } catch (emailError) {
-      console.error('⚠️  Failed to send verification email:', emailError.message);
-    }
-
     res.status(201).json({
       success: true,
       message: 'Registration successful! Please check your email.',
       user: user.getPublicProfile(),
+    });
+
+    // Send verification email in background so slow SMTP never blocks registration response.
+    setImmediate(() => {
+      const appBaseUrl = process.env.FRONTEND_URL || '';
+      const verificationLink = `${appBaseUrl}/verify-email?token=${verificationToken}`;
+      sendEmail({
+        to: email,
+        subject: 'Verify Your Email - EduTrack GH',
+        html: emailTemplates.verification(fullName, verificationLink),
+      }).catch((emailError) => {
+        console.error('⚠️  Failed to send verification email:', emailError.message);
+      });
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || 'Registration failed' });
