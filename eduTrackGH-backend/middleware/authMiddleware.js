@@ -36,6 +36,15 @@ const protect = async (req, res, next) => {
         });
       }
 
+      if (!req.user.isVerified) {
+        return res.status(403).json({
+          success: false,
+          code: 'EMAIL_NOT_VERIFIED',
+          message: 'Email verification required. Please verify your account to continue.',
+          email: req.user.email,
+        });
+      }
+
       next();
     } catch (error) {
       console.error('Auth middleware error:', error.message);

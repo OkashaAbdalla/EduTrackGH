@@ -59,6 +59,11 @@ const AdminLogin = () => {
         }
         showToast('Admin login successful. Redirecting...', 'success');
         setTimeout(() => navigate(ROUTES.ADMIN_DASHBOARD), 800);
+      } else if (result.code === 'EMAIL_NOT_VERIFIED') {
+        showToast(
+          result.message || 'This administrator account must be verified before sign-in.',
+          'warning'
+        );
       } else {
         showToast(result.message || 'Invalid credentials', 'error');
       }

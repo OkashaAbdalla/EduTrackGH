@@ -122,9 +122,19 @@ export const AuthProvider = ({ children }) => {
 
         return { success: true, user: { ...userData, role } };
       }
-      return { success: false, message: response.message };
+      return {
+        success: false,
+        message: response.message,
+        code: response.code,
+      };
     } catch (error) {
-      return { success: false, message: error.response?.data?.message || 'Login failed' };
+      const data = error.response?.data;
+      return {
+        success: false,
+        message: data?.message || 'Login failed',
+        code: data?.code,
+        email: data?.email,
+      };
     }
   };
 
@@ -157,9 +167,18 @@ export const AuthProvider = ({ children }) => {
         setIsAuthenticated(true);
         return { success: true, user: { ...userData, role } };
       }
-      return { success: false, message: response.message };
+      return {
+        success: false,
+        message: response.message,
+        code: response.code,
+      };
     } catch (error) {
-      return { success: false, message: error.response?.data?.message || 'Admin login failed' };
+      const data = error.response?.data;
+      return {
+        success: false,
+        message: data?.message || 'Admin login failed',
+        code: data?.code,
+      };
     }
   };
 

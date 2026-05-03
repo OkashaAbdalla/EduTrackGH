@@ -31,6 +31,37 @@ const writeAuthAudit = ({ user, email, action, req }) => {
   }).catch(() => {});
 };
 
+const normalizeBaseUrl = (value) => {
+  const raw = String(value || '').trim();
+  if (!raw || !/^https?:\/\//i.test(raw)) return '';
+  return raw.replace(/\/+$/, '');
+};
+
+const getFrontendBaseUrl = (req) => {
+  const fromEnv = normalizeBaseUrl(process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL);
+  if (fromEnv) return fromEnv;
+
+  const origin = normalizeBaseUrl(req?.headers?.origin);
+  if (origin) return origin;
+
+  const referer = String(req?.headers?.referer || '').trim();
+  if (referer) {
+    try {
+      const parsed = new URL(referer);
+      const refOrigin = normalizeBaseUrl(parsed.origin);
+      if (refOrigin) return refOrigin;
+    } catch (_) {}
+  }
+
+  return normalizeBaseUrl('http://localhost:5173');
+};
+
+const buildFrontendUrl = (req, pathWithQuery) => {
+  const baseUrl = getFrontendBaseUrl(req);
+  const route = String(pathWithQuery || '').startsWith('/') ? pathWithQuery : `/${pathWithQuery || ''}`;
+  return `${baseUrl}${route}`;
+};
+
 const register = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
@@ -63,8 +94,7 @@ const register = async (req, res) => {
 
     // Send verification email in background so slow SMTP never blocks registration response.
     setImmediate(() => {
-      const appBaseUrl = process.env.FRONTEND_URL || '';
-      const verificationLink = `${appBaseUrl}/verify-email?token=${verificationToken}`;
+      const verificationLink = buildFrontendUrl(req, `/verify-email?token=${verificationToken}`);
       sendEmail({
         to: email,
         subject: 'Verify Your Email - EduTrack GH',
@@ -105,6 +135,16 @@ const login = async (req, res) => {
 
     if (!user.isActive) {
       return res.status(403).json({ success: false, message: 'Account deactivated' });
+    }
+
+    if (!user.isVerified) {
+      writeAuthAudit({ user, action: 'FAILED_LOGIN', req });
+      return res.status(403).json({
+        success: false,
+        code: 'EMAIL_NOT_VERIFIED',
+        message: 'Please verify your email before signing in. Check your inbox for the verification link.',
+        email: user.email,
+      });
     }
 
     const token = generateToken(user._id);
@@ -248,7 +288,7 @@ const resendVerification = async (req, res) => {
     user.verificationToken = verificationToken;
     await user.save();
 
-    const verificationLink = `${process.env.FRONTEND_URL}/verify-email?token=${verificationToken}`;
+    const verificationLink = buildFrontendUrl(req, `/verify-email?token=${verificationToken}`);
     await sendEmail({
       to: email,
       subject: 'Verify Your Email - EduTrack GH',
@@ -284,7 +324,7 @@ const forgotPassword = async (req, res) => {
       }
     );
 
-    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${rawToken}`;
+    const resetLink = buildFrontendUrl(req, `/reset-password?token=${rawToken}`);
     setImmediate(() => {
       sendEmail({
         to: user.email,
@@ -386,6 +426,16 @@ const adminLogin = async (req, res) => {
 
     if (!user.isActive) {
       return res.status(403).json({ success: false, message: 'Account deactivated' });
+    }
+
+    if (!user.isVerified) {
+      writeAuthAudit({ user, action: 'FAILED_LOGIN', req });
+      return res.status(403).json({
+        success: false,
+        code: 'EMAIL_NOT_VERIFIED',
+        message: 'Please verify this administrator email before signing in.',
+        email: user.email,
+      });
     }
 
     const token = generateToken(user._id);

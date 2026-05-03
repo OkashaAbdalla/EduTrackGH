@@ -45,6 +45,14 @@ const Login = () => {
         setTimeout(() => {
           navigate(redirectPath);
         }, 1000);
+      } else if (result.code === 'EMAIL_NOT_VERIFIED') {
+        const pending = (result.email || formData.email || '').trim();
+        if (pending) localStorage.setItem('pendingVerificationEmail', pending);
+        showToast(
+          result.message || 'Please verify your email before signing in.',
+          'warning'
+        );
+        navigate(ROUTES.VERIFY_EMAIL, { replace: true });
       } else {
         showToast(result.message || 'Invalid email or password', 'error');
       }

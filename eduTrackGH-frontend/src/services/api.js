@@ -96,6 +96,32 @@ apiClient.interceptors.response.use(
       window.location.href = wasAdmin || wasAdminRequest ? ROUTES.ADMIN_LOGIN : ROUTES.LOGIN;
     }
 
+    if (error.response?.status === 403 && error.response?.data?.code === 'EMAIL_NOT_VERIFIED') {
+      const adminLoginPath = import.meta.env.VITE_ADMIN_LOGIN_PATH || 'secure-admin';
+      const isAdminLoginRequest = error.config?.url?.includes(`/auth/${adminLoginPath}`);
+      if (isAdminLoginRequest) {
+        return Promise.reject(error);
+      }
+
+      const email =
+        error.response?.data?.email ||
+        localStorage.getItem('user_email') ||
+        sessionStorage.getItem('user_email');
+      if (email) {
+        try {
+          localStorage.setItem('pendingVerificationEmail', String(email).trim());
+        } catch (_) {
+          // ignore
+        }
+      }
+      ['auth_token', 'user_role', 'user_email', 'user_name', 'user_schoolLevel'].forEach((k) => {
+        localStorage.removeItem(k);
+        sessionStorage.removeItem(k);
+      });
+      window.location.href = ROUTES.VERIFY_EMAIL;
+      return Promise.reject(error);
+    }
+
     // Surface network / CORS failures (Brave shields, offline) instead of silent hangs
     if (!error.response && error.request && import.meta.env.DEV) {
       console.warn('[api]', error.message || 'Network error', error.config?.baseURL, error.config?.url);

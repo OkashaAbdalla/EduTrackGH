@@ -20,8 +20,9 @@ function setupSocketServer(httpServer) {
     if (!token) return next(new Error('Authentication required'));
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      const user = await User.findById(decoded.id).select('_id role school schoolId isActive');
+      const user = await User.findById(decoded.id).select('_id role school schoolId isActive isVerified');
       if (!user || user.isActive === false) return next(new Error('Invalid user'));
+      if (!user.isVerified) return next(new Error('Email verification required'));
       socket.userId = user._id.toString();
       socket.userRole = user.role;
       socket.schoolId = (user.school || user.schoolId)?.toString();
