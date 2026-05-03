@@ -7,6 +7,7 @@ const User = require('../models/User');
 const AuthAuditLog = require('../models/AuthAuditLog');
 const generateToken = require('../utils/generateToken');
 const { sendEmail, emailTemplates } = require('../utils/sendEmail');
+const { isEmailConfigured } = require('../config/email');
 const { uploadProfilePhoto, deleteImage } = require('../utils/cloudinary');
 
 const getRequestMeta = (req) => ({
@@ -66,6 +67,14 @@ const register = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
     const phone = (req.body.phone && String(req.body.phone).trim()) || '';
+
+    if (!isEmailConfigured()) {
+      return res.status(503).json({
+        success: false,
+        code: 'EMAIL_SERVICE_UNAVAILABLE',
+        message: 'Email service is currently unavailable. Please try again later.',
+      });
+    }
 
     const userExists = await User.findOne({ email });
     if (userExists) {
@@ -273,7 +282,7 @@ const logout = async (req, res) => {
 
 const resendVerification = async (req, res) => {
   try {
-    const { email } = req.body;
+    const email = String(req.body?.email || '').toLowerCase().trim();
     const user = await User.findOne({ email });
 
     if (!user) {
@@ -284,16 +293,37 @@ const resendVerification = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Email already verified' });
     }
 
+    const previousVerificationToken = user.verificationToken;
     const verificationToken = crypto.randomBytes(32).toString('hex');
     user.verificationToken = verificationToken;
     await user.save();
 
     const verificationLink = buildFrontendUrl(req, `/verify-email?token=${verificationToken}`);
-    await sendEmail({
-      to: email,
-      subject: 'Verify Your Email - EduTrack GH',
-      html: emailTemplates.verification(user.fullName, verificationLink),
-    });
+    try {
+      await sendEmail({
+        to: email,
+        subject: 'Verify Your Email - EduTrack GH',
+        html: emailTemplates.verification(user.fullName, verificationLink),
+      });
+    } catch (mailError) {
+      // Keep previous token valid if resend fails, so old link still works.
+      user.verificationToken = previousVerificationToken;
+      await user.save();
+
+      if (mailError.code === 'EMAIL_NOT_CONFIGURED') {
+        return res.status(503).json({
+          success: false,
+          code: 'EMAIL_SERVICE_UNAVAILABLE',
+          message: 'Email service is not configured on the server. Please contact support.',
+        });
+      }
+
+      return res.status(502).json({
+        success: false,
+        code: 'EMAIL_DELIVERY_FAILED',
+        message: 'Unable to deliver verification email right now. Please try again shortly.',
+      });
+    }
 
     res.json({ success: true, message: 'Verification email sent!' });
   } catch (error) {

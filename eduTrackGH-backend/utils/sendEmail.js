@@ -2,12 +2,21 @@
  * Email Sending Utility
  */
 
-const transporter = require('../config/email');
+const { transporter, isEmailConfigured, getEmailConfig } = require('../config/email');
 
 const sendEmail = async ({ to, subject, html }) => {
   try {
+    if (!isEmailConfigured() || !transporter) {
+      const configError = new Error(
+        'Email service is not configured on the server. Set EMAIL_USER/EMAIL_PASSWORD or SMTP_* variables.'
+      );
+      configError.code = 'EMAIL_NOT_CONFIGURED';
+      throw configError;
+    }
+
+    const emailCfg = getEmailConfig();
     const mailOptions = {
-      from: `"EduTrack GH" <${process.env.EMAIL_USER}>`,
+      from: `"EduTrack GH" <${emailCfg.from}>`,
       to,
       subject,
       html,
@@ -24,7 +33,14 @@ const sendEmail = async ({ to, subject, html }) => {
       envelope: info.envelope,
     };
   } catch (error) {
-    console.error('❌ Email sending failed:', error.message);
+    console.error(
+      '❌ Email sending failed:',
+      error.message,
+      '| code:',
+      error.code || 'N/A',
+      '| responseCode:',
+      error.responseCode || 'N/A'
+    );
     throw error;
   }
 };

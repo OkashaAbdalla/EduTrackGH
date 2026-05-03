@@ -11,6 +11,7 @@ const connectDB = require("./config/db");
 const errorMiddleware = require("./middleware/errorMiddleware");
 const { setupSocketServer } = require("./utils/socketServer");
 const { getCorsOrigins } = require("./utils/corsOrigins");
+const { isEmailConfigured } = require("./config/email");
 
 // Load environment variables
 dotenv.config();
@@ -57,6 +58,7 @@ app.get("/api/health", (req, res) => {
     status: "OK",
     message: "EduTrack GH API is running",
     timestamp: new Date().toISOString(),
+    emailConfigured: isEmailConfigured(),
   });
 });
 
