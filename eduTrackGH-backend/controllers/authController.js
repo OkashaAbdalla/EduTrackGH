@@ -6,8 +6,12 @@ const crypto = require('crypto');
 const User = require('../models/User');
 const AuthAuditLog = require('../models/AuthAuditLog');
 const generateToken = require('../utils/generateToken');
-const { sendEmail, emailTemplates } = require('../utils/sendEmail');
-const { isEmailConfigured } = require('../config/email');
+const {
+  isEmailConfigured,
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+  buildFrontendUrl,
+} = require('../services/emailService');
 const { uploadProfilePhoto, deleteImage } = require('../utils/cloudinary');
 
 const getRequestMeta = (req) => ({
@@ -57,12 +61,6 @@ const getFrontendBaseUrl = (req) => {
   return normalizeBaseUrl('http://localhost:5173');
 };
 
-const buildFrontendUrl = (req, pathWithQuery) => {
-  const baseUrl = getFrontendBaseUrl(req);
-  const route = String(pathWithQuery || '').startsWith('/') ? pathWithQuery : `/${pathWithQuery || ''}`;
-  return `${baseUrl}${route}`;
-};
-
 const register = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
@@ -103,12 +101,11 @@ const register = async (req, res) => {
 
     // Send verification email in background so slow SMTP never blocks registration response.
     setImmediate(() => {
-      const verificationLink = buildFrontendUrl(req, `/verify-email?token=${verificationToken}`);
-      sendEmail({
-        to: email,
-        subject: 'Verify Your Email - EduTrack GH',
-        html: emailTemplates.verification(fullName, verificationLink),
-      }).catch((emailError) => {
+      const verificationLink = buildFrontendUrl(
+        `/verify-email?token=${verificationToken}`,
+        getFrontendBaseUrl(req)
+      );
+      sendVerificationEmail(email, verificationToken, { fullName, verificationLink }).catch((emailError) => {
         console.error('⚠️  Failed to send verification email:', emailError.message);
       });
     });
@@ -298,15 +295,17 @@ const resendVerification = async (req, res) => {
     user.verificationToken = verificationToken;
     await user.save();
 
-    const verificationLink = buildFrontendUrl(req, `/verify-email?token=${verificationToken}`);
+    const verificationLink = buildFrontendUrl(
+      `/verify-email?token=${verificationToken}`,
+      getFrontendBaseUrl(req)
+    );
     try {
-      await sendEmail({
-        to: email,
-        subject: 'Verify Your Email - EduTrack GH',
-        html: emailTemplates.verification(user.fullName, verificationLink),
+      await sendVerificationEmail(email, verificationToken, {
+        fullName: user.fullName,
+        verificationLink,
       });
     } catch (mailError) {
-      // Keep previous token valid if resend fails, so old link still works.
+      // Keep previous token valid if email delivery fails, so old link still works.
       user.verificationToken = previousVerificationToken;
       await user.save();
 
@@ -354,30 +353,11 @@ const forgotPassword = async (req, res) => {
       }
     );
 
-    const resetLink = buildFrontendUrl(req, `/reset-password?token=${rawToken}`);
+    const resetLink = buildFrontendUrl(`/reset-password?token=${rawToken}`, getFrontendBaseUrl(req));
     setImmediate(() => {
-      sendEmail({
-        to: user.email,
-        subject: 'Reset Your Password - EduTrack GH',
-        html: `
-          <!DOCTYPE html>
-          <html>
-          <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-            <div style="max-width: 600px; margin: 0 auto; padding: 16px;">
-              <h2 style="color:#006838;">Password Reset Request</h2>
-              <p>Hello ${user.fullName || 'Parent'},</p>
-              <p>We received a request to reset your EduTrack GH parent account password.</p>
-              <p>
-                Click this link to reset your password:
-                <br />
-                <a href="${resetLink}">${resetLink}</a>
-              </p>
-              <p>This link expires in 30 minutes and can only be used once.</p>
-              <p>If you did not request this, you can ignore this email.</p>
-            </div>
-          </body>
-          </html>
-        `,
+      sendPasswordResetEmail(user.email, rawToken, {
+        fullName: user.fullName || 'Parent',
+        resetLink,
       }).catch((err) => console.error('forgotPassword email error:', err.message));
     });
 

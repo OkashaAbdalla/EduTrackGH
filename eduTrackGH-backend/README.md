@@ -4,7 +4,7 @@ REST API for EduTrack GH: school absenteeism tracking and parent notifications (
 
 ## Tech Stack
 
-Node.js, Express, MongoDB, JWT, Bcrypt, Nodemailer. Optional SMS via Hubtel (see `.env.example`).
+Node.js, Express, MongoDB, JWT, Bcrypt, Brevo (SMTP via Nodemailer). Optional SMS via Hubtel (see `.env.example`).
 
 ## Setup
 
@@ -17,7 +17,7 @@ Node.js, Express, MongoDB, JWT, Bcrypt, Nodemailer. Optional SMS via Hubtel (see
    ```bash
    cp .env.example .env
    ```
-   Set: `MONGODB_URI`, `JWT_SECRET`, `FRONTEND_URL` (e.g. `http://localhost:5173`). Optional: `EMAIL_*`, `SMS_ENABLED`, `HUBTEL_*`.
+   Set: `MONGODB_URI`, `JWT_SECRET`, `FRONTEND_URL` (e.g. `http://localhost:5173`), `BREVO_SMTP_USER`, `BREVO_SMTP_PASS`, `BREVO_FROM_EMAIL`. Optional: `SMS_ENABLED`, `HUBTEL_*`.
 
 3. **Run**
    ```bash
@@ -46,12 +46,13 @@ Creates admin, headteachers, teachers, parent (e.g. `admin@edutrack.test` / `adm
 ## Structure
 
 ```
-config/       db, email
+config/       db
 models/       User, School, Student, Classroom, DailyAttendance, Notification
 controllers/  auth, attendance, classroom, admin, notification, reports
 routes/       auth, attendance, classrooms, admin, notifications, reports
 middleware/   auth, role, error
-utils/        generateToken, sendEmail, sendSms, validators
+services/     emailService, attendanceService, parentNotificationService
+utils/        generateToken, sendEmail (compat wrapper), sendSms, validators
 scripts/      createTestUsers.js
 server.js
 ```

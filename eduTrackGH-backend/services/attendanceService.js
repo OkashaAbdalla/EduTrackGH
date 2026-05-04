@@ -7,9 +7,12 @@ const Student = require("../models/Student");
 const DailyAttendance = require("../models/DailyAttendance");
 const AttendanceFlag = require("../models/AttendanceFlag");
 const { sendSms } = require("../utils/sendSms");
-const { handleAbsenceNotification } = require("../services/emailService");
 const { getSchoolDayDecision } = require("./calendarRuntime");
-const { queueParentAttendanceAlert, dateToIso } = require("./parentNotificationService");
+const {
+  queueParentAttendanceAlert,
+  dateToIso,
+  handleAbsenceNotification,
+} = require("./parentNotificationService");
 const { approvedInClassroom } = require("../utils/studentQuery");
 const School = require("../models/School");
 const { haversineMeters, isGeoFenceActive } = require("../utils/geo");

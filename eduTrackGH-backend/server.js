@@ -7,14 +7,15 @@ const http = require("http");
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
+
+// Load environment variables before importing modules that read process.env at require-time.
+dotenv.config();
+
 const connectDB = require("./config/db");
 const errorMiddleware = require("./middleware/errorMiddleware");
 const { setupSocketServer } = require("./utils/socketServer");
 const { getCorsOrigins } = require("./utils/corsOrigins");
-const { isEmailConfigured } = require("./config/email");
-
-// Load environment variables
-dotenv.config();
+const { isEmailConfigured } = require("./services/emailService");
 
 if (!process.env.JWT_SECRET) {
   console.error("❌ JWT_SECRET is not set. Add it to eduTrackGH-backend/.env or your host (Render).");

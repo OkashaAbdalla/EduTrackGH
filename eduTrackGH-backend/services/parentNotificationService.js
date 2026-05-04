@@ -3,7 +3,8 @@ const User = require("../models/User");
 const Student = require("../models/Student");
 const DailyAttendance = require("../models/DailyAttendance");
 const School = require("../models/School");
-const { sendEmail } = require("../utils/sendEmail");
+const Classroom = require("../models/Classroom");
+const { sendParentNotificationEmail } = require("./emailService");
 const { linkStudentToParentUser } = require("./parentService");
 
 function isoToUtcDateStart(iso) {
@@ -17,29 +18,6 @@ function dateToIso(dateInput) {
   const d = new Date(dateInput);
   if (Number.isNaN(d.getTime())) return null;
   return d.toISOString().split("T")[0];
-}
-
-function buildEmailHtml({ studentName, statusLabel, dateIso, schoolName, message }) {
-  return `
-    <!DOCTYPE html>
-    <html>
-      <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #111;">
-        <div style="max-width: 600px; margin: 0 auto; padding: 16px;">
-          <h2 style="color:#006838;margin-bottom:8px;">Attendance Update – EduTrackGH</h2>
-          <p>${message}</p>
-          <p>
-            <strong>Student:</strong> ${studentName}<br/>
-            <strong>Date:</strong> ${dateIso}<br/>
-            <strong>Status:</strong> ${statusLabel}<br/>
-            <strong>School:</strong> ${schoolName || "School"}
-          </p>
-          <p style="font-size:12px;color:#555;margin-top:24px;">
-            EduTrackGH – Intelligent absenteeism monitoring for primary and JHS schools.
-          </p>
-        </div>
-      </body>
-    </html>
-  `;
 }
 
 async function getConsecutiveAbsences(studentId, classroomId, dateIso) {
@@ -101,16 +79,12 @@ async function sendNotificationEmailIfNeeded({
 }) {
   if (!parentEmail || notification.emailSentAt) return;
   try {
-    const result = await sendEmail({
-      to: parentEmail,
-      subject: `Attendance ${statusLabel} Alert – EduTrackGH`,
-      html: buildEmailHtml({
-        studentName,
-        statusLabel,
-        dateIso: dateToIso(notification.date),
-        schoolName,
-        message,
-      }),
+    const result = await sendParentNotificationEmail(parentEmail, {
+      studentName,
+      statusLabel,
+      dateIso: dateToIso(notification.date),
+      schoolName,
+      message,
     });
     notification.emailSentAt = new Date();
     notification.emailMessageId = result?.messageId || "";
@@ -195,7 +169,61 @@ async function queueParentAttendanceAlert({ studentId, classroomId, schoolId, da
   });
 }
 
+async function handleAbsenceNotification({ studentId, classroomId, date }) {
+  try {
+    const student = await Student.findById(studentId)
+      .populate("parent", "fullName email phone")
+      .populate("classroom", "name grade")
+      .lean();
+    if (!student) return;
+
+    const parentEmail = student.parent?.email || student.parentEmail;
+    if (!parentEmail) return;
+
+    const classroom = student.classroom || (await Classroom.findById(classroomId).select("name grade").lean());
+    const classroomName = classroom
+      ? `${classroom.name}${classroom.grade ? ` (${classroom.grade})` : ""}`
+      : "Classroom";
+
+    const dateOnly = new Date(date);
+    dateOnly.setHours(0, 0, 0, 0);
+    const dateLabel = dateOnly.toLocaleDateString();
+
+    const start = new Date(dateOnly);
+    start.setDate(start.getDate() - 1);
+    start.setHours(0, 0, 0, 0);
+
+    const recent = await DailyAttendance.find({
+      studentId,
+      classroomId,
+      date: { $gte: start, $lte: dateOnly },
+    })
+      .sort({ date: 1 })
+      .lean();
+
+    let consecutiveAbsent = 0;
+    for (let i = recent.length - 1; i >= 0; i -= 1) {
+      if (recent[i].status === "absent") consecutiveAbsent += 1;
+      else break;
+    }
+
+    const stronger = consecutiveAbsent >= 2;
+    await sendParentNotificationEmail(parentEmail, {
+      studentName: student.fullName,
+      statusLabel: stronger ? "Absent (Consecutive Days)" : "Absent",
+      dateIso: dateLabel,
+      schoolName: classroomName,
+      message: stronger
+        ? "Your child has been marked absent for two consecutive school days."
+        : "Your child was marked absent from school today.",
+    });
+  } catch (err) {
+    console.error("handleAbsenceNotification error:", err.message);
+  }
+}
+
 module.exports = {
   queueParentAttendanceAlert,
   dateToIso,
+  handleAbsenceNotification,
 };
