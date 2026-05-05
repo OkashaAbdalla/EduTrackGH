@@ -4,7 +4,7 @@ REST API for EduTrack GH: school absenteeism tracking and parent notifications (
 
 ## Tech Stack
 
-Node.js, Express, MongoDB, JWT, Bcrypt, Brevo (SMTP via Nodemailer). Optional SMS via Hubtel (see `.env.example`).
+Node.js, Express, MongoDB, JWT, Bcrypt, Brevo Transactional Email API. Optional SMS via Hubtel (see `.env.example`).
 
 ## Setup
 
@@ -17,7 +17,7 @@ Node.js, Express, MongoDB, JWT, Bcrypt, Brevo (SMTP via Nodemailer). Optional SM
    ```bash
    cp .env.example .env
    ```
-   Set: `MONGODB_URI`, `JWT_SECRET`, `FRONTEND_URL` (e.g. `http://localhost:5173`), `BREVO_SMTP_USER`, `BREVO_SMTP_PASS`, `BREVO_FROM_EMAIL`. Optional: `SMS_ENABLED`, `HUBTEL_*`.
+   Set: `MONGODB_URI`, `JWT_SECRET`, `FRONTEND_URL` (e.g. `http://localhost:5173`), `BREVO_API_KEY`, `BREVO_FROM_EMAIL`. Optional: `SMS_ENABLED`, `HUBTEL_*`.
 
 3. **Run**
    ```bash

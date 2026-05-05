@@ -1,4 +1,4 @@
-const nodemailer = require('nodemailer');
+const SibApiV3Sdk = require('sib-api-v3-sdk');
 
 const APP_NAME = 'EduTrack GH';
 
@@ -17,16 +17,24 @@ const escapeHtml = (value) =>
     .replace(/'/g, '&#39;');
 
 const getEmailConfig = () => ({
-  smtpUser: String(process.env.BREVO_SMTP_USER || '').trim(),
-  smtpPass: String(process.env.BREVO_SMTP_PASS || '').trim(),
+  apiKey: String(process.env.BREVO_API_KEY || '').trim(),
   from: String(process.env.BREVO_FROM_EMAIL || '').trim(),
-  host: String(process.env.BREVO_SMTP_HOST || 'smtp-relay.brevo.com').trim(),
-  port: Number(process.env.BREVO_SMTP_PORT || 587) || 587,
 });
 
-const isEmailConfigured = () => {
-  const cfg = getEmailConfig();
-  return !!cfg.smtpUser && !!cfg.smtpPass && !!cfg.from;
+const isLikelyBrevoApiKey = (value) => /^xkeysib-/i.test(String(value || '').trim());
+
+const isEmailConfigured = () => !!getEmailConfig().apiKey && !!getEmailConfig().from;
+
+/** Sender for Brevo API: plain email or `Display Name <email>`. */
+const getSenderForApi = () => {
+  const raw = getEmailConfig().from;
+  if (!raw) return { name: 'EduTrackGH', email: '' };
+  const m = raw.match(/^(.+?)\s*<([^>]+)>\s*$/);
+  if (m) {
+    const name = m[1].replace(/^["']|["']$/g, '').trim() || 'EduTrackGH';
+    return { name, email: m[2].trim() };
+  }
+  return { name: 'EduTrackGH', email: raw.trim() };
 };
 
 const getFrontendBaseUrl = (fallback = '') =>
@@ -40,31 +48,21 @@ const buildFrontendUrl = (pathWithQuery, fallbackBase = '') => {
   return `${base}${route}`;
 };
 
-/** Nodemailer "from" header: supports plain email or `Display Name <email>`. */
-const getMailFrom = () => {
-  const raw = getEmailConfig().from;
-  if (!raw) return '';
-  if (/^[\s\S]*<[^>]+>\s*$/.test(raw)) return raw;
-  return `"EduTrackGH" <${raw}>`;
-};
+let cachedApiKey = '';
+let transactionalApi = null;
 
-let transporter = null;
+const getTransactionalApi = () => {
+  const { apiKey } = getEmailConfig();
+  if (!apiKey) return null;
 
-const getTransporter = () => {
-  const cfg = getEmailConfig();
-  if (!isEmailConfigured()) return null;
-  if (!transporter) {
-    transporter = nodemailer.createTransport({
-      host: cfg.host,
-      port: cfg.port,
-      secure: false,
-      auth: {
-        user: cfg.smtpUser,
-        pass: cfg.smtpPass,
-      },
-    });
+  if (!transactionalApi || cachedApiKey !== apiKey) {
+    const client = SibApiV3Sdk.ApiClient.instance;
+    client.authentications['api-key'].apiKey = apiKey;
+    transactionalApi = new SibApiV3Sdk.TransactionalEmailsApi();
+    cachedApiKey = apiKey;
   }
-  return transporter;
+
+  return transactionalApi;
 };
 
 const renderEmailFrame = ({ title, intro, contentHtml }) => `
@@ -90,28 +88,66 @@ const renderEmailFrame = ({ title, intro, contentHtml }) => `
   </html>
 `;
 
+const sendEmailViaBrevoApi = async ({ to, subject, html }) => {
+  const { apiKey } = getEmailConfig();
+  const sender = getSenderForApi();
+  const api = getTransactionalApi();
+  if (!isLikelyBrevoApiKey(apiKey)) {
+    const err = new Error(
+      'BREVO_API_KEY is invalid for Transactional API. Use API key starting with "xkeysib-" (not SMTP key "xsmtpsib-").'
+    );
+    err.code = 'EMAIL_NOT_CONFIGURED';
+    throw err;
+  }
+  if (!sender.email) {
+    const err = new Error('BREVO_FROM_EMAIL is missing or invalid.');
+    err.code = 'EMAIL_NOT_CONFIGURED';
+    throw err;
+  }
+  if (!api) {
+    const err = new Error('BREVO_API_KEY is missing.');
+    err.code = 'EMAIL_NOT_CONFIGURED';
+    throw err;
+  }
+
+  try {
+    const payload = {
+      sender: { name: sender.name, email: sender.email },
+      to: [{ email: String(to || '').trim() }],
+      subject,
+      htmlContent: html,
+    };
+    const result = await api.sendTransacEmail(payload);
+    const messageId = result?.messageId != null ? String(result.messageId) : '';
+    return { success: true, messageId };
+  } catch (error) {
+    const msg =
+      error?.response?.body?.message ||
+      error?.response?.text ||
+      error?.message ||
+      'Brevo API request failed';
+    console.error('❌ Brevo API email failed:', msg);
+    const sendErr = new Error(String(msg));
+    sendErr.code = 'BREVO_API_FAILED';
+    throw sendErr;
+  }
+};
+
 const sendEmail = async ({ to, subject, html }) => {
   if (!isEmailConfigured()) {
     const err = new Error(
-      'Email service is not configured on the server. Set BREVO_SMTP_USER, BREVO_SMTP_PASS, and BREVO_FROM_EMAIL.'
+      'Email service is not configured. Set BREVO_API_KEY and BREVO_FROM_EMAIL.'
     );
     err.code = 'EMAIL_NOT_CONFIGURED';
     throw err;
   }
 
-  const transport = getTransporter();
   try {
-    const info = await transport.sendMail({
-      from: getMailFrom(),
-      to,
-      subject,
-      html,
-    });
-    return { success: true, messageId: info.messageId || '' };
+    return await sendEmailViaBrevoApi({ to, subject, html });
   } catch (error) {
     console.error('❌ Email sending failed:', error.message, '| code:', error.code || 'N/A');
-    const sendErr = new Error(error.message || 'Brevo SMTP failed to deliver email');
-    sendErr.code = error.code || 'BREVO_SMTP_FAILED';
+    const sendErr = new Error(error.message || 'Brevo API failed to deliver email');
+    sendErr.code = error.code || 'BREVO_API_FAILED';
     throw sendErr;
   }
 };
