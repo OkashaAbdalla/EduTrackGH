@@ -32,9 +32,14 @@ function getCorsOrigins() {
     .map((s) => normalizeOrigin(s))
     .filter(Boolean);
 
-  // Production: trust FRONTEND_URL only (avoid exposing dev origins on public APIs).
+  // Production: trust FRONTEND_URL list. Add known Render aliases for this project
+  // to prevent accidental lockout from common frontend URL typos during redeploys.
   if (process.env.NODE_ENV === 'production') {
-    return fromEnv;
+    const renderAliases = [
+      'https://edutrackgh-frontend.onrender.com',
+      'https://edutrackgh-fronted.onrender.com',
+    ];
+    return [...new Set([...fromEnv, ...renderAliases])];
   }
 
   return [...new Set([...fromEnv, ...getDefaultDevOrigins()])];

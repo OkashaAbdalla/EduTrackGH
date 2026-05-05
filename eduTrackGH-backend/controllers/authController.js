@@ -116,7 +116,12 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
+
+    if (!email || !password) {
+      return res.status(400).json({ success: false, message: 'Email and password are required' });
+    }
 
     const user = await User.findOne({ email }).select('+password');
     if (!user) {
@@ -130,6 +135,14 @@ const login = async (req, res) => {
       return res.status(403).json({
         success: false,
         message: 'Administrators must use the secure admin portal.',
+      });
+    }
+
+    if (!user.password) {
+      writeAuthAudit({ user, action: 'FAILED_LOGIN', req });
+      return res.status(401).json({
+        success: false,
+        message: 'Account password is not set. Please use Forgot password to create a new password.',
       });
     }
 
@@ -163,6 +176,7 @@ const login = async (req, res) => {
       user: user.getPublicProfile(),
     });
   } catch (error) {
+    console.error('Login error:', error.message);
     res.status(500).json({ success: false, message: 'Login failed' });
   }
 };
