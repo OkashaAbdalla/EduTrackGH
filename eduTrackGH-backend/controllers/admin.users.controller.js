@@ -6,6 +6,7 @@ const User = require('../models/User');
 const School = require('../models/School');
 const Student = require('../models/Student');
 const { sendEmail, emailTemplates } = require('../utils/sendEmail');
+const { isEmailConfigured } = require('../services/emailService');
 
 const schoolAllowsHeadteacherLevel = (school, headteacherLevel) => {
   if (!school || !headteacherLevel) return false;
@@ -24,11 +25,11 @@ const createHeadteacher = async (req, res) => {
     const phone = (req.body.phone && String(req.body.phone).trim()) || '';
 
     // Hard requirement: this flow must email credentials to the headteacher.
-    if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+    if (!isEmailConfigured()) {
       return res.status(500).json({
         success: false,
         message:
-          'Email service is not configured on the server (missing EMAIL_USER/EMAIL_PASSWORD). Headteacher was not created.',
+          'Email service is not configured on the server (missing BREVO_API_KEY/BREVO_FROM_EMAIL). Headteacher was not created.',
       });
     }
 

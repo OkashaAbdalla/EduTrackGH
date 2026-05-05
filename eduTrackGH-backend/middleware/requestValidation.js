@@ -8,18 +8,24 @@ const badRequest = (res, message) =>
   });
 
 const validateCreateHeadteacher = (req, res, next) => {
-  const { fullName, email, password } = req.body || {};
+  const { fullName, email, tempPassword, password } = req.body || {};
+  const effectivePassword = isNonEmptyString(tempPassword) ? tempPassword : password;
   if (!isNonEmptyString(fullName)) return badRequest(res, 'fullName is required');
   if (!isValidEmail(email)) return badRequest(res, 'Valid email is required');
-  if (!isNonEmptyString(password)) return badRequest(res, 'password is required');
+  if (!isNonEmptyString(effectivePassword)) {
+    return badRequest(res, 'tempPassword is required');
+  }
   next();
 };
 
 const validateCreateTeacher = (req, res, next) => {
-  const { fullName, email, password } = req.body || {};
+  const { fullName, email, tempPassword, password } = req.body || {};
+  const effectivePassword = isNonEmptyString(tempPassword) ? tempPassword : password;
   if (!isNonEmptyString(fullName)) return badRequest(res, 'fullName is required');
   if (!isValidEmail(email)) return badRequest(res, 'Valid email is required');
-  if (!isNonEmptyString(password)) return badRequest(res, 'password is required');
+  if (!isNonEmptyString(effectivePassword)) {
+    return badRequest(res, 'tempPassword is required');
+  }
   next();
 };
 
