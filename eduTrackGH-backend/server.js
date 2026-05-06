@@ -24,6 +24,8 @@ if (!process.env.JWT_SECRET) {
 
 // Initialize Express app
 const app = express();
+// Render runs behind a proxy/load balancer; trust first proxy so req.ip is the real client IP.
+app.set("trust proxy", 1);
 
 // Connect to MongoDB
 connectDB();

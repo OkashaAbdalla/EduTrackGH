@@ -8,6 +8,14 @@ const rateLimit = require('express-rate-limit');
 // In-memory store for failed attempts (in production, use Redis)
 const failedAttempts = new Map();
 
+const getClientIp = (req) => {
+  const forwarded = req.headers['x-forwarded-for'];
+  if (typeof forwarded === 'string' && forwarded.trim()) {
+    return forwarded.split(',')[0].trim();
+  }
+  return req.ip || req.connection?.remoteAddress || '';
+};
+
 // Clean up old entries every 30 minutes
 setInterval(() => {
   const now = Date.now();
@@ -27,7 +35,7 @@ setInterval(() => {
  */
 const createSmartLimiter = (maxAttempts, type = 'login') => {
   return (req, res, next) => {
-    const ip = req.ip || req.connection.remoteAddress;
+    const ip = getClientIp(req);
     const key = `${type}_${ip}`;
     const windowMs = parseInt(process.env.RATE_LIMIT_LOGIN_WINDOW_MS, 10) || 15 * 60 * 1000;
     const now = Date.now();
