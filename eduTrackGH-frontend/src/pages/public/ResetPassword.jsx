@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Link, useSearchParams, useNavigate } from 'react-router-dom';
+import { Link, useSearchParams, useNavigate, useParams } from 'react-router-dom';
 import { AuthLayout, FormInput } from '../../components/common';
 import { ROUTES } from '../../utils/constants';
 import { validatePassword } from '../../utils/validators';
@@ -8,7 +8,22 @@ import authService from '../../services/authService';
 const ResetPassword = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const token = searchParams.get('token') || '';
+  const { token: pathToken } = useParams();
+  const rawToken = (() => {
+    if (pathToken) {
+      try {
+        return decodeURIComponent(pathToken);
+      } catch {
+        return pathToken;
+      }
+    }
+    return searchParams.get('token') || '';
+  })();
+  const token = useMemo(() => {
+    const s = rawToken.trim().replace(/\s+/g, '');
+    if (!/^[a-fA-F0-9]{64}$/.test(s)) return '';
+    return s.toLowerCase();
+  }, [rawToken]);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
@@ -23,7 +38,9 @@ const ResetPassword = () => {
     setSuccess('');
 
     if (!token) {
-      setError('Invalid reset link. Request a new one.');
+      setError(
+        'This reset link is missing or damaged. Open the link from your email again, or request a new reset from Forgot password.'
+      );
       return;
     }
     if (!strength.isValid) {
@@ -45,7 +62,25 @@ const ResetPassword = () => {
       setSuccess(response.message || 'Password reset successful.');
       setTimeout(() => navigate(ROUTES.LOGIN), 1000);
     } catch (err) {
-      setError(err?.response?.data?.message || 'Invalid or expired reset token');
+      if (!err.response) {
+        setError(
+          err?.message?.includes('Network') || err?.code === 'ERR_NETWORK'
+            ? 'Network error. Check your connection and that the app can reach the server.'
+            : 'Could not reach the server. Try again.'
+        );
+        return;
+      }
+      const msg = err?.response?.data?.message;
+      const code = err?.response?.data?.code;
+      if (msg) {
+        setError(msg);
+        return;
+      }
+      if (code === 'EMAIL_NOT_VERIFIED') {
+        setError('Please verify your email before continuing.');
+        return;
+      }
+      setError('Invalid or expired reset token. Request a new link from Forgot password.');
     } finally {
       setLoading(false);
     }
@@ -55,7 +90,9 @@ const ResetPassword = () => {
     <AuthLayout>
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Reset Password</h2>
-        <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">Set a new password for your parent account.</p>
+        <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">
+          Set a new password for your account.
+        </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">

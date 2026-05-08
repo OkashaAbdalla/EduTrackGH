@@ -8,6 +8,16 @@ export default {
   theme: {
     extend: {
       colors: {
+        dashboard: {
+          /** Page canvas — deeper than any panel (reference: slate-900 family) */
+          canvas: '#0f172a',
+          /** Raised panels: cards, sidebar, top bar */
+          surface: '#1e293b',
+          /** Hover / inset controls */
+          elevated: '#334155',
+          muted: '#94a3b8',
+          accent: '#2563eb',
+        },
         // UDS Brand Colors
         uds: {
           green: '#006838',

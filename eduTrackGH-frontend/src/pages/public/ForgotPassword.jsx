@@ -23,10 +23,33 @@ const ForgotPassword = () => {
 
     try {
       setLoading(true);
-      const response = await authService.forgotPassword(email.trim());
-      setMessage(response?.message || 'If this email exists, a reset link has been sent.');
+      const normalizedEmail = String(email || '').trim().toLowerCase();
+      const response = await authService.forgotPassword(normalizedEmail);
+      setMessage(
+        response?.message ||
+          `If this email exists, a reset link has been sent to ${normalizedEmail}.`
+      );
     } catch (err) {
-      setMessage('If this email exists, a reset link has been sent.');
+      if (!err.response) {
+        setError(
+          err?.message?.includes('Network') || err?.code === 'ERR_NETWORK'
+            ? 'Network error. Check your connection and backend URL, then try again.'
+            : 'Could not reach the server. Please try again.'
+        );
+        return;
+      }
+      const status = err.response?.status;
+      const data = err.response?.data;
+      const code = data?.code;
+      if (status === 503 || code === 'EMAIL_SERVICE_UNAVAILABLE') {
+        setError(data?.message || 'Email service is unavailable. Please try again later.');
+        return;
+      }
+      if (status === 502 || code === 'EMAIL_DELIVERY_FAILED') {
+        setError(data?.message || 'Could not send reset email. Please try again shortly.');
+        return;
+      }
+      setError(data?.message || 'Failed to request reset email. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -37,7 +60,7 @@ const ForgotPassword = () => {
       <div className="text-center mb-6">
         <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Forgot Password</h2>
         <p className="text-gray-600 dark:text-gray-400 mt-2 text-sm">
-          Enter your parent account email and we will send reset instructions.
+          Enter the email you use to sign in and we will send reset instructions.
         </p>
       </div>
 
@@ -50,6 +73,7 @@ const ForgotPassword = () => {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="you@example.com"
           error={error}
+          autoComplete="email"
           required
         />
 
