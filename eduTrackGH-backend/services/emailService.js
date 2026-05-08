@@ -8,6 +8,14 @@ const normalizeBaseUrl = (value) => {
   return raw.replace(/\/+$/, '');
 };
 
+/** First origin when FRONTEND_URL is comma-separated (CORS list). Links must use a single URL. */
+const getPrimarySiteOrigin = () => {
+  const raw = process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || '';
+  if (!String(raw).trim()) return '';
+  const first = String(raw).split(',')[0].trim();
+  return normalizeBaseUrl(first);
+};
+
 const escapeHtml = (value) =>
   String(value || '')
     .replace(/&/g, '&amp;')
@@ -38,12 +46,24 @@ const getSenderForApi = () => {
 };
 
 const getFrontendBaseUrl = (fallback = '') =>
-  normalizeBaseUrl(
-    process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL || fallback || 'http://localhost:5173'
-  );
+  getPrimarySiteOrigin() ||
+  normalizeBaseUrl(fallback) ||
+  normalizeBaseUrl('http://localhost:5173');
 
 const buildFrontendUrl = (pathWithQuery, fallbackBase = '') => {
   const base = getFrontendBaseUrl(fallbackBase);
+  const route = String(pathWithQuery || '').startsWith('/') ? pathWithQuery : `/${pathWithQuery || ''}`;
+  return `${base}${route}`;
+};
+
+const { resolveFrontendBaseForEmailLink } = require('../utils/corsOrigins');
+
+/**
+ * Build an absolute frontend URL using a CORS-trusted Origin from this request when possible.
+ * Use for password-reset and verification links so dev/staging tokens match the API that issued them.
+ */
+const buildFrontendUrlForRequest = (pathWithQuery, req) => {
+  const base = String(resolveFrontendBaseForEmailLink(req) || '').replace(/\/+$/, '');
   const route = String(pathWithQuery || '').startsWith('/') ? pathWithQuery : `/${pathWithQuery || ''}`;
   return `${base}${route}`;
 };
@@ -155,7 +175,8 @@ const sendEmail = async ({ to, subject, html }) => {
 const sendVerificationEmail = async (email, token, options = {}) => {
   const name = escapeHtml(options.fullName || 'User');
   const verificationLink =
-    options.verificationLink || buildFrontendUrl(`/verify-email?token=${encodeURIComponent(token || '')}`);
+    options.verificationLink ||
+    buildFrontendUrl(`/verify-email?token=${encodeURIComponent(token || '')}`);
   const html = renderEmailFrame({
     title: 'Verify Your Email',
     intro: `Welcome ${name}! Please verify your email address to activate your ${APP_NAME} account.`,
@@ -175,7 +196,8 @@ const sendVerificationEmail = async (email, token, options = {}) => {
 const sendPasswordResetEmail = async (email, token, options = {}) => {
   const name = escapeHtml(options.fullName || 'User');
   const resetLink =
-    options.resetLink || buildFrontendUrl(`/reset-password?token=${encodeURIComponent(token || '')}`);
+    options.resetLink ||
+    buildFrontendUrl(`/reset-password/${encodeURIComponent(token || '')}`);
   const html = renderEmailFrame({
     title: 'Reset Your Password',
     intro: `Hello ${name}, we received a request to reset your ${APP_NAME} password.`,
@@ -278,7 +300,9 @@ module.exports = {
   sendParentNotificationEmail,
   isEmailConfigured,
   getEmailConfig,
+  getPrimarySiteOrigin,
   getFrontendBaseUrl,
   buildFrontendUrl,
+  buildFrontendUrlForRequest,
   emailTemplates,
 };

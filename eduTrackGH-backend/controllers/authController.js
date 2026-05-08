@@ -10,8 +10,9 @@ const {
   isEmailConfigured,
   sendVerificationEmail,
   sendPasswordResetEmail,
-  buildFrontendUrl,
+  buildFrontendUrlForRequest,
 } = require('../services/emailService');
+
 const { uploadProfilePhoto, deleteImage } = require('../utils/cloudinary');
 
 const getRequestMeta = (req) => ({
@@ -36,29 +37,22 @@ const writeAuthAudit = ({ user, email, action, req }) => {
   }).catch(() => {});
 };
 
-const normalizeBaseUrl = (value) => {
-  const raw = String(value || '').trim();
-  if (!raw || !/^https?:\/\//i.test(raw)) return '';
-  return raw.replace(/\/+$/, '');
+/** Match register/reset UX: min 8 chars, upper, lower, number. */
+const validateStrongPassword = (password) => {
+  if (password.length < 8) return 'Password must be at least 8 characters';
+  if (!/[A-Z]/.test(password)) return 'Password must include an uppercase letter';
+  if (!/[a-z]/.test(password)) return 'Password must include a lowercase letter';
+  if (!/\d/.test(password)) return 'Password must include a number';
+  return null;
 };
 
-const getFrontendBaseUrl = (req) => {
-  const fromEnv = normalizeBaseUrl(process.env.FRONTEND_URL || process.env.CLIENT_URL || process.env.APP_URL);
-  if (fromEnv) return fromEnv;
-
-  const origin = normalizeBaseUrl(req?.headers?.origin);
-  if (origin) return origin;
-
-  const referer = String(req?.headers?.referer || '').trim();
-  if (referer) {
-    try {
-      const parsed = new URL(referer);
-      const refOrigin = normalizeBaseUrl(parsed.origin);
-      if (refOrigin) return refOrigin;
-    } catch (_) {}
-  }
-
-  return normalizeBaseUrl('http://localhost:5173');
+/** normalizeResetToken — raw token from query/body: trim, strip whitespace, lowercase hex (64 chars from randomBytes(32).toString('hex')). */
+const normalizeResetToken = (raw) => {
+  const s = String(raw ?? '')
+    .trim()
+    .replace(/\s+/g, '');
+  if (!/^[a-fA-F0-9]{64}$/.test(s)) return '';
+  return s.toLowerCase();
 };
 
 const register = async (req, res) => {
@@ -101,9 +95,9 @@ const register = async (req, res) => {
 
     // Send verification email in background so slow SMTP never blocks registration response.
     setImmediate(() => {
-      const verificationLink = buildFrontendUrl(
-        `/verify-email?token=${verificationToken}`,
-        getFrontendBaseUrl(req)
+      const verificationLink = buildFrontendUrlForRequest(
+        `/verify-email?token=${encodeURIComponent(verificationToken)}`,
+        req
       );
       sendVerificationEmail(email, verificationToken, { fullName, verificationLink }).catch((emailError) => {
         console.error('⚠️  Failed to send verification email:', emailError.message);
@@ -309,9 +303,9 @@ const resendVerification = async (req, res) => {
     user.verificationToken = verificationToken;
     await user.save();
 
-    const verificationLink = buildFrontendUrl(
-      `/verify-email?token=${verificationToken}`,
-      getFrontendBaseUrl(req)
+    const verificationLink = buildFrontendUrlForRequest(
+      `/verify-email?token=${encodeURIComponent(verificationToken)}`,
+      req
     );
     try {
       await sendVerificationEmail(email, verificationToken, {
@@ -350,11 +344,19 @@ const forgotPassword = async (req, res) => {
     const genericMessage = 'If this email exists, a reset link has been sent.';
     if (!email) return res.json({ success: true, message: genericMessage });
 
-    const user = await User.findOne({ email, role: 'parent' }).select('_id fullName email role');
+    if (!isEmailConfigured()) {
+      return res.status(503).json({
+        success: false,
+        code: 'EMAIL_SERVICE_UNAVAILABLE',
+        message: 'Email service is currently unavailable. Please try again later.',
+      });
+    }
+
+    const user = await User.findOne({ email }).select('_id fullName email role');
     if (!user) return res.json({ success: true, message: genericMessage });
 
     const rawToken = crypto.randomBytes(32).toString('hex');
-    const tokenHash = crypto.createHash('sha256').update(rawToken).digest('hex');
+    const tokenHash = crypto.createHash('sha256').update(rawToken, 'utf8').digest('hex');
     const expiresAt = new Date(Date.now() + 30 * 60 * 1000);
 
     await User.updateOne(
@@ -367,13 +369,32 @@ const forgotPassword = async (req, res) => {
       }
     );
 
-    const resetLink = buildFrontendUrl(`/reset-password?token=${rawToken}`, getFrontendBaseUrl(req));
-    setImmediate(() => {
-      sendPasswordResetEmail(user.email, rawToken, {
-        fullName: user.fullName || 'Parent',
+    const resetLink = buildFrontendUrlForRequest(`/reset-password/${encodeURIComponent(rawToken)}`, req);
+    try {
+      await sendPasswordResetEmail(user.email, rawToken, {
+        fullName: user.fullName || 'User',
         resetLink,
-      }).catch((err) => console.error('forgotPassword email error:', err.message));
-    });
+      });
+    } catch (mailError) {
+      await User.updateOne(
+        { _id: user._id },
+        { $set: { passwordResetTokenHash: '', passwordResetExpiresAt: null } }
+      );
+
+      if (mailError.code === 'EMAIL_NOT_CONFIGURED') {
+        return res.status(503).json({
+          success: false,
+          code: 'EMAIL_SERVICE_UNAVAILABLE',
+          message: 'Email service is not configured on the server. Please contact support.',
+        });
+      }
+
+      return res.status(502).json({
+        success: false,
+        code: 'EMAIL_DELIVERY_FAILED',
+        message: 'Unable to deliver reset email right now. Please try again shortly.',
+      });
+    }
 
     return res.json({ success: true, message: genericMessage });
   } catch (error) {
@@ -383,23 +404,28 @@ const forgotPassword = async (req, res) => {
 
 const resetPassword = async (req, res) => {
   try {
-    const token = String(req.body?.token || '').trim();
+    const token = normalizeResetToken(req.body?.token);
     const newPassword = String(req.body?.password || '');
     const confirmPassword = String(req.body?.confirmPassword || '');
 
     if (!token || !newPassword || !confirmPassword) {
-      return res.status(400).json({ success: false, message: 'token, password and confirmPassword are required' });
+      return res.status(400).json({
+        success: false,
+        message: !token
+          ? 'Invalid reset link. Use the full link from your latest email or request a new reset.'
+          : 'token, password and confirmPassword are required',
+      });
     }
     if (newPassword !== confirmPassword) {
       return res.status(400).json({ success: false, message: 'Passwords do not match' });
     }
-    if (newPassword.length < 8) {
-      return res.status(400).json({ success: false, message: 'Password must be at least 8 characters' });
+    const pwdMsg = validateStrongPassword(newPassword);
+    if (pwdMsg) {
+      return res.status(400).json({ success: false, message: pwdMsg });
     }
 
-    const tokenHash = crypto.createHash('sha256').update(token).digest('hex');
+    const tokenHash = crypto.createHash('sha256').update(token, 'utf8').digest('hex');
     const user = await User.findOne({
-      role: 'parent',
       passwordResetTokenHash: tokenHash,
       passwordResetExpiresAt: { $gt: new Date() },
     }).select('+password +passwordResetTokenHash +passwordResetExpiresAt');
