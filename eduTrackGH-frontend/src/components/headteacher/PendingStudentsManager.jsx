@@ -103,7 +103,7 @@ const PendingStudentsManager = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
-                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                    <div className="w-10 h-10 bg-blue-600 dark:bg-dashboard-accent rounded-full flex items-center justify-center">
                       <span className="text-white font-medium text-sm">
                         {student.fullName?.charAt(0)?.toUpperCase() || 'S'}
                       </span>

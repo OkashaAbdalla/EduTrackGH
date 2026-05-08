@@ -15,7 +15,7 @@ const DashboardLayout = ({ children }) => {
   const location = useLocation();
   const { user, logout } = useAuthContext();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+
   const userRole = user?.role || ROLES.TEACHER;
 
   const handleLogout = () => {
@@ -76,23 +76,29 @@ const DashboardLayout = ({ children }) => {
     userRole === ROLES.TEACHER ? '' : formatSchoolLevelLabel(user?.schoolLevel);
 
   return (
-    <div className="h-screen flex bg-gradient-to-br from-gray-50 via-gray-100 to-gray-200 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900 transition-colors duration-300">
+    <div className="h-screen flex bg-slate-100 dark:bg-dashboard-canvas transition-colors duration-200">
       {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-transform duration-300 ease-in-out flex flex-col`}>
+      <aside
+        className={`${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } md:translate-x-0 fixed md:static inset-y-0 left-0 z-50 w-64 bg-white dark:bg-dashboard-canvas border-r border-slate-200 dark:border-white/[0.08] transition-transform duration-200 ease-out flex flex-col`}
+      >
         {/* Logo */}
-        <div className="h-16 flex items-center px-4 border-b border-gray-200 dark:border-gray-700">
-          <Link to={menuItems[0].path} className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-green-600 rounded-lg flex items-center justify-center">
+        <div className="h-16 flex items-center px-4 border-b border-slate-200 dark:border-white/[0.08]">
+          <Link to={menuItems[0].path} className="flex items-center space-x-2.5">
+            <div className="w-8 h-8 rounded-lg bg-uds-green flex items-center justify-center shrink-0">
               <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <span className="text-lg font-bold text-gray-900 dark:text-white">EduTrack<span className="text-green-600">GH</span></span>
+            <span className="text-base font-semibold tracking-tight text-slate-900 dark:text-white">
+              Edu<span className="text-uds-green">Track</span> GH
+            </span>
           </Link>
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
+        <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
           {menuItems.map((item) => {
             const isActive = location.pathname === item.path;
             return (
@@ -100,13 +106,13 @@ const DashboardLayout = ({ children }) => {
                 key={item.path}
                 to={item.path}
                 onClick={() => setSidebarOpen(false)}
-                className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-all ${
+                className={`flex items-center space-x-3 px-3 py-2.5 rounded-lg transition-colors ${
                   isActive
-                    ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400 font-medium'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
+                    ? 'bg-blue-600/15 text-dashboard-accent dark:text-blue-400 border border-blue-500/30 font-medium shadow-sm shadow-blue-900/20'
+                    : 'text-slate-700 dark:text-dashboard-muted hover:bg-slate-100 dark:hover:bg-white/[0.06] border border-transparent'
                 }`}
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 shrink-0 opacity-90" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={item.icon} />
                 </svg>
                 <span className="text-sm">{item.name}</span>
@@ -116,26 +122,27 @@ const DashboardLayout = ({ children }) => {
         </nav>
 
         {/* User Info & Logout */}
-        <div className="p-3 border-t border-gray-200 dark:border-gray-700">
-          <div className="flex items-center justify-between px-3 py-2">
-            <div className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-gray-200 dark:bg-gray-700 rounded-full flex items-center justify-center">
-                <svg className="w-5 h-5 text-gray-600 dark:text-gray-400" fill="currentColor" viewBox="0 0 20 20">
+        <div className="p-3 border-t border-slate-200 dark:border-white/[0.08]">
+          <div className="flex items-center justify-between px-2 py-2 rounded-lg bg-slate-50 dark:bg-white/[0.04] ring-1 ring-inset ring-slate-200/80 dark:ring-white/[0.08]">
+            <div className="flex items-center space-x-2 min-w-0">
+              <div className="w-8 h-8 bg-slate-200 dark:bg-white/[0.08] rounded-full flex items-center justify-center shrink-0">
+                <svg className="w-5 h-5 text-slate-600 dark:text-dashboard-muted" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 capitalize">{userRole}</span>
+                <span className="text-xs font-medium text-slate-800 dark:text-white capitalize truncate block">{userRole}</span>
                 {sectionLabel && (
-                  <span className="block truncate text-[10px] text-gray-500 dark:text-gray-400" title={sectionLabel}>
+                  <span className="block truncate text-[10px] text-slate-500 dark:text-dashboard-muted" title={sectionLabel}>
                     {sectionLabel}
                   </span>
                 )}
               </div>
             </div>
             <button
+              type="button"
               onClick={handleLogout}
-              className="p-1.5 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition"
+              className="p-1.5 text-slate-600 dark:text-dashboard-muted hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 rounded-lg transition shrink-0"
               title="Logout"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -148,34 +155,35 @@ const DashboardLayout = ({ children }) => {
 
       {/* Mobile sidebar overlay */}
       {sidebarOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 md:hidden"
+        <button
+          type="button"
+          aria-label="Close menu"
+          className="fixed inset-0 bg-slate-900/55 z-40 md:hidden backdrop-blur-[2px]"
           onClick={() => setSidebarOpen(false)}
         />
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Top Bar */}
-        <header className="h-16 bg-white/80 dark:bg-gray-800/50 backdrop-blur-sm border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4">
+        <header className="h-14 md:h-16 shrink-0 flex items-center justify-between px-3 md:px-5 border-b bg-white dark:bg-dashboard-canvas border-slate-200 dark:border-white/[0.08]">
           <button
+            type="button"
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="md:hidden p-2 text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+            className="md:hidden p-2 text-slate-600 dark:text-dashboard-muted hover:bg-slate-100 dark:hover:bg-white/[0.06] rounded-lg"
           >
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
             </svg>
           </button>
-          
+
           <div className="flex-1" />
-          
+
           <ThemeSwitcher />
         </header>
 
-        {/* Page Content */}
-        <main className="flex-1 overflow-y-auto p-4">
-          {children}
-        </main>
+        {/* Page Content — canvas stays deeper than inner Card surfaces */}
+        <main className="flex-1 overflow-y-auto p-4 md:p-6 bg-slate-100 dark:bg-dashboard-canvas">{children}</main>
       </div>
     </div>
   );

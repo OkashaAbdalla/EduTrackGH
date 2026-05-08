@@ -55,7 +55,7 @@ const TeacherDashboard = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+          <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-200 dark:border-slate-700 border-t-dashboard-accent dark:border-t-blue-400" />
         </div>
       </DashboardLayout>
     );
@@ -77,7 +77,7 @@ const TeacherDashboard = () => {
               Assigned class{profile.classrooms.length > 1 ? 'es' : ''}: {profile.classrooms.map((c) => c.name).join(', ')}
             </p>
           )}
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Monitor attendance and track student progress</p>
+          <p className="text-gray-600 dark:text-dashboard-muted mt-1">Monitor attendance and track student progress</p>
         </div>
 
         {/* Stats Grid */}
@@ -89,7 +89,7 @@ const TeacherDashboard = () => {
                 <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.classesToday}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Active classes</p>
               </div>
-              <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-14 h-14 bg-blue-600 dark:bg-dashboard-accent rounded-xl flex items-center justify-center">
                 <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
@@ -104,7 +104,7 @@ const TeacherDashboard = () => {
                 <p className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.unmarkedClasses}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Requires attention</p>
               </div>
-              <div className="w-14 h-14 bg-gradient-to-br from-red-500 to-red-600 dark:from-red-600 dark:to-red-700 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-14 h-14 bg-red-600 dark:bg-red-600 rounded-xl flex items-center justify-center">
                 <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
@@ -119,7 +119,7 @@ const TeacherDashboard = () => {
                 <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{stats.flaggedStudents}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Chronic absenteeism</p>
               </div>
-              <div className="w-14 h-14 bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-14 h-14 bg-orange-600 dark:bg-orange-600 rounded-xl flex items-center justify-center">
                 <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
@@ -134,7 +134,7 @@ const TeacherDashboard = () => {
                 <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalStudents}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">In your classes</p>
               </div>
-              <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 rounded-xl flex items-center justify-center shadow-lg">
+              <div className="w-14 h-14 bg-uds-green dark:bg-green-700 rounded-xl flex items-center justify-center">
                 <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
@@ -148,7 +148,7 @@ const TeacherDashboard = () => {
           <Link to={ROUTES.MARK_ATTENDANCE}>
             <Card variant="action" hover className="p-6 group cursor-pointer">
               <div className="flex items-center space-x-5">
-                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <div className="w-16 h-16 bg-uds-green dark:bg-green-700 rounded-xl flex items-center justify-center group-hover:opacity-95 transition-opacity duration-300">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                   </svg>
@@ -170,7 +170,7 @@ const TeacherDashboard = () => {
           <Link to={ROUTES.TEACHER_MANAGE_STUDENTS}>
             <Card variant="action" hover className="p-6 group cursor-pointer">
               <div className="flex items-center space-x-5">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <div className="w-16 h-16 bg-blue-600 dark:bg-dashboard-accent rounded-xl flex items-center justify-center group-hover:opacity-95 transition-opacity duration-300">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                   </svg>
@@ -192,7 +192,7 @@ const TeacherDashboard = () => {
           <Link to={ROUTES.ATTENDANCE_HISTORY}>
             <Card variant="action" hover className="p-6 group cursor-pointer">
               <div className="flex items-center space-x-5">
-                <div className="w-16 h-16 bg-gradient-to-br from-slate-500 to-slate-600 dark:from-slate-600 dark:to-slate-700 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform duration-300">
+                <div className="w-16 h-16 bg-slate-600 dark:bg-slate-500 rounded-xl flex items-center justify-center group-hover:opacity-95 transition-opacity duration-300">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>

@@ -16,7 +16,7 @@ const ThemeSwitcher = () => {
   return (
     <button
       onClick={toggleTheme}
-      className="p-2 rounded-lg bg-white hover:bg-gray-50 dark:bg-gray-700/50 dark:hover:bg-gray-600 transition-all duration-300 border border-gray-300 dark:border-gray-600 hover:border-green-500/50 shadow-sm group"
+      className="p-2 rounded-lg bg-white hover:bg-slate-50 dark:bg-white/[0.06] dark:hover:bg-white/[0.1] transition-colors duration-200 border border-slate-200 dark:border-white/[0.1] text-slate-700 dark:text-dashboard-muted dark:hover:text-slate-200 group"
       aria-label="Toggle theme"
     >
       {theme === 'dark' ? (

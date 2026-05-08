@@ -33,6 +33,36 @@ const apiClient = axios.create({
   withCredentials: false,
 });
 
+/** True when this request must not send JWT (public auth + password recovery). */
+function isPublicAuthRequest(config) {
+  const adminLoginSegment = import.meta.env.VITE_ADMIN_LOGIN_PATH || 'secure-admin';
+  const blob = [config.baseURL, config.url].filter(Boolean).join('').toLowerCase();
+  const markers = [
+    'forgot-password',
+    'reset-password',
+    '/auth/register',
+    '/auth/login',
+    'verify-email',
+    'resend-verification',
+    'verification-status',
+    `/auth/${adminLoginSegment.toLowerCase()}`,
+  ];
+  return markers.some((m) => blob.includes(m));
+}
+
+/** Routes where a 401 from session refresh must not force navigation (user may be resetting password, etc.). */
+function isPublicAuthRecoveryPath(pathname) {
+  const p = pathname || '';
+  return (
+    p === ROUTES.LOGIN ||
+    p === ROUTES.REGISTER ||
+    p === ROUTES.FORGOT_PASSWORD ||
+    p === ROUTES.VERIFY_EMAIL ||
+    p === ROUTES.RESET_PASSWORD ||
+    p.startsWith(`${ROUTES.RESET_PASSWORD}/`) ||
+    p === ROUTES.ADMIN_LOGIN
+  );
+}
 
 // ========================================
 // REQUEST INTERCEPTOR
@@ -41,6 +71,8 @@ const apiClient = axios.create({
 // Implements request deduplication for GET requests
 apiClient.interceptors.request.use(
   (config) => {
+    const skipAuth = isPublicAuthRequest(config);
+
     const sessionToken = sessionStorage.getItem('auth_token');
     let token = sessionToken;
     if (!token) {
@@ -54,12 +86,11 @@ apiClient.interceptors.request.use(
         token = localStorage.getItem('auth_token');
       }
     }
-    if (token) {
+    if (skipAuth) {
+      delete config.headers.Authorization;
+    } else if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
-
-    // Request deduplication for GET requests - handled in service layer
-    // This interceptor just adds auth token
 
     return config;
   },
@@ -89,6 +120,18 @@ apiClient.interceptors.response.use(
       if (isAuthLoginRequest || isProfilePhotoRequest) {
         return Promise.reject(error);
       }
+
+      const path =
+        typeof window !== 'undefined' && window.location && window.location.pathname
+          ? window.location.pathname
+          : '';
+      if (isPublicAuthRecoveryPath(path)) {
+        ['auth_token', 'user_role', 'user_email', 'user_name', 'user_schoolLevel'].forEach((k) => {
+          localStorage.removeItem(k);
+          sessionStorage.removeItem(k);
+        });
+        return Promise.reject(error);
+      }
       ['auth_token', 'user_role', 'user_email', 'user_name', 'user_schoolLevel'].forEach((k) => {
         localStorage.removeItem(k);
         sessionStorage.removeItem(k);
@@ -100,6 +143,18 @@ apiClient.interceptors.response.use(
       const adminLoginPath = import.meta.env.VITE_ADMIN_LOGIN_PATH || 'secure-admin';
       const isAdminLoginRequest = error.config?.url?.includes(`/auth/${adminLoginPath}`);
       if (isAdminLoginRequest) {
+        return Promise.reject(error);
+      }
+
+      const path =
+        typeof window !== 'undefined' && window.location && window.location.pathname
+          ? window.location.pathname
+          : '';
+      if (isPublicAuthRecoveryPath(path)) {
+        ['auth_token', 'user_role', 'user_email', 'user_name', 'user_schoolLevel'].forEach((k) => {
+          localStorage.removeItem(k);
+          sessionStorage.removeItem(k);
+        });
         return Promise.reject(error);
       }
 

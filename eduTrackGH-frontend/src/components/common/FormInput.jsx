@@ -15,7 +15,8 @@ const FormInput = ({
   placeholder,
   required = false,
   error = '',
-  hint = ''
+  hint = '',
+  autoComplete,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPasswordField = type === 'password';
@@ -37,6 +38,7 @@ const FormInput = ({
           onChange={onChange}
           required={required}
           placeholder={placeholder}
+          autoComplete={autoComplete}
           className={`w-full bg-white dark:bg-gray-700/80 border-2 ${
             error 
               ? 'border-red-500 dark:border-red-500 focus:border-red-500 focus:ring-red-500/30' 
