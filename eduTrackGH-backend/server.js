@@ -16,6 +16,12 @@ const errorMiddleware = require("./middleware/errorMiddleware");
 const { setupSocketServer } = require("./utils/socketServer");
 const { getCorsOrigins } = require("./utils/corsOrigins");
 const { isEmailConfigured } = require("./services/emailService");
+const {
+  assertAdminLoginPathConfigured,
+  getAdminLoginApiPath,
+} = require("./config/adminLoginPath");
+
+assertAdminLoginPathConfigured();
 
 if (!process.env.JWT_SECRET) {
   console.error("❌ JWT_SECRET is not set. Add it to eduTrackGH-backend/.env or your host (Render).");
@@ -99,5 +105,5 @@ server.listen(PORT, HOST, () => {
   console.log(`📡 Bound host: ${HOST}`);
   console.log(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`);
-  console.log("🔐 Admin login path configured");
+  console.log(`🔐 Admin login: POST ${getAdminLoginApiPath()}`);
 });

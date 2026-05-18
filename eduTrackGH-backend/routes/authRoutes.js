@@ -22,10 +22,10 @@ const {
 const { protect } = require('../middleware/authMiddleware');
 const { validationRules, validate } = require('../utils/validators');
 const { loginLimiter, adminLoginLimiter } = require('../middleware/rateLimitMiddleware');
+const { getAdminLoginPath } = require('../config/adminLoginPath');
 
-// Admin login - isolated path from ADMIN_LOGIN_PATH env (must match frontend VITE_ADMIN_LOGIN_PATH)
-const adminPath = process.env.ADMIN_LOGIN_PATH || 'secure-admin-default';
-router.post(`/${adminPath}`, adminLoginLimiter, validationRules.login, validate, adminLogin);
+// Admin login - isolated path (must match frontend VITE_ADMIN_LOGIN_PATH)
+router.post(`/${getAdminLoginPath()}`, adminLoginLimiter, validationRules.login, validate, adminLogin);
 
 // Public routes - login has rate limiting
 router.post('/register', validationRules.register, validate, register);
