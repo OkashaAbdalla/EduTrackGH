@@ -264,29 +264,39 @@
     box-shadow: 0 24px 80px rgba(0, 0, 0, 0.55);
   }
 
-  /* Tables */
-  .dashboard-content table {
+  /* Tables — standard data tables */
+  .dashboard-content table:not(.register-table) {
     @apply min-w-full text-sm;
   }
 
-  .dashboard-content thead {
+  .dashboard-content table:not(.register-table) thead {
     background: color-mix(in srgb, var(--glass) 60%, transparent);
   }
 
-  .dashboard-content thead th {
+  .dashboard-content table:not(.register-table) thead th {
     @apply px-4 py-3 text-left text-xs font-medium uppercase tracking-wider text-[color:var(--text-secondary)] border-b border-[color:var(--glass-border)];
   }
 
-  .dashboard-content tbody tr {
+  .dashboard-content table:not(.register-table) tbody tr {
     @apply border-b border-[color:var(--glass-border)] transition-colors;
   }
 
-  .dashboard-content tbody tr:hover {
+  .dashboard-content table:not(.register-table) tbody tr:hover {
     background: color-mix(in srgb, var(--glass) 50%, transparent);
   }
 
-  .dashboard-content tbody td {
+  .dashboard-content table:not(.register-table) tbody td {
     @apply px-4 py-3 text-[color:var(--text-primary)];
+  }
+
+  /* Attendance register — compact rows (do not inflate cell padding) */
+  .dashboard-content table.register-table {
+    @apply text-xs leading-tight;
+  }
+
+  .dashboard-content table.register-table tbody td,
+  .dashboard-content table.register-table thead th {
+    @apply leading-tight;
   }
 
   /* Empty state */

@@ -17,29 +17,31 @@ const historyQueryParams = (periodMode, selectedMonth, selectedTerm) => {
 };
 
 const chipForStatus = (status) => {
+  const chipBase =
+    'inline-flex h-6 w-6 items-center justify-center rounded border font-mono text-[11px] font-bold leading-none';
   if (status === 'present') {
     return (
-      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-green-500/50 bg-green-100 font-mono text-sm font-bold text-green-700 dark:border-green-500/40 dark:bg-green-500/15 dark:text-green-400">
+      <span className={`${chipBase} border-green-500/50 bg-green-100 text-green-700 dark:border-green-500/40 dark:bg-green-500/15 dark:text-green-400`}>
         1
       </span>
     );
   }
   if (status === 'late') {
     return (
-      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-amber-500/50 bg-amber-100 font-mono text-sm font-bold text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-400">
+      <span className={`${chipBase} border-amber-500/50 bg-amber-100 text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/15 dark:text-amber-400`}>
         1
       </span>
     );
   }
   if (status === 'absent') {
     return (
-      <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-red-500/50 bg-red-100 font-mono text-sm font-bold text-red-700 dark:border-red-500/40 dark:bg-red-500/15 dark:text-red-400">
+      <span className={`${chipBase} border-red-500/50 bg-red-100 text-red-700 dark:border-red-500/40 dark:bg-red-500/15 dark:text-red-400`}>
         0
       </span>
     );
   }
   return (
-    <span className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-gray-400 border-dashed font-mono text-xs text-gray-500 dark:border-slate-600 dark:text-slate-500">
+    <span className={`${chipBase} border-dashed border-gray-400 text-gray-500 dark:border-slate-600 dark:text-slate-500`}>
       -
     </span>
   );
@@ -423,19 +425,19 @@ const AttendanceHistory = () => {
                 <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-green-600"></div>
               </div>
             ) : (
-              <table className="w-max min-w-full table-fixed border-collapse">
+              <table className="register-table w-max min-w-full table-fixed border-collapse">
                 <thead>
                   <tr className="bg-gray-100 text-[10px] uppercase tracking-wider text-gray-600 dark:bg-slate-800/80 dark:text-slate-400">
-                    <th rowSpan={2} className="sticky left-0 z-10 w-10 border-r border-gray-200 bg-white px-2 py-2 align-middle text-left dark:border-slate-700 dark:bg-slate-950">
+                    <th rowSpan={2} className="sticky left-0 z-10 w-10 border-r border-gray-200 bg-white px-1.5 py-1 align-middle text-left dark:border-slate-700 dark:bg-slate-950">
                       #
                     </th>
-                    <th rowSpan={2} className="sticky left-10 z-10 w-52 border-r border-gray-200 bg-white px-3 py-2 align-middle text-left dark:border-slate-700 dark:bg-slate-950">
+                    <th rowSpan={2} className="sticky left-10 z-10 w-48 border-r border-gray-200 bg-white px-2 py-1 align-middle text-left dark:border-slate-700 dark:bg-slate-950">
                       Student
                     </th>
                     {weeks.map((w) => (
                       <th
                         key={`wk-${w.index}`}
-                        className="border-r border-gray-200 bg-indigo-50 px-2 py-2 text-indigo-900 dark:border-slate-700 dark:bg-indigo-500/10 dark:text-indigo-300"
+                        className="border-r border-gray-200 bg-indigo-50 px-1.5 py-1 text-indigo-900 dark:border-slate-700 dark:bg-indigo-500/10 dark:text-indigo-300"
                         colSpan={Math.max(w.days.length, 0) + 1}
                       >
                         <div className="flex flex-col items-center gap-0.5">
@@ -446,11 +448,11 @@ const AttendanceHistory = () => {
                         </div>
                       </th>
                     ))}
-                    <th rowSpan={2} className="border-r border-indigo-200 bg-indigo-100/90 px-2 py-2 align-middle text-indigo-900 dark:border-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200">
+                    <th rowSpan={2} className="border-r border-indigo-200 bg-indigo-100/90 px-1.5 py-1 align-middle text-indigo-900 dark:border-indigo-700 dark:bg-indigo-500/20 dark:text-indigo-200">
                       <div className="text-[10px] uppercase tracking-wider">Term Total</div>
                       <div className="mt-1 text-[9px] font-normal normal-case tracking-normal text-indigo-800 dark:text-indigo-300/90">P / A / L</div>
                     </th>
-                    <th rowSpan={2} className="bg-indigo-100/90 px-2 py-2 align-middle text-indigo-900 dark:bg-indigo-500/20 dark:text-indigo-200">
+                    <th rowSpan={2} className="bg-indigo-100/90 px-1.5 py-1 align-middle text-indigo-900 dark:bg-indigo-500/20 dark:text-indigo-200">
                       <div className="text-[10px] uppercase tracking-wider">Rate</div>
                       <div className="mt-1 text-[9px] font-normal">%</div>
                     </th>
@@ -458,13 +460,13 @@ const AttendanceHistory = () => {
                   <tr className="bg-gray-50 text-[10px] uppercase tracking-wider text-gray-600 dark:bg-slate-950 dark:text-slate-500">
                     {weeks.flatMap((w) => [
                       ...w.days.map((day) => (
-                        <th key={`day-${w.index}-${day.date}`} className="border-r border-gray-200 px-1.5 py-2.5 text-center dark:border-slate-800">
+                        <th key={`day-${w.index}-${day.date}`} className="border-r border-gray-200 px-1 py-1 text-center dark:border-slate-800">
                           <span className="font-mono text-sm font-bold tabular-nums text-gray-900 dark:text-slate-100">{day.day}</span>
                         </th>
                       )),
                       <th
                         key={`wsub-${w.index}`}
-                        className="border-r border-indigo-200 bg-indigo-50 px-2 py-2 text-[9px] text-indigo-900 dark:border-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-200"
+                        className="border-r border-indigo-200 bg-indigo-50 px-1.5 py-1 text-[9px] text-indigo-900 dark:border-indigo-700 dark:bg-indigo-500/10 dark:text-indigo-200"
                       >
                         P / A / L
                       </th>,
@@ -480,14 +482,14 @@ const AttendanceHistory = () => {
                     return (
                       <tr key={row.studentId} className={rowBg}>
                         <td
-                          className={`sticky left-0 z-10 border-r border-gray-200 px-2 py-2 font-mono text-xs text-gray-600 dark:border-slate-800 ${idx % 2 === 0 ? 'bg-gray-50 dark:bg-slate-900' : 'bg-white dark:bg-slate-950'}`}
+                          className={`sticky left-0 z-10 border-r border-gray-200 px-1.5 py-0.5 font-mono text-[11px] text-gray-600 dark:border-slate-800 ${idx % 2 === 0 ? 'bg-gray-50 dark:bg-slate-900' : 'bg-white dark:bg-slate-950'}`}
                         >
                           {idx + 1}
                         </td>
                         <td
-                          className={`sticky left-10 z-10 border-r border-gray-200 px-3 py-2 text-left dark:border-slate-800 ${idx % 2 === 0 ? 'bg-gray-50 dark:bg-slate-900' : 'bg-white dark:bg-slate-950'}`}
+                          className={`sticky left-10 z-10 border-r border-gray-200 px-2 py-0.5 text-left dark:border-slate-800 ${idx % 2 === 0 ? 'bg-gray-50 dark:bg-slate-900' : 'bg-white dark:bg-slate-950'}`}
                         >
-                          <div className="truncate text-sm font-bold text-gray-900 dark:text-slate-100">{row.name}</div>
+                          <div className="truncate text-xs font-semibold leading-tight text-gray-900 dark:text-slate-100">{row.name}</div>
                         </td>
                         {weeks.flatMap((w) => {
                           let wP = 0;
@@ -496,8 +498,8 @@ const AttendanceHistory = () => {
                           const dayCells = w.days.map((day) => {
                             if (day.type === 'exam') {
                               return (
-                                <td key={`${row.studentId}-${day.date}`} className="border-r border-gray-200 px-1 py-2 text-center dark:border-slate-800">
-                                  <span className="inline-flex rounded-md border border-gray-400 bg-gray-100 px-2 py-1 text-[10px] font-semibold text-gray-800 dark:border-slate-500/60 dark:bg-slate-700/40 dark:text-slate-200">
+                                <td key={`${row.studentId}-${day.date}`} className="border-r border-gray-200 px-0.5 py-0.5 text-center dark:border-slate-800">
+                                  <span className="inline-flex rounded border border-gray-400 bg-gray-100 px-1.5 py-0.5 text-[9px] font-semibold text-gray-800 dark:border-slate-500/60 dark:bg-slate-700/40 dark:text-slate-200">
                                     EXAM
                                   </span>
                                 </td>
@@ -508,7 +510,7 @@ const AttendanceHistory = () => {
                             else if (status === 'absent') wA += 1;
                             else if (status === 'late') wL += 1;
                             return (
-                              <td key={`${row.studentId}-${day.date}`} className="border-r border-gray-200 px-1 py-2 text-center dark:border-slate-800">
+                              <td key={`${row.studentId}-${day.date}`} className="border-r border-gray-200 px-0.5 py-0.5 text-center dark:border-slate-800">
                                 {chipForStatus(status)}
                               </td>
                             );
@@ -519,9 +521,9 @@ const AttendanceHistory = () => {
                           dayCells.push(
                             <td
                               key={`wt-${row.studentId}-${w.index}`}
-                              className="border-r border-indigo-200 bg-indigo-50/80 px-2 py-1 dark:border-indigo-700 dark:bg-indigo-500/10"
+                              className="border-r border-indigo-200 bg-indigo-50/80 px-1.5 py-0.5 dark:border-indigo-700 dark:bg-indigo-500/10"
                             >
-                              <div className="space-y-0.5 text-left font-mono text-[10px]">
+                              <div className="space-y-0 text-left font-mono text-[9px] leading-tight">
                                 <div className="text-green-700 dark:text-green-400">{wP + wL}P</div>
                                 <div className="text-red-600 dark:text-red-400">{wA}A</div>
                                 <div className="text-amber-700 dark:text-amber-400">{wL}L</div>
@@ -530,14 +532,14 @@ const AttendanceHistory = () => {
                           );
                           return dayCells;
                         })}
-                        <td className="border-r border-indigo-200 bg-indigo-100/70 px-2 py-1 dark:border-indigo-700 dark:bg-indigo-500/20">
-                          <div className="space-y-0.5 text-left font-mono text-[10px]">
+                        <td className="border-r border-indigo-200 bg-indigo-100/70 px-1.5 py-0.5 dark:border-indigo-700 dark:bg-indigo-500/20">
+                          <div className="space-y-0 text-left font-mono text-[9px] leading-tight">
                             <div className="text-green-700 dark:text-green-400">{termP + termL}P</div>
                             <div className="text-red-600 dark:text-red-400">{termA}A</div>
                             <div className="text-amber-700 dark:text-amber-400">{termL}L</div>
                           </div>
                         </td>
-                        <td className="bg-indigo-100/70 px-2 py-2 text-center font-mono text-xs font-bold text-gray-900 dark:bg-indigo-500/20 dark:text-slate-100">
+                        <td className="bg-indigo-100/70 px-1.5 py-0.5 text-center font-mono text-[11px] font-bold text-gray-900 dark:bg-indigo-500/20 dark:text-slate-100">
                           {(((termP + termL) / Math.max(termP + termA + termL, 1)) * 100).toFixed(1)}%
                         </td>
                       </tr>
