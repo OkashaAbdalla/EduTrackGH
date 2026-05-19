@@ -1,13 +1,10 @@
 /**
- * Loading Spinner Component
- * Purpose: Visual feedback during async operations
- * Usage: API calls, attendance processing, page transitions
- * Variants: Full page, inline, button spinner
+ * Loading Spinner
  */
 
-const Loader = () => {
-  // TODO: Implement spinner with EduTrack GH green color
-  return null;
+const Loader = ({ size = 'md', className = '' }) => {
+  const sizes = { sm: 'h-5 w-5', md: 'h-8 w-8', lg: 'h-12 w-12' };
+  return <div className={`ui-spinner ${sizes[size]} ${className}`} role="status" aria-label="Loading" />;
 };
 
 export default Loader;

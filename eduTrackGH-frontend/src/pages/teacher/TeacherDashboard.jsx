@@ -7,7 +7,7 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { ROUTES } from '../../utils/constants';
-import { Card } from '../../components/common';
+import { Card, Loader } from '../../components/common';
 import { useAuthContext } from '../../context';
 import authService from '../../services/authService';
 import classroomService from '../../services/classroomService';
@@ -55,7 +55,7 @@ const TeacherDashboard = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-200 dark:border-slate-700 border-t-dashboard-accent dark:border-t-blue-400" />
+          <Loader size="lg" />
         </div>
       </DashboardLayout>
     );

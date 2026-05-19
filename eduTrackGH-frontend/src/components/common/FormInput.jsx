@@ -1,7 +1,5 @@
 /**
- * Form Input Component
- * Purpose: Reusable form input with modern styling and error display
- * Features: Support for password visibility toggle with eye icon
+ * Form Input — glass styling with password toggle
  */
 
 import { useState } from 'react';
@@ -22,14 +20,11 @@ const FormInput = ({
   const isPasswordField = type === 'password';
   const inputType = isPasswordField && showPassword ? 'text' : type;
 
-  const togglePasswordVisibility = (e) => {
-    e.preventDefault();
-    setShowPassword(!showPassword);
-  };
-
   return (
     <div>
-      <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">{label}</label>
+      {label && (
+        <label className="block text-sm font-medium text-[color:var(--text-primary)] mb-1.5">{label}</label>
+      )}
       <div className="relative">
         <input
           type={inputType}
@@ -39,18 +34,17 @@ const FormInput = ({
           required={required}
           placeholder={placeholder}
           autoComplete={autoComplete}
-          className={`w-full bg-white dark:bg-gray-700/80 border-2 ${
-            error 
-              ? 'border-red-500 dark:border-red-500 focus:border-red-500 focus:ring-red-500/30' 
-              : 'border-gray-300 dark:border-gray-600 focus:border-green-500 dark:focus:border-green-400 focus:ring-green-500/30 dark:focus:ring-green-400/30'
-          } text-gray-900 dark:text-white px-4 py-3 ${isPasswordField ? 'pr-12' : ''} rounded-xl focus:outline-none focus:ring-4 placeholder-gray-400 dark:placeholder-gray-500 transition-all duration-200`}
+          className={`ui-input ${isPasswordField ? 'pr-11' : ''} ${error ? 'ui-input-error' : ''}`}
         />
-        
+
         {isPasswordField && (
           <button
             type="button"
-            onClick={togglePasswordVisibility}
-            className="absolute inset-y-0 right-0 flex items-center pr-3 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-300 transition-colors"
+            onClick={(e) => {
+              e.preventDefault();
+              setShowPassword(!showPassword);
+            }}
+            className="absolute inset-y-0 right-0 flex items-center pr-3 text-[color:var(--text-muted)] hover:text-[color:var(--text-primary)] transition"
             aria-label={showPassword ? 'Hide password' : 'Show password'}
           >
             {showPassword ? (
@@ -65,26 +59,16 @@ const FormInput = ({
             )}
           </button>
         )}
-
-        {!error && !isPasswordField && (
-          <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-            <div className="w-2 h-2 rounded-full bg-green-500 opacity-0 group-focus-within:opacity-100 transition-opacity"></div>
-          </div>
-        )}
       </div>
       {error && (
-        <p className="mt-2 text-sm text-red-600 dark:text-red-400 flex items-center space-x-1">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <p className="mt-1.5 text-sm text-[color:var(--danger)] flex items-center gap-1">
+          <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
           <span>{error}</span>
         </p>
       )}
-      {!error && hint && (
-        <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
-          {hint}
-        </p>
-      )}
+      {!error && hint && <p className="mt-1.5 text-xs text-[color:var(--text-muted)]">{hint}</p>}
     </div>
   );
 };

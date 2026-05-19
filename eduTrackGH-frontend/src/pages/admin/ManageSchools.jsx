@@ -129,18 +129,18 @@ const ManageSchools = () => {
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
           </div>
         ) : filteredSchools.length === 0 ? (
-          <Card className="p-12 text-center">
-            <svg className="w-16 h-16 mx-auto text-gray-400 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+          <Card className="ui-empty">
+            <svg className="ui-empty-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
             </svg>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-2">No Schools Found</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">Get started by creating your first school</p>
+            <h3 className="ui-empty-title">No schools found</h3>
+            <p className="ui-empty-text mb-4">Get started by creating your first school.</p>
             <Button
               onClick={() => {
                 resetForm();
                 setShowCreateModal(true);
               }}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              variant="primary"
             >
               Create School
             </Button>

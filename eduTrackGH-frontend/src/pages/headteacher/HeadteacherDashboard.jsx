@@ -5,7 +5,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { Card } from '../../components/common';
+import { Card, Loader } from '../../components/common';
 import HeadteacherStatsCards from '../../components/headteacher/HeadteacherStatsCards';
 import HeadteacherQuickActions from '../../components/headteacher/HeadteacherQuickActions';
 import SchoolLocationSettings from '../../components/headteacher/SchoolLocationSettings';
@@ -146,7 +146,7 @@ const HeadteacherDashboard = () => {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
-          <div className="animate-spin rounded-full h-12 w-12 border-2 border-slate-200 dark:border-slate-700 border-t-dashboard-accent dark:border-t-blue-400" />
+          <Loader size="lg" />
         </div>
       </DashboardLayout>
     );

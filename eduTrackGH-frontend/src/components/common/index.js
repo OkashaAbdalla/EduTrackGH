@@ -17,5 +17,6 @@ export { default as Card } from './Card';
 export { default as Modal } from './Modal';
 export { default as Skeleton } from './Skeleton';
 // export { default as Alert } from './Alert';
-// export { default as Loader } from './Loader';
+export { default as Loader } from './Loader';
 export { default as Toast } from './Toast';
+export { default as NotificationButton } from './NotificationButton';

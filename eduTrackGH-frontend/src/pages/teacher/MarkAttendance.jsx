@@ -328,11 +328,17 @@ const MarkAttendance = () => {
         )}
 
         {!classLoading && selectedClass && students.length === 0 && (
-          <Card className="p-12 text-center text-gray-500 dark:text-gray-400">No students found for this class.</Card>
+          <Card className="ui-empty">
+            <p className="ui-empty-title">No students found</p>
+            <p className="ui-empty-text">No students are enrolled in this class yet.</p>
+          </Card>
         )}
 
         {!selectedClass && classrooms.length > 0 && !classLoading && (
-          <Card className="p-12 text-center text-gray-500 dark:text-gray-400">Select your class to mark attendance.</Card>
+          <Card className="ui-empty">
+            <p className="ui-empty-title">Select a class</p>
+            <p className="ui-empty-text">Choose your class above to start marking attendance.</p>
+          </Card>
         )}
       </div>
     </DashboardLayout>

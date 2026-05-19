@@ -33,12 +33,17 @@ export const unlockNotificationSound = async () => {
   }
 };
 
-const playBeep = (ctx, freq, start, duration, gainValue) => {
+const playBeep = (ctx, freq, start, duration, gainValue, type = 'sine') => {
   const osc = ctx.createOscillator();
   const gain = ctx.createGain();
-  osc.type = 'square';
+  osc.type = type;
   osc.frequency.value = freq;
-  gain.gain.value = gainValue;
+  
+  // Smooth envelope for natural sound
+  gain.gain.setValueAtTime(0, ctx.currentTime + start);
+  gain.gain.linearRampToValueAtTime(gainValue, ctx.currentTime + start + 0.02);
+  gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + start + duration);
+  
   osc.connect(gain);
   gain.connect(ctx.destination);
   osc.start(ctx.currentTime + start);
@@ -52,12 +57,11 @@ export const playParentNotificationSound = async () => {
     if (ctx.state === 'suspended') {
       await ctx.resume();
     }
-    // Louder triple pattern + repeat pulse for clearer notice.
-    playBeep(ctx, 880, 0, 0.2, 0.95);
-    playBeep(ctx, 1320, 0.24, 0.2, 0.95);
-    playBeep(ctx, 1760, 0.48, 0.24, 0.95);
-    playBeep(ctx, 1320, 0.82, 0.18, 0.9);
-    playBeep(ctx, 1760, 1.04, 0.22, 0.9);
+    // Pleasant, gentle notification sound - soft ascending melody
+    // Using sine waves for smooth, non-harsh tones
+    playBeep(ctx, 523.25, 0, 0.15, 0.3, 'sine');      // C5 - soft start
+    playBeep(ctx, 659.25, 0.12, 0.15, 0.35, 'sine');  // E5 - gentle rise
+    playBeep(ctx, 783.99, 0.24, 0.25, 0.4, 'sine');   // G5 - pleasant finish
     return true;
   } catch {
     return false;

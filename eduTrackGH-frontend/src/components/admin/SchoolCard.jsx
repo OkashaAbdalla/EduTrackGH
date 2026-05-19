@@ -1,79 +1,64 @@
 /**
- * School Card Component
- * Purpose: Display individual school information card
+ * School Card — solid glass panel for readable school metadata
  */
 
 import { Card, Button } from '../common';
 
 const SchoolCard = ({ school, onEdit, onToggleStatus }) => {
-  const getLevelBadgeClass = (level) => {
-    switch (level) {
-      case 'PRIMARY':
-        return 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300';
-      case 'JHS':
-        return 'bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-300';
-      default:
-        return 'bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-300';
-    }
-  };
+  const levelBadge =
+    school.schoolLevel === 'PRIMARY'
+      ? 'badge-neutral'
+      : school.schoolLevel === 'JHS'
+        ? 'badge-neutral'
+        : 'badge-neutral';
 
   return (
-    <Card className="p-5 hover:shadow-lg transition-shadow h-full flex flex-col">
-      <div className="flex justify-between items-start mb-3">
-        <div className="flex-1">
-          <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{school.name}</h3>
-          <span className={`inline-block px-2 py-1 rounded-full text-xs font-medium ${getLevelBadgeClass(school.schoolLevel)}`}>
-            {school.schoolLevel}
-          </span>
+    <Card variant="solid" className="p-5 h-full flex flex-col" hover>
+      <div className="flex justify-between items-start gap-3 mb-3">
+        <div className="min-w-0 flex-1">
+          <h3 className="ui-section-title ui-truncate mb-1.5" title={school.name}>
+            {school.name}
+          </h3>
+          <span className={`${levelBadge} capitalize`}>{school.schoolLevel}</span>
         </div>
-        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-          school.isActive
-            ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-            : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
-        }`}>
+        <span className={school.isActive ? 'badge-success shrink-0' : 'badge-danger shrink-0'}>
           {school.isActive ? 'Active' : 'Inactive'}
         </span>
       </div>
 
       {school.location?.region && (
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-          📍 {school.location.region}{school.location.district ? `, ${school.location.district}` : ''}
+        <p className="text-sm text-[color:var(--text-secondary)] mb-2 truncate" title={school.location.region}>
+          {school.location.region}
+          {school.location.district ? `, ${school.location.district}` : ''}
         </p>
       )}
 
       {school.schoolLevel === 'BOTH' ? (
-        <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1 mb-2">
-          <p>👤 Primary: {school.primaryHeadteacher?.fullName || 'Unassigned'}</p>
-          <p>👤 JHS: {school.jhsHeadteacher?.fullName || 'Unassigned'}</p>
+        <div className="text-sm text-[color:var(--text-secondary)] space-y-1 mb-2">
+          <p className="ui-truncate" title={school.primaryHeadteacher?.fullName}>
+            Primary: {school.primaryHeadteacher?.fullName || 'Unassigned'}
+          </p>
+          <p className="ui-truncate" title={school.jhsHeadteacher?.fullName}>
+            JHS: {school.jhsHeadteacher?.fullName || 'Unassigned'}
+          </p>
         </div>
       ) : school.headteacher ? (
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-          👤 {school.headteacher.fullName}
+        <p className="text-sm text-[color:var(--text-secondary)] mb-2 ui-truncate" title={school.headteacher.fullName}>
+          {school.headteacher.fullName}
         </p>
       ) : (
-        <p className="text-sm text-amber-600 dark:text-amber-400 mb-2">
-          ⚠️ No headteacher assigned
-        </p>
+        <p className="text-sm text-[color:var(--warning)] mb-2">No headteacher assigned</p>
       )}
 
       <div className="flex gap-2 mt-auto pt-4">
-        <Button
-          onClick={() => onEdit(school)}
-          className="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-sm py-2"
-        >
-          {school.schoolLevel === 'BOTH'
-            ? 'Edit'
-            : school.headteacher
-              ? 'Edit'
-              : 'Assign Headteacher'}
+        <Button onClick={() => onEdit(school)} variant="primary" size="sm" className="flex-1">
+          {school.schoolLevel === 'BOTH' ? 'Edit' : school.headteacher ? 'Edit' : 'Assign Headteacher'}
         </Button>
         <Button
           onClick={() => onToggleStatus(school)}
-          className={`flex-1 text-sm py-2 ${
-            school.isActive
-              ? 'bg-red-600 hover:bg-red-700 text-white'
-              : 'bg-green-600 hover:bg-green-700 text-white'
-          }`}
+          variant={school.isActive ? 'danger' : 'primary'}
+          size="sm"
+          className="flex-1"
         >
           {school.isActive ? 'Deactivate' : 'Activate'}
         </Button>

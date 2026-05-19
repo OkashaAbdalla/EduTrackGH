@@ -1,45 +1,36 @@
 /**
- * Reusable Button Component
- * Purpose: Consistent button styling across the application
- * Usage: Primary, secondary, danger variants with loading states
- * EduTrack GH Branding: Green primary, white secondary
+ * Button — design-system variants (no logic changes)
  */
 
-const Button = ({ 
-  children, 
-  onClick, 
-  type = 'button', 
-  disabled = false, 
+const Button = ({
+  children,
+  onClick,
+  type = 'button',
+  disabled = false,
   variant = 'primary',
   size = 'md',
   className = '',
-  ...props 
+  ...props
 }) => {
-  const baseClasses = 'font-medium rounded-lg transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed';
-  
-  const variantClasses = {
-    primary: 'bg-green-600 hover:bg-green-700 text-white focus:ring-green-500',
-    secondary: 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 focus:ring-gray-500',
-    danger: 'bg-red-600 hover:bg-red-700 text-white focus:ring-red-500',
-    outline: 'border-2 border-green-600 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/20 focus:ring-green-500',
+  const variants = {
+    primary: 'ui-btn-primary',
+    secondary: 'ui-btn-secondary',
+    danger: 'ui-btn-danger',
+    outline: 'ui-btn-outline',
+    ghost: 'ui-btn-ghost',
+    blue: 'ui-btn-primary bg-[color:var(--secondary)] hover:opacity-90 focus:ring-blue-500/25',
   };
 
-  const sizeClasses = {
-    sm: 'px-3 py-1.5 text-sm',
+  const sizes = {
+    sm: 'px-3 py-1.5 text-xs',
     md: 'px-4 py-2 text-sm',
-    lg: 'px-6 py-3 text-base',
+    lg: 'px-5 py-2.5 text-sm',
   };
 
-  const classes = `${baseClasses} ${variantClasses[variant]} ${sizeClasses[size]} ${className}`;
+  const classes = `ui-btn ${variants[variant] || variants.primary} ${sizes[size]} ${className}`.trim();
 
   return (
-    <button
-      type={type}
-      onClick={onClick}
-      disabled={disabled}
-      className={classes}
-      {...props}
-    >
+    <button type={type} onClick={onClick} disabled={disabled} className={classes} {...props}>
       {children}
     </button>
   );
