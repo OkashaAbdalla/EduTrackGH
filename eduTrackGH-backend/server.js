@@ -4,6 +4,7 @@
  */
 
 const http = require("http");
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const dotenv = require("dotenv");
@@ -20,6 +21,7 @@ const {
   assertAdminLoginPathConfigured,
   getAdminLoginApiPath,
 } = require("./config/adminLoginPath");
+const { isCloudinaryConfigured } = require("./utils/profilePhotoStorage");
 
 assertAdminLoginPathConfigured();
 
@@ -45,6 +47,21 @@ app.use(
 );
 app.use(express.json({ limit: "10mb" })); // For base64 images
 app.use(express.urlencoded({ extended: true }));
+
+// Local profile uploads (used when Cloudinary env vars are not set)
+app.use(
+  "/api/uploads",
+  express.static(path.join(__dirname, "uploads"), {
+    maxAge: "7d",
+    fallthrough: true,
+    setHeaders(res, filePath) {
+      if (filePath.includes(`${path.sep}profiles${path.sep}`)) {
+        res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate");
+        res.setHeader("Pragma", "no-cache");
+      }
+    },
+  }),
+);
 
 // Routes - Admin login is registered inside authRoutes at /api/auth/${ADMIN_LOGIN_PATH}
 // Rate limiting only applies to failed login attempts, not successful ones
@@ -106,4 +123,11 @@ server.listen(PORT, HOST, () => {
   console.log(`📝 Environment: ${process.env.NODE_ENV || "development"}`);
   console.log(`🌐 Frontend URL: ${process.env.FRONTEND_URL || "http://localhost:5173"}`);
   console.log(`🔐 Admin login: POST ${getAdminLoginApiPath()}`);
+  if (isCloudinaryConfigured()) {
+    console.log("☁️  Cloudinary: configured (profile + attendance photos)");
+  } else {
+    console.log(
+      "☁️  Cloudinary: not configured — profile photos save to uploads/ (add CLOUDINARY_* to .env for cloud storage)",
+    );
+  }
 });

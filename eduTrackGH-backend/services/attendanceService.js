@@ -235,11 +235,15 @@ async function markDailyAttendance({
     let manualReason = row.manualReason;
     let photoUrl = row.photoUrl || null;
     if (status === "present") {
-      if (!verificationType) {
-        verificationType = "manual";
-        manualReason = manualReason != null && String(manualReason).trim() ? manualReason : "Legacy entry";
+      if (verificationType === "photo" && photoUrl) {
+        manualReason = null;
+      } else if (verificationType === "manual" && manualReason != null && String(manualReason).trim()) {
+        photoUrl = null;
+      } else {
+        verificationType = null;
+        manualReason = null;
+        photoUrl = null;
       }
-      if (verificationType === "photo" && photoUrl) manualReason = null;
     } else {
       verificationType = "manual";
       manualReason = null;

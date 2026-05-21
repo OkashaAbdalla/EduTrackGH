@@ -1,4 +1,4 @@
-﻿# Dependencies
+# Dependencies
 node_modules/
 
 # Environment variables (NEVER commit actual .env files!)
@@ -23,6 +23,9 @@ Thumbs.db
 # Build files
 dist/
 build/
+
+# Local profile photo uploads (when Cloudinary is not configured)
+uploads/
 
 # Test coverage
 coverage/

@@ -115,13 +115,19 @@ async function getConversations(req, res) {
       const other = user.role === 'headteacher' ? g._id.tt : g._id.ht;
       ids.add(other);
     }
-    const users = await User.find({ _id: { $in: Array.from(ids) } }).select('fullName email').lean();
+    const users = await User.find({ _id: { $in: Array.from(ids) } }).select('fullName email avatarUrl').lean();
     const userMap = new Map(users.map((u) => [u._id.toString(), u]));
 
     const list = agg.map((g) => {
       const otherId = user.role === 'headteacher' ? g._id.tt : g._id.ht;
       const u = userMap.get(otherId.toString());
-      return { otherId, otherName: u?.fullName || 'Unknown', lastMessage: g.lastMsg, lastAt: g.lastAt };
+      return {
+        otherId,
+        otherName: u?.fullName || 'Unknown',
+        otherAvatarUrl: u?.avatarUrl || '',
+        lastMessage: g.lastMsg,
+        lastAt: g.lastAt,
+      };
     });
 
     return res.json({ success: true, conversations: list });

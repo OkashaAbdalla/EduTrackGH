@@ -13,7 +13,7 @@ const {
   buildFrontendUrlForRequest,
 } = require('../services/emailService');
 
-const { uploadProfilePhoto, deleteImage } = require('../utils/cloudinary');
+const { saveProfilePhoto, removeProfilePhoto } = require('../utils/profilePhotoStorage');
 
 const getRequestMeta = (req) => ({
   ipAddress:
@@ -235,21 +235,19 @@ const getMe = async (req, res) => {
 
 const uploadProfilePhotoHandler = async (req, res) => {
   try {
-    if (req.user.role !== 'headteacher') {
-      return res.status(403).json({ success: false, message: 'Only headteachers can update profile photo' });
+    if (req.user.role !== 'headteacher' && req.user.role !== 'teacher') {
+      return res.status(403).json({ success: false, message: 'Only headteachers and teachers can update profile photo' });
     }
     const { image } = req.body || {};
-    const upload = await uploadProfilePhoto(image);
+    await removeProfilePhoto(req.user);
+
+    const upload = await saveProfilePhoto(image, String(req.user._id));
     if (!upload.success) {
       return res.status(400).json({ success: false, message: upload.message || 'Upload failed' });
     }
 
-    if (req.user.avatarPublicId) {
-      await deleteImage(req.user.avatarPublicId);
-    }
-
     req.user.avatarUrl = upload.url;
-    req.user.avatarPublicId = upload.publicId;
+    req.user.avatarPublicId = upload.publicId || '';
     await req.user.save();
 
     return res.json({ success: true, avatarUrl: upload.url });
@@ -261,13 +259,11 @@ const uploadProfilePhotoHandler = async (req, res) => {
 
 const deleteProfilePhotoHandler = async (req, res) => {
   try {
-    if (req.user.role !== 'headteacher') {
-      return res.status(403).json({ success: false, message: 'Only headteachers can update profile photo' });
+    if (req.user.role !== 'headteacher' && req.user.role !== 'teacher') {
+      return res.status(403).json({ success: false, message: 'Only headteachers and teachers can update profile photo' });
     }
 
-    if (req.user.avatarPublicId) {
-      await deleteImage(req.user.avatarPublicId);
-    }
+    await removeProfilePhoto(req.user);
 
     req.user.avatarUrl = '';
     req.user.avatarPublicId = '';

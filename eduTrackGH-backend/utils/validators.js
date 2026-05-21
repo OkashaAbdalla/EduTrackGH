@@ -43,8 +43,8 @@ const validate = (req, res, next) => {
 
 /**
  * Phase 2: Validate daily attendance payload.
- * Rules: If status === "present" → verificationType must be "photo" or "manual".
- * If "photo" → photoUrl required. If "manual" → manualReason required.
+ * Rules: Present may omit verification. If verificationType is set:
+ * "photo" → photoUrl required; "manual" → manualReason required.
  * Absent/late: no photo or verification required.
  */
 const validateDailyAttendancePayload = (req, res, next) => {
@@ -73,7 +73,7 @@ const validateDailyAttendancePayload = (req, res, next) => {
     // When status is present, enforce verification: photo (photoUrl) or manual (manualReason)
     if (status === 'present') {
       const verificationType = row.verificationType;
-      // Legacy payload: no verificationType → controller will set manual + "Legacy entry"
+      // No verificationType → present without photo/reason (allowed)
       if (verificationType === undefined || verificationType === null) {
         continue;
       }

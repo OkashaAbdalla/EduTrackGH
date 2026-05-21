@@ -11,9 +11,11 @@ try {
   // Package not installed; server still starts, photo upload uses manual verification
 }
 
-let CLOUD_NAME = process.env.CLOUDINARY_CLOUD_NAME;
-let API_KEY = process.env.CLOUDINARY_API_KEY;
-let API_SECRET = process.env.CLOUDINARY_API_SECRET;
+const trim = (v) => (typeof v === 'string' ? v.trim() : v);
+
+let CLOUD_NAME = trim(process.env.CLOUDINARY_CLOUD_NAME);
+let API_KEY = trim(process.env.CLOUDINARY_API_KEY);
+let API_SECRET = trim(process.env.CLOUDINARY_API_SECRET);
 
 const CLOUDINARY_URL = process.env.CLOUDINARY_URL;
 

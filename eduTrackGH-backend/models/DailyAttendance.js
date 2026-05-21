@@ -41,7 +41,7 @@ const dailyAttendanceSchema = new mongoose.Schema(
     verificationType: {
       type: String,
       enum: ['photo', 'manual'],
-      default: 'manual',
+      default: null,
     },
     manualReason: { type: String, default: null },
     markedAt: { type: Date, default: Date.now },
