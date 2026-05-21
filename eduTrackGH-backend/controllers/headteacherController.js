@@ -17,6 +17,7 @@ module.exports = {
   getClassroomsForSchool: classrooms.getClassroomsForSchool,
   seedDefaultClassroomsForSchool: classrooms.seedDefaultClassroomsForSchool,
   assignClassTeacher: classrooms.assignClassTeacher,
+  getClassroomRegisterHistory: classrooms.getClassroomRegisterHistory,
   getTeachersCompliance: compliance.getTeachersCompliance,
   getDashboardStats: dashboard.getDashboardStats,
   getSchoolLocation: location.getSchoolLocation,

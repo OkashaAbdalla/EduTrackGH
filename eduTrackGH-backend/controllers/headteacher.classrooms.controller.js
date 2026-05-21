@@ -7,6 +7,7 @@ const Classroom = require('../models/Classroom');
 const DailyAttendance = require('../models/DailyAttendance');
 const TeacherMessage = require('../models/TeacherMessage');
 const { getClassroomsWithBootstrap, seedDefaultClassrooms, getDefinitionsForLevel, getClassroomLevelFilter } = require('../services/headteacherService');
+const { getClassroomRegisterHistoryForHeadteacher } = require('./attendance.history.controller');
 
 function getSchoolId(req) {
   return req.user?.school || null;
@@ -160,4 +161,5 @@ module.exports = {
   seedDefaultClassroomsForSchool,
   assignClassTeacher,
   unlockAttendanceForHeadteacher,
+  getClassroomRegisterHistory: getClassroomRegisterHistoryForHeadteacher,
 };

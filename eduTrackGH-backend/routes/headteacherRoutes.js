@@ -16,6 +16,7 @@ const {
   seedDefaultClassroomsForSchool,
   getTeachersCompliance,
   getDashboardStats,
+  getClassroomRegisterHistory,
 } = require('../controllers/headteacherController');
 const { unlockAttendanceForHeadteacher } = require('../controllers/headteacher.classrooms.controller');
 const { getSchoolLocation, setSchoolLocation } = require('../controllers/headteacher.location.controller');
@@ -33,6 +34,7 @@ router.delete('/teachers/:id', deleteTeacherForSchool);
 
 // Classrooms in headteacher's school
 router.get('/classrooms', getClassroomsForSchool);
+router.get('/classrooms/:classroomId/register', getClassroomRegisterHistory);
 router.patch('/classrooms/:id/assign-teacher', assignClassTeacher);
 router.post('/classrooms/seed-default', seedDefaultClassroomsForSchool);
 

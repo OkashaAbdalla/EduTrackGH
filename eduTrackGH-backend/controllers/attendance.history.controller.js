@@ -2,6 +2,7 @@
  * Attendance – history, flagged students, photo upload
  */
 
+const mongoose = require("mongoose");
 const Classroom = require("../models/Classroom");
 const Student = require("../models/Student");
 const DailyAttendance = require("../models/DailyAttendance");
@@ -9,19 +10,14 @@ const { uploadAttendancePhoto } = require("../utils/cloudinary");
 const { getTermDateRange } = require("../services/calendarRuntime");
 const { approvedInClassroom } = require("../utils/studentQuery");
 
-const getClassroomDailyHistory = async (req, res) => {
-  try {
-    const { classroomId } = req.params;
-    const teacherId = req.user._id;
-    const { month, term } = req.query;
+/** Shared register/history payload for a classroom (no auth). */
+async function buildClassroomDailyHistory(classroomId, { month, term } = {}) {
+  const classroom = await Classroom.findById(classroomId);
+  if (!classroom) {
+    return { error: { status: 404, message: "Classroom not found" } };
+  }
 
-    const classroom = await Classroom.findById(classroomId);
-    if (!classroom) return res.status(404).json({ success: false, message: "Classroom not found" });
-    if (classroom.teacherId.toString() !== teacherId.toString()) {
-      return res.status(403).json({ success: false, message: "Unauthorized" });
-    }
-
-    const students = await Student.find(approvedInClassroom(classroomId))
+  const students = await Student.find(approvedInClassroom(classroomId))
       .select("_id fullName studentId studentIdNumber")
       .sort({ fullName: 1 });
     const studentIds = students.map((s) => s._id);
@@ -99,23 +95,76 @@ const getClassroomDailyHistory = async (req, res) => {
       };
     });
 
-    res.json({
-      success: true,
-      classroomId,
-      classroomName: classroom.name,
-      records: grouped,
-      students: students.map((s) => ({
-        id: String(s._id),
-        name: s.fullName,
-        rollNumber: s.studentId || s.studentIdNumber || "",
-      })),
-      entries,
-      historyRows,
-      totalStudents: studentIds.length,
-    });
+  return {
+    success: true,
+    classroomId,
+    classroomName: classroom.name,
+    records: grouped,
+    students: students.map((s) => ({
+      id: String(s._id),
+      name: s.fullName,
+      rollNumber: s.studentId || s.studentIdNumber || "",
+    })),
+    entries,
+    historyRows,
+    totalStudents: studentIds.length,
+  };
+}
+
+const getClassroomDailyHistory = async (req, res) => {
+  try {
+    const { classroomId } = req.params;
+    const teacherId = req.user._id;
+    const { month, term } = req.query;
+
+    const classroom = await Classroom.findById(classroomId);
+    if (!classroom) return res.status(404).json({ success: false, message: "Classroom not found" });
+    if (!classroom.teacherId || classroom.teacherId.toString() !== teacherId.toString()) {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    const payload = await buildClassroomDailyHistory(classroomId, { month, term });
+    if (payload.error) {
+      return res.status(payload.error.status).json({ success: false, message: payload.error.message });
+    }
+    res.json(payload);
   } catch (error) {
     console.error("getClassroomDailyHistory error:", error);
     res.status(500).json({ success: false, message: "Failed to get attendance history" });
+  }
+};
+
+/** Headteacher: view class register for any classroom in their school */
+const getClassroomRegisterHistoryForHeadteacher = async (req, res) => {
+  try {
+    const { classroomId } = req.params;
+    const headteacherSchoolId = req.user?.school || req.user?.schoolId;
+    const { month, term } = req.query;
+
+    if (!mongoose.Types.ObjectId.isValid(classroomId)) {
+      return res.status(400).json({ success: false, message: "Invalid classroom id" });
+    }
+
+    if (!headteacherSchoolId) {
+      return res.status(400).json({ success: false, message: "No school assigned to your account" });
+    }
+
+    const classroom = await Classroom.findById(classroomId);
+    if (!classroom) return res.status(404).json({ success: false, message: "Classroom not found" });
+
+    const classroomSchoolId = classroom.schoolId?._id || classroom.schoolId;
+    if (String(classroomSchoolId) !== String(headteacherSchoolId)) {
+      return res.status(403).json({ success: false, message: "Unauthorized" });
+    }
+
+    const payload = await buildClassroomDailyHistory(classroomId, { month, term });
+    if (payload.error) {
+      return res.status(payload.error.status).json({ success: false, message: payload.error.message });
+    }
+    res.json(payload);
+  } catch (error) {
+    console.error("getClassroomRegisterHistoryForHeadteacher error:", error);
+    res.status(500).json({ success: false, message: "Failed to get class register" });
   }
 };
 
@@ -229,7 +278,9 @@ const deleteAttendanceWeek = async (req, res) => {
 };
 
 module.exports = {
+  buildClassroomDailyHistory,
   getClassroomDailyHistory,
+  getClassroomRegisterHistoryForHeadteacher,
   getFlaggedStudentsForClassroom,
   uploadPhoto,
   deleteAttendanceWeek,
