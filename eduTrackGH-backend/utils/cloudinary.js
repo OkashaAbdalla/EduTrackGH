@@ -82,7 +82,16 @@ async function uploadProfilePhoto(base64Data) {
     const result = await cloudinary.uploader.upload(`data:${mime};base64,${base64}`, {
       folder: 'edutrack-profiles',
       resource_type: 'image',
-      transformation: [{ quality: 'auto:good', fetch_format: 'auto' }],
+      transformation: [
+        {
+          width: 384,
+          height: 384,
+          crop: 'fill',
+          gravity: 'auto',
+          quality: 'auto:best',
+          fetch_format: 'auto',
+        },
+      ],
     });
     return { success: true, url: result.secure_url, publicId: result.public_id };
   } catch (err) {
