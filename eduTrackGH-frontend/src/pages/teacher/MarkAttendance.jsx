@@ -85,7 +85,9 @@ const MarkAttendance = () => {
       <div className="space-y-6 max-w-3xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mark Attendance</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Mark one student at a time. Present requires photo or manual reason.</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            Mark one student at a time. Photo and manual reasons are optional when marking present.
+          </p>
         </div>
 
         {error && (
@@ -102,7 +104,7 @@ const MarkAttendance = () => {
                 <select
                   value={selectedClass}
                   onChange={(e) => setSelectedClass(e.target.value)}
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                  className="ui-select w-full"
                 >
                   <option value="">Choose a class...</option>
                   {classrooms.map((cls) => (
@@ -117,7 +119,7 @@ const MarkAttendance = () => {
                   value={selectedDate}
                   onChange={(e) => setSelectedDate(e.target.value)}
                   max={new Date().toISOString().split('T')[0]}
-                  className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                  className="ui-select w-full"
                 />
               </div>
             </div>

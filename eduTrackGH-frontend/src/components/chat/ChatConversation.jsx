@@ -4,10 +4,11 @@
 
 import { useState, useEffect } from 'react';
 import ChatMessageList from './ChatMessageList';
+import { ProfileAvatar } from '../common';
 import chatService from '../../services/chatService';
 import { useSocket, useToast, useConfirm } from '../../context';
 
-const ChatConversation = ({ otherId, otherName, currentRole, onBack }) => {
+const ChatConversation = ({ otherId, otherName, otherAvatarUrl = '', currentRole, onBack }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -90,7 +91,8 @@ const ChatConversation = ({ otherId, otherName, currentRole, onBack }) => {
             </svg>
           </button>
         )}
-        <h3 className="font-semibold text-gray-900 dark:text-white">{otherName || 'Chat'}</h3>
+        <ProfileAvatar src={otherAvatarUrl} name={otherName} size="sm" />
+        <h3 className="font-semibold text-gray-900 dark:text-white truncate">{otherName || 'Chat'}</h3>
       </div>
       <ChatMessageList
         messages={messages}

@@ -26,12 +26,12 @@ const TeacherManageStudents = lazy(() => import('./pages/teacher/ManageStudents'
 const TeacherChat = lazy(() => import('./pages/teacher/Chat'));
 
 const HeadteacherDashboard = lazy(() => import('./pages/headteacher/HeadteacherDashboard'));
-const SchoolReports = lazy(() => import('./pages/headteacher/SchoolReports'));
 const TeacherCompliance = lazy(() => import('./pages/headteacher/TeacherCompliance'));
 const ManageClasses = lazy(() => import('./pages/headteacher/ManageClasses'));
 const ManageStudents = lazy(() => import('./pages/headteacher/ManageStudents'));
 const HeadteacherManageTeachers = lazy(() => import('./pages/headteacher/ManageTeachers'));
 const HeadteacherChat = lazy(() => import('./pages/headteacher/Chat'));
+const HeadteacherRegisters = lazy(() => import('./pages/headteacher/Registers'));
 
 const ParentDashboard = lazy(() => import('./pages/parent/ParentDashboard'));
 const ChildrenAttendance = lazy(() => import('./pages/parent/ChildrenAttendance'));
@@ -88,12 +88,12 @@ function App() {
           
           {/* Headteacher Routes - Protected */}
           <Route path={ROUTES.HEADTEACHER_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherDashboard /></ProtectedRoute>} />
-          <Route path={ROUTES.SCHOOL_REPORTS} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><SchoolReports /></ProtectedRoute>} />
           <Route path={ROUTES.TEACHER_COMPLIANCE} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><TeacherCompliance /></ProtectedRoute>} />
           <Route path={ROUTES.MANAGE_CLASSES} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><ManageClasses /></ProtectedRoute>} />
           <Route path={ROUTES.HEADTEACHER_MANAGE_STUDENTS} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><ManageStudents /></ProtectedRoute>} />
           <Route path={ROUTES.HEADTEACHER_MANAGE_TEACHERS} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherManageTeachers /></ProtectedRoute>} />
           <Route path={ROUTES.HEADTEACHER_CHAT} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherChat /></ProtectedRoute>} />
+          <Route path={ROUTES.HEADTEACHER_REGISTERS} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherRegisters /></ProtectedRoute>} />
           
           {/* Parent Routes - Protected */}
           <Route path={ROUTES.PARENT_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.PARENT}><ParentDashboard /></ProtectedRoute>} />

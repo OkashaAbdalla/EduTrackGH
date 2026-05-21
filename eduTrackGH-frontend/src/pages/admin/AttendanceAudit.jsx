@@ -37,7 +37,7 @@ const AttendanceAudit = () => {
               <select
                 value={filters.schoolId}
                 onChange={(e) => setFilters((f) => ({ ...f, schoolId: e.target.value, classroomId: '' }))}
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                className="ui-select w-full"
               >
                 <option value="">All schools</option>
                 {schools.map((s) => (
@@ -50,7 +50,7 @@ const AttendanceAudit = () => {
               <select
                 value={filters.classroomId}
                 onChange={(e) => setFilters((f) => ({ ...f, classroomId: e.target.value }))}
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                className="ui-select w-full"
               >
                 <option value="">All classrooms</option>
                 {classrooms.map((c) => (
@@ -64,7 +64,7 @@ const AttendanceAudit = () => {
                 type="date"
                 value={filters.date}
                 onChange={(e) => setFilters((f) => ({ ...f, date: e.target.value }))}
-                className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
+                className="ui-select w-full"
               />
             </div>
             <div className="flex items-end gap-2">

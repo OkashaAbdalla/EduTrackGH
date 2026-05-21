@@ -36,9 +36,9 @@ const AdminAuthLogs = () => {
               value={filters.search}
               onChange={(e) => setFilters((f) => ({ ...f, search: e.target.value }))}
               placeholder="Search email"
-              className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-700"
+              className="ui-select ui-select-inline"
             />
-            <select value={filters.role} onChange={(e) => setFilters((f) => ({ ...f, role: e.target.value }))} className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-700">
+            <select value={filters.role} onChange={(e) => setFilters((f) => ({ ...f, role: e.target.value }))} className="ui-select ui-select-inline">
               <option value="">All roles</option>
               <option value="super_admin">super_admin</option>
               <option value="admin">admin</option>
@@ -46,7 +46,7 @@ const AdminAuthLogs = () => {
               <option value="teacher">teacher</option>
               <option value="parent">parent</option>
             </select>
-            <select value={filters.action} onChange={(e) => setFilters((f) => ({ ...f, action: e.target.value }))} className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-700">
+            <select value={filters.action} onChange={(e) => setFilters((f) => ({ ...f, action: e.target.value }))} className="ui-select ui-select-inline">
               <option value="">All actions</option>
               <option value="LOGIN">LOGIN</option>
               <option value="LOGOUT">LOGOUT</option>

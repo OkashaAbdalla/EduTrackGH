@@ -90,7 +90,7 @@ const ProposeStudentForm = ({ isOpen, onClose, classrooms = [], onSuccess }) => 
               name="gender"
               value={formData.gender}
               onChange={handleChange}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+              className="ui-select w-full"
             >
               <option value="">Select gender</option>
               <option value="MALE">Male</option>
@@ -108,7 +108,7 @@ const ProposeStudentForm = ({ isOpen, onClose, classrooms = [], onSuccess }) => 
             value={formData.classroomId}
             onChange={handleChange}
             required
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent dark:border-gray-600 dark:bg-gray-700 dark:text-white"
+            className="ui-select w-full"
           >
             <option value="">Select classroom</option>
             {classrooms.map((classroom) => (

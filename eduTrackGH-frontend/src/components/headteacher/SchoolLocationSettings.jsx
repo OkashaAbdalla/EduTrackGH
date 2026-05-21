@@ -1,13 +1,12 @@
 /**
- * Headteacher – configure school GPS boundary for teacher attendance (geo-fence)
+ * Headteacher – compact school GPS boundary settings
  */
 
 import { useState, useEffect, useCallback } from 'react';
-import { Card } from '../common';
+import { Card, Button } from '../common';
 import headteacherService from '../../services/headteacherService';
 import { useToast } from '../../context';
 
-/** Hard cap for “Use current location” — user requirement: must not exceed ~13s. */
 const SCHOOL_LOCATION_GEO_MAX_MS = 13000;
 
 function coordsFromGeolocationPosition(position) {
@@ -22,15 +21,6 @@ function coordsFromGeolocationPosition(position) {
   };
 }
 
-/**
- * School boundary setup only (not teacher attendance checks).
- *
- * Order matters: **phone / GPS first** (`enableHighAccuracy: true`) so mobiles get a real GNSS fix when available.
- * If that times out or fails (typical on desktop), fall back to **network / Wi‑Fi** paths.
- * Teacher “Mark attendance” still uses stricter `watchPosition` + high accuracy in `useMarkAttendance.js` — unchanged.
- *
- * All attempts share one 13s budget.
- */
 async function readStablePositionForSchoolSetup() {
   if (!navigator.geolocation) {
     throw new Error('Geolocation not supported');
@@ -44,9 +34,6 @@ async function readStablePositionForSchoolSetup() {
   const startedAt = Date.now();
   const remainingMs = () => SCHOOL_LOCATION_GEO_MAX_MS - (Date.now() - startedAt);
 
-  /**
-   * @param {GeolocationPositionOptions & { _budgetMs?: number }} opts _budgetMs caps this single call (not passed to API)
-   */
   const getOnce = (opts) => {
     const { _budgetMs = 5000, ...geoOpts } = opts;
     const budget = Math.min(Math.max(_budgetMs, 1500), Math.max(800, remainingMs()));
@@ -70,24 +57,9 @@ async function readStablePositionForSchoolSetup() {
 
   let lastErr = new Error('Location unavailable');
   const attempts = [
-    // 1) Phones / tablets: GPS & sensors (same intent as attendance high-accuracy mode)
-    {
-      enableHighAccuracy: true,
-      maximumAge: 0,
-      _budgetMs: 5500,
-    },
-    // 2) Desktop / Wi‑Fi: cached network position (fast when GPS not available)
-    {
-      enableHighAccuracy: false,
-      maximumAge: 600000,
-      _budgetMs: 4000,
-    },
-    // 3) Fresh network fix (no cache)
-    {
-      enableHighAccuracy: false,
-      maximumAge: 0,
-      _budgetMs: 3500,
-    },
+    { enableHighAccuracy: true, maximumAge: 0, _budgetMs: 5500 },
+    { enableHighAccuracy: false, maximumAge: 600000, _budgetMs: 4000 },
+    { enableHighAccuracy: false, maximumAge: 0, _budgetMs: 3500 },
   ];
 
   for (const a of attempts) {
@@ -103,6 +75,9 @@ async function readStablePositionForSchoolSetup() {
 
   throw lastErr;
 }
+
+const inputClass =
+  'w-full max-w-[9rem] rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800/80 px-2.5 py-1.5 text-sm text-slate-900 dark:text-white focus:ring-2 focus:ring-green-500/40 focus:border-green-500';
 
 export default function SchoolLocationSettings() {
   const { showToast } = useToast();
@@ -152,16 +127,13 @@ export default function SchoolLocationSettings() {
       let msg =
         'Could not read your location. Allow location for this site, use HTTPS, or enter coordinates manually.';
       if (insecure) {
-        msg = 'Geolocation needs a secure connection (HTTPS) except on localhost. Open the app over HTTPS or use manual coordinates.';
+        msg = 'Geolocation needs HTTPS (or localhost). Use manual coordinates if needed.';
       } else if (denied) {
-        msg =
-          'Location permission denied. Click the lock icon in the address bar → Site settings → Location → Allow, then try again.';
+        msg = 'Location permission denied. Allow location in browser settings, then try again.';
       } else if (timedOut) {
-        msg =
-          'Location request timed out. Try again near a window, disable strict privacy blocking for this site, or enter lat/lng from a map.';
+        msg = 'Location timed out. Try again on campus or enter coordinates manually.';
       } else if (code === 2) {
-        msg =
-          'Position unavailable (browser could not determine location). Check OS location services and try again, or enter coordinates manually.';
+        msg = 'Position unavailable. Enter coordinates manually.';
       }
       showToast(msg, 'error');
     } finally {
@@ -186,7 +158,7 @@ export default function SchoolLocationSettings() {
     try {
       const res = await headteacherService.setSchoolLocation({ latitude, longitude, radius: r });
       if (res.success) {
-        showToast(res.message || 'School location updated successfully', 'success');
+        showToast(res.message || 'School location updated', 'success');
         await load();
       } else showToast(res.message || 'Save failed', 'error');
     } catch (err) {
@@ -196,88 +168,96 @@ export default function SchoolLocationSettings() {
     }
   };
 
-  const summary =
-    lat !== '' && lng !== '' && radius !== '' && Number.isFinite(Number(lat)) && Number.isFinite(Number(lng))
-      ? `Lat: ${Number(lat).toFixed(6)} | Lng: ${Number(lng).toFixed(6)} | Radius: ${radius}m`
-      : null;
+  const hasBoundary =
+    lat !== '' && lng !== '' && radius !== '' && Number.isFinite(Number(lat)) && Number.isFinite(Number(lng));
 
   return (
-    <Card className="p-6">
-      <div className="mb-5">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">School location settings</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-          Set the school center and radius so teachers can only submit attendance while on campus.
-        </p>
-        <div className="mt-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900 dark:border-amber-800 dark:bg-amber-900/20 dark:text-amber-200">
-          Update this location only while physically at the school. Saving coordinates from another place can block teachers from marking attendance.
+    <Card className="p-4 max-w-3xl border-l-4 border-l-emerald-500 dark:border-l-emerald-400">
+      <div className="flex flex-wrap items-start gap-3 mb-3">
+        <div className="w-10 h-10 shrink-0 rounded-lg bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center shadow-md shadow-emerald-500/25">
+          <svg className="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"
+            />
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+        </div>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-sm font-bold text-slate-900 dark:text-white">School location</h2>
+          <p className="text-xs text-slate-600 dark:text-slate-400 mt-0.5 leading-relaxed">
+            Campus center and radius for teacher attendance checks.
+          </p>
         </div>
       </div>
 
+      <p className="mb-3 rounded-md border border-amber-200/80 bg-amber-50/90 px-2.5 py-1.5 text-[11px] leading-snug text-amber-900 dark:border-amber-800/60 dark:bg-amber-900/20 dark:text-amber-200">
+        Set this while on campus. Wrong coordinates can block teachers from marking attendance.
+      </p>
+
       {loading ? (
-        <div className="flex justify-center py-10">
-          <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600" />
+        <div className="flex justify-center py-6">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-200 border-t-emerald-500" />
         </div>
       ) : (
-        <form onSubmit={handleSave} className="space-y-4">
-          {summary && (
-            <div className="rounded-lg bg-gray-50 dark:bg-gray-900/50 border border-gray-200 dark:border-gray-700 px-4 py-3 text-sm text-gray-800 dark:text-gray-200">
-              <span className="font-medium text-gray-700 dark:text-gray-300">Saved boundary: </span>
-              {summary}
-            </div>
+        <form onSubmit={handleSave} className="space-y-3">
+          {hasBoundary && (
+            <p className="text-xs font-mono text-slate-600 dark:text-slate-400 bg-slate-50 dark:bg-slate-900/50 rounded-md px-2.5 py-1.5 border border-slate-200 dark:border-slate-700">
+              <span className="font-semibold text-slate-700 dark:text-slate-300">Saved: </span>
+              {Number(lat).toFixed(5)}, {Number(lng).toFixed(5)} · {radius}m
+            </p>
           )}
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex flex-wrap items-end gap-3">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Latitude</label>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                Lat
+              </label>
               <input
                 type="text"
                 inputMode="decimal"
                 value={lat}
                 onChange={(e) => setLat(e.target.value)}
-                placeholder="e.g. 9.4075"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500"
+                placeholder="9.4075"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Longitude</label>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                Lng
+              </label>
               <input
                 type="text"
                 inputMode="decimal"
                 value={lng}
                 onChange={(e) => setLng(e.target.value)}
-                placeholder="e.g. -0.8533"
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500"
+                placeholder="-0.8533"
+                className={inputClass}
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Radius (meters)</label>
+              <label className="block text-[10px] font-semibold uppercase tracking-wider text-slate-500 mb-1">
+                Radius (m)
+              </label>
               <input
                 type="number"
                 min={10}
                 max={1000}
                 value={radius}
                 onChange={(e) => setRadius(e.target.value)}
-                className="w-full px-3 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 text-gray-900 dark:text-white text-sm focus:ring-2 focus:ring-green-500"
+                className={inputClass}
               />
             </div>
-          </div>
-
-          <div className="flex flex-wrap gap-3 pt-1">
-            <button
-              type="submit"
-              disabled={saving}
-              className="px-5 py-2.5 rounded-lg bg-green-600 hover:bg-green-700 text-white text-sm font-medium disabled:opacity-50 shadow-sm"
-            >
-              {saving ? 'Saving…' : 'Save location'}
-            </button>
-            <button
-              type="button"
-              onClick={handleUseCurrent}
-              disabled={locating}
-              className="px-5 py-2.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 text-gray-800 dark:text-gray-200 text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50"
-            >
-              {locating ? 'Locating…' : 'Use current location'}
-            </button>
+            <div className="flex flex-wrap gap-2 pb-0.5">
+              <Button type="submit" variant="primary" size="sm" disabled={saving}>
+                {saving ? 'Saving…' : 'Save'}
+              </Button>
+              <Button type="button" variant="secondary" size="sm" onClick={handleUseCurrent} disabled={locating}>
+                {locating ? 'Locating…' : 'Use GPS'}
+              </Button>
+            </div>
           </div>
         </form>
       )}

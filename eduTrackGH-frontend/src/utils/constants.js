@@ -49,6 +49,7 @@ export const ROUTES = {
   HEADTEACHER_MANAGE_STUDENTS: '/headteacher/students',
   HEADTEACHER_MANAGE_TEACHERS: '/headteacher/teachers',
   HEADTEACHER_CHAT: '/headteacher/messages',
+  HEADTEACHER_REGISTERS: '/headteacher/registers',
 
   // Parent routes
   PARENT_DASHBOARD: '/parent/dashboard',

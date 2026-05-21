@@ -83,7 +83,7 @@ const FlaggedStudents = () => {
               <select
                 value={selectedClassroom}
                 onChange={(e) => setSelectedClassroom(e.target.value)}
-                className="sm:flex-1 px-3 py-2 border border-gray-300 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-sm text-gray-900 dark:text-white"
+                className="ui-select w-full sm:flex-1"
               >
                 {classrooms.map((c) => (
                   <option key={c._id} value={c._id}>

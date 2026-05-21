@@ -7,14 +7,18 @@ import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { ROUTES } from '../../utils/constants';
-import { Card, Loader } from '../../components/common';
-import { useAuthContext } from '../../context';
+import { Card, Loader, ProfilePhotoEditor } from '../../components/common';
+import { useAuthContext, useToast } from '../../context';
 import authService from '../../services/authService';
+import { compressImageFile, withAvatarCacheBust } from '../../utils/helpers';
 import classroomService from '../../services/classroomService';
 
 const TeacherDashboard = () => {
-  const { user } = useAuthContext();
+  const { user, updateUser } = useAuthContext();
+  const { showToast } = useToast();
   const [profile, setProfile] = useState({ fullName: '', schoolName: '', classrooms: [] });
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
+  const [avatarLoading, setAvatarLoading] = useState(false);
   const [stats, setStats] = useState({
     classesToday: 0,
     unmarkedClasses: 0,
@@ -31,6 +35,7 @@ const TeacherDashboard = () => {
           classroomService.getTeacherClassrooms(),
         ]);
         if (meRes.success && meRes.user) {
+          if (meRes.user.avatarUrl) setAvatarUrl(withAvatarCacheBust(meRes.user.avatarUrl));
           setProfile((p) => ({
             ...p,
             fullName: meRes.user.fullName || user?.name || '',
@@ -51,6 +56,65 @@ const TeacherDashboard = () => {
     fetchData();
   }, [user?.name]);
 
+  const handleAvatarChange = async (event) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select an image file', 'error');
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      showToast('Image too large (max 2MB).', 'error');
+      return;
+    }
+
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarUrl(previewUrl);
+    setAvatarLoading(true);
+
+    try {
+      const base64 = await compressImageFile(file, {
+        maxDimension: 384,
+        maxSizeBytes: 480 * 1024,
+        startQuality: 0.92,
+      });
+      const res = await authService.uploadProfilePhoto(base64);
+      if (res.success && res.avatarUrl) {
+        const freshUrl = withAvatarCacheBust(res.avatarUrl);
+        setAvatarUrl(freshUrl);
+        updateUser({ avatarUrl: freshUrl });
+        showToast('Profile photo updated', 'success');
+      } else {
+        setAvatarUrl(user?.avatarUrl || '');
+        showToast(res.message || 'Upload failed', 'error');
+      }
+    } catch (err) {
+      setAvatarUrl(user?.avatarUrl || '');
+      showToast(err?.message || 'Failed to upload photo', 'error');
+    } finally {
+      URL.revokeObjectURL(previewUrl);
+      setAvatarLoading(false);
+    }
+  };
+
+  const handleRemoveAvatar = async () => {
+    setAvatarUrl('');
+    setAvatarLoading(true);
+    try {
+      const res = await authService.deleteProfilePhoto();
+      if (res.success) {
+        updateUser({ avatarUrl: '' });
+        showToast('Profile photo removed', 'success');
+      } else {
+        showToast(res.message || 'Failed to remove photo', 'error');
+      }
+    } catch (err) {
+      showToast(err?.message || 'Failed to remove photo', 'error');
+    } finally {
+      setAvatarLoading(false);
+    }
+  };
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -65,7 +129,8 @@ const TeacherDashboard = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header – teacher name, school, assigned class */}
-        <div>
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             Welcome{profile.fullName ? `, ${profile.fullName}` : ''}
           </h1>
@@ -78,6 +143,14 @@ const TeacherDashboard = () => {
             </p>
           )}
           <p className="text-gray-600 dark:text-dashboard-muted mt-1">Monitor attendance and track student progress</p>
+          </div>
+          <ProfilePhotoEditor
+            avatarUrl={avatarUrl}
+            userName={profile.fullName || user?.name}
+            loading={avatarLoading}
+            onFileSelect={handleAvatarChange}
+            onRemove={handleRemoveAvatar}
+          />
         </div>
 
         {/* Stats Grid */}

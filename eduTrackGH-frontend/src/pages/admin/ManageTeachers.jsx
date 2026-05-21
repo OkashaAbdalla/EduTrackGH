@@ -292,7 +292,7 @@ const ManageTeachers = () => {
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="px-4 py-2 border-2 border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white focus:border-green-500 dark:focus:border-green-400 focus:outline-none"
+              className="ui-select ui-select-inline"
             >
               <option value="all">All Teachers</option>
               <option value="active">Active</option>

@@ -38,7 +38,7 @@ const AdminViewAs = () => {
         <h1 className="text-2xl font-bold text-gray-900 dark:text-white">View-As Mode</h1>
         <Card className="p-4">
           <form onSubmit={inspect} className="grid grid-cols-1 md:grid-cols-4 gap-3">
-            <select value={targetRole} onChange={(e) => setTargetRole(e.target.value)} className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-700">
+            <select value={targetRole} onChange={(e) => setTargetRole(e.target.value)} className="ui-select w-full max-w-xs">
               <option value="teacher">teacher</option>
               <option value="headteacher">headteacher</option>
               <option value="parent">parent</option>

@@ -144,7 +144,7 @@ const CreateHeadteacher = () => {
                 name="schoolId"
                 value={formData.schoolId}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="ui-select w-full"
               >
                 <option value="">Select school (leave empty to assign later)</option>
                 {schools
@@ -179,7 +179,7 @@ const CreateHeadteacher = () => {
                 name="schoolLevel"
                 value={formData.schoolLevel}
                 onChange={handleChange}
-                className="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                className="ui-select w-full"
                 required
               >
                 <option value="PRIMARY">Primary Headteacher (P1-P6)</option>

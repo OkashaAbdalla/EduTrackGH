@@ -99,7 +99,7 @@ const ChildrenAttendance = () => {
                 type="month"
                 value={selectedMonth}
                 onChange={(e) => setSelectedMonth(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                className="ui-select w-full"
               />
             </div>
             <div>
@@ -107,7 +107,7 @@ const ChildrenAttendance = () => {
               <select
                 value={selectedChild}
                 onChange={(e) => setSelectedChild(e.target.value)}
-                className="w-full px-4 py-2.5 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white focus:ring-2 focus:ring-green-500"
+                className="ui-select w-full"
               >
                 <option value="">Choose a child...</option>
                 {children.map((child) => (

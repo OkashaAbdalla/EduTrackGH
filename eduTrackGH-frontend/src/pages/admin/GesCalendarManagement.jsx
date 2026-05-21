@@ -286,7 +286,7 @@ const GesCalendarManagement = () => {
               <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400">
                 Academic year
                 <input
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800"
+                  className="ui-select ui-select-sm w-full mt-1"
                   value={editing.academicYear}
                   onChange={(e) => setEditing({ ...editing, academicYear: e.target.value })}
                   placeholder="2025/2026"
@@ -295,7 +295,7 @@ const GesCalendarManagement = () => {
               <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400">
                 Term
                 <select
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800"
+                  className="ui-select ui-select-sm w-full mt-1"
                   value={editing.termKey}
                   onChange={(e) => {
                     const opt = TERM_OPTIONS.find((o) => o.key === e.target.value);
@@ -313,7 +313,7 @@ const GesCalendarManagement = () => {
                 Start date
                 <input
                   type="date"
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800"
+                  className="ui-select ui-select-sm w-full mt-1"
                   value={editing.startDate}
                   onChange={(e) => setEditing({ ...editing, startDate: e.target.value })}
                 />
@@ -322,7 +322,7 @@ const GesCalendarManagement = () => {
                 End date
                 <input
                   type="date"
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800"
+                  className="ui-select ui-select-sm w-full mt-1"
                   value={editing.endDate}
                   onChange={(e) => setEditing({ ...editing, endDate: e.target.value })}
                 />
@@ -332,7 +332,7 @@ const GesCalendarManagement = () => {
                 <input
                   type="number"
                   min={1}
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800"
+                  className="ui-select ui-select-sm w-full mt-1"
                   value={editing.numberOfWeeks}
                   onChange={(e) => setEditing({ ...editing, numberOfWeeks: e.target.value })}
                 />
@@ -351,7 +351,7 @@ const GesCalendarManagement = () => {
                 Vacation start (after term)
                 <input
                   type="date"
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800"
+                  className="ui-select ui-select-sm w-full mt-1"
                   value={editing.vacationStart}
                   onChange={(e) => setEditing({ ...editing, vacationStart: e.target.value })}
                 />
@@ -360,7 +360,7 @@ const GesCalendarManagement = () => {
                 Vacation end
                 <input
                   type="date"
-                  className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800"
+                  className="ui-select ui-select-sm w-full mt-1"
                   value={editing.vacationEnd}
                   onChange={(e) => setEditing({ ...editing, vacationEnd: e.target.value })}
                 />
@@ -372,7 +372,7 @@ const GesCalendarManagement = () => {
                   BECE start (JHS3 exam window)
                   <input
                     type="date"
-                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800"
+                    className="ui-select ui-select-sm w-full mt-1"
                     value={editing.beceStart}
                     onChange={(e) => setEditing({ ...editing, beceStart: e.target.value })}
                   />
@@ -381,7 +381,7 @@ const GesCalendarManagement = () => {
                   BECE end
                   <input
                     type="date"
-                    className="mt-1 w-full rounded border border-gray-300 px-2 py-1.5 dark:border-slate-600 dark:bg-slate-800"
+                    className="ui-select ui-select-sm w-full mt-1"
                     value={editing.beceEnd}
                     onChange={(e) => setEditing({ ...editing, beceEnd: e.target.value })}
                   />

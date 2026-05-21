@@ -380,7 +380,7 @@ const ManageStudents = () => {
               <input
                 value={editData.fullName}
                 onChange={(e) => setEditData((p) => ({ ...p, fullName: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="ui-select w-full"
               />
             </div>
             <div>
@@ -388,7 +388,7 @@ const ManageStudents = () => {
               <select
                 value={editData.gender}
                 onChange={(e) => setEditData((p) => ({ ...p, gender: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="ui-select w-full"
               >
                 <option value="">Select gender</option>
                 <option value="MALE">Male</option>
@@ -401,7 +401,7 @@ const ManageStudents = () => {
                 type="date"
                 value={editData.dateOfBirth}
                 onChange={(e) => setEditData((p) => ({ ...p, dateOfBirth: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="ui-select w-full"
               />
             </div>
             <div>
@@ -409,7 +409,7 @@ const ManageStudents = () => {
               <input
                 value={editData.parentName}
                 onChange={(e) => setEditData((p) => ({ ...p, parentName: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="ui-select w-full"
               />
             </div>
             <div>
@@ -418,7 +418,7 @@ const ManageStudents = () => {
                 type="email"
                 value={editData.parentEmail}
                 onChange={(e) => setEditData((p) => ({ ...p, parentEmail: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="ui-select w-full"
               />
             </div>
             <div>
@@ -426,7 +426,7 @@ const ManageStudents = () => {
               <input
                 value={editData.parentPhone}
                 onChange={(e) => setEditData((p) => ({ ...p, parentPhone: e.target.value }))}
-                className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100"
+                className="ui-select w-full"
               />
             </div>
           </div>

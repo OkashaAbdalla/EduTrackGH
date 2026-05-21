@@ -411,36 +411,36 @@ export function useMarkAttendance() {
 
   const canCompleteCurrent = useCallback(() => {
     if (!currentStatus) return false;
-    if (currentStatus === 'absent' || currentStatus === 'late') return true;
-    if (currentStatus === 'present') {
-      if (currentVerificationType === 'photo' && currentPhotoUrl) return true;
-      if (currentVerificationType === 'manual') {
-        const reason = currentManualReason === 'Other' ? currentManualOther.trim() : currentManualReason;
-        return !!reason;
-      }
+    if (currentStatus === 'present' && currentVerificationType === 'manual') {
+      const reason = currentManualReason === 'Other' ? currentManualOther.trim() : currentManualReason;
+      if (!reason) return false;
     }
-    return false;
-  }, [currentStatus, currentVerificationType, currentPhotoUrl, currentManualReason, currentManualOther]);
+    return true;
+  }, [currentStatus, currentVerificationType, currentManualReason, currentManualOther]);
 
   const completeCurrent = useCallback(() => {
     if (!canCompleteCurrent() || currentIndex >= students.length) return;
     const student = students[currentIndex];
-    let manualReason = null;
-    if (currentVerificationType === 'manual') {
-      manualReason = currentManualReason === 'Other' ? currentManualOther.trim() || 'Other' : currentManualReason;
+    const entry = {
+      studentId: student._id,
+      status: currentStatus,
+      markedAt: new Date().toISOString(),
+      location: location || undefined,
+    };
+    if (currentStatus === 'present') {
+      if (currentVerificationType === 'photo' && currentPhotoUrl) {
+        entry.verificationType = 'photo';
+        entry.photoUrl = currentPhotoUrl;
+      } else if (currentVerificationType === 'manual') {
+        const manualReason =
+          currentManualReason === 'Other' ? currentManualOther.trim() || 'Other' : currentManualReason;
+        if (manualReason) {
+          entry.verificationType = 'manual';
+          entry.manualReason = manualReason;
+        }
+      }
     }
-    setEntries((prev) => [
-      ...prev,
-      {
-        studentId: student._id,
-        status: currentStatus,
-        photoUrl: currentPhotoUrl || undefined,
-        verificationType: currentStatus === 'present' ? (currentVerificationType || 'manual') : 'manual',
-        manualReason: manualReason || undefined,
-        markedAt: new Date().toISOString(),
-        location: location || undefined,
-      },
-    ]);
+    setEntries((prev) => [...prev, entry]);
     setCurrentIndex((i) => i + 1);
     setCurrentStatus(null);
     setCurrentPhotoUrl(null);

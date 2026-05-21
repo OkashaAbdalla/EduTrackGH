@@ -2,7 +2,7 @@
  * Teacher table – list with status toggle and action buttons
  */
 
-import { Card, Button } from '../common';
+import { Card, Button, ProfileAvatar } from '../common';
 
 export default function TeacherTable({
   filteredTeachers,
@@ -57,7 +57,12 @@ export default function TeacherTable({
               const id = teacher._id || teacher.id;
               return (
                 <tr key={id} className="hover:bg-gray-50 dark:hover:bg-gray-800/70">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{teacher.fullName}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">
+                    <div className="flex items-center gap-3">
+                      <ProfileAvatar src={teacher.avatarUrl} name={teacher.fullName} size="sm" />
+                      <span>{teacher.fullName}</span>
+                    </div>
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{teacher.email}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <button

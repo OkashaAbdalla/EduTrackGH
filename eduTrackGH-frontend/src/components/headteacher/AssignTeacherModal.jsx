@@ -35,7 +35,7 @@ export default function AssignTeacherModal({
             <select
               value={selectedTeacher}
               onChange={(e) => setSelectedTeacher(e.target.value)}
-              className="w-full bg-white dark:bg-gray-700/80 border-2 border-gray-300 dark:border-gray-600 focus:border-green-500 dark:focus:border-green-400 text-gray-900 dark:text-white px-4 py-2.5 rounded-lg focus:outline-none focus:ring-4 focus:ring-green-500/30 transition"
+              className="ui-select w-full"
             >
               <option value="">-- Select a teacher --</option>
               {teachers.map((teacher) => (

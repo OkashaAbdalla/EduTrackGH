@@ -5,17 +5,17 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { Card, Loader } from '../../components/common';
+import { Card, Loader, ProfilePhotoEditor } from '../../components/common';
 import HeadteacherStatsCards from '../../components/headteacher/HeadteacherStatsCards';
 import HeadteacherQuickActions from '../../components/headteacher/HeadteacherQuickActions';
 import SchoolLocationSettings from '../../components/headteacher/SchoolLocationSettings';
 import { useAuthContext, useToast, useSocket } from '../../context';
 import authService from '../../services/authService';
 import { messageService, headteacherService } from '../../services';
-import { compressImageFile } from '../../utils/helpers';
+import { compressImageFile, withAvatarCacheBust } from '../../utils/helpers';
 
 const HeadteacherDashboard = () => {
-  const { user } = useAuthContext();
+  const { user, updateUser } = useAuthContext();
   const { showToast } = useToast();
   const { socket } = useSocket();
   const schoolLevel = user?.schoolLevel; // PRIMARY or JHS
@@ -27,7 +27,6 @@ const HeadteacherDashboard = () => {
   });
   const [loading, setLoading] = useState(true);
   const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '');
-  const [menuOpen, setMenuOpen] = useState(false);
   const [avatarLoading, setAvatarLoading] = useState(false);
   const [schoolName, setSchoolName] = useState('');
   const [unlockRequests, setUnlockRequests] = useState([]);
@@ -75,7 +74,7 @@ const HeadteacherDashboard = () => {
         const res = await authService.getMe();
         if (res.success && res.user) {
           if (res.user.schoolName) setSchoolName(res.user.schoolName);
-          if (res.user.avatarUrl) setAvatarUrl(res.user.avatarUrl);
+          if (res.user.avatarUrl) setAvatarUrl(withAvatarCacheBust(res.user.avatarUrl));
         }
       } catch {
         // Silent fail
@@ -106,31 +105,43 @@ const HeadteacherDashboard = () => {
       showToast('Image too large (max 2MB).', 'error');
       return;
     }
+
+    const previewUrl = URL.createObjectURL(file);
+    setAvatarUrl(previewUrl);
     setAvatarLoading(true);
+
     try {
-      const base64 = await compressImageFile(file, { maxDimension: 512, maxSizeBytes: 300 * 1024 });
+      const base64 = await compressImageFile(file, {
+        maxDimension: 384,
+        maxSizeBytes: 480 * 1024,
+        startQuality: 0.92,
+      });
       const res = await authService.uploadProfilePhoto(base64);
       if (res.success && res.avatarUrl) {
-        setAvatarUrl(res.avatarUrl);
-        setMenuOpen(false);
+        const freshUrl = withAvatarCacheBust(res.avatarUrl);
+        setAvatarUrl(freshUrl);
+        updateUser({ avatarUrl: freshUrl });
         showToast('Profile photo updated', 'success');
       } else {
+        setAvatarUrl(user?.avatarUrl || '');
         showToast(res.message || 'Upload failed', 'error');
       }
     } catch (err) {
+      setAvatarUrl(user?.avatarUrl || '');
       showToast(err?.message || 'Failed to upload photo', 'error');
     } finally {
+      URL.revokeObjectURL(previewUrl);
       setAvatarLoading(false);
     }
   };
 
   const handleRemoveAvatar = async () => {
+    setAvatarUrl('');
     setAvatarLoading(true);
     try {
       const res = await authService.deleteProfilePhoto();
       if (res.success) {
-        setAvatarUrl('');
-        setMenuOpen(false);
+        updateUser({ avatarUrl: '' });
         showToast('Profile photo removed', 'success');
       } else {
         showToast(res.message || 'Failed to remove photo', 'error');
@@ -152,84 +163,47 @@ const HeadteacherDashboard = () => {
     );
   }
 
+  const sectionSubtitle =
+    schoolLevel === 'PRIMARY'
+      ? 'Primary Section (P1–P6)'
+      : schoolLevel === 'JHS'
+        ? 'JHS Section (JHS 1–3)'
+        : 'School section';
+
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      <div className="space-y-6 max-w-6xl">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
               Welcome{user?.name ? `, ${user.name}` : ''}
             </h1>
             {schoolName && (
-              <p className="text-sm font-medium text-gray-800 dark:text-gray-200 mt-1">
-                {schoolName}
-              </p>
+              <p className="text-sm font-medium text-slate-700 dark:text-slate-300">{schoolName}</p>
             )}
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
-              {schoolLevel === 'PRIMARY'
-                ? 'Primary Section (P1-P6) - Attendance monitoring and reports'
-                : schoolLevel === 'JHS'
-                ? 'JHS Section (JHS 1-3) - Attendance monitoring and reports'
-                : 'School-wide attendance monitoring and reports'}
+            <p className="text-xs text-slate-500 dark:text-slate-500 mt-0.5">{sectionSubtitle}</p>
+            <p className="text-sm text-slate-600 dark:text-slate-400 mt-1">
+              Monitor attendance, classes, and staff from one place.
             </p>
           </div>
-          <div className="flex items-center justify-end gap-3">
-            <div className="h-12 w-12 overflow-hidden rounded-full border border-gray-200 dark:border-gray-700 bg-gray-100 dark:bg-gray-800">
-              {avatarUrl ? (
-                <img src={avatarUrl} alt="Profile" className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-sm font-semibold text-gray-500 dark:text-gray-400">
-                  {user?.name ? user.name.slice(0, 1).toUpperCase() : 'H'}
-                </div>
-              )}
-            </div>
-            <div className="relative">
-            <button
-              type="button"
-              onClick={() => setMenuOpen((v) => !v)}
-              className="flex items-center gap-2 rounded-full border border-gray-200 bg-white px-3 py-1.5 text-xs font-semibold text-gray-700 shadow-sm transition hover:border-gray-300 hover:shadow-md dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200 disabled:opacity-60"
-              disabled={avatarLoading}
-            >
-              {avatarLoading ? 'Updating...' : 'Edit photo'}
-              <svg className={`h-4 w-4 transition-transform ${menuOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-            {menuOpen && (
-              <div className="absolute right-0 mt-2 w-40 rounded-xl border border-gray-200 bg-white shadow-lg z-50 dark:border-gray-700 dark:bg-gray-800">
-                <label className="block cursor-pointer px-3 py-2 text-sm text-gray-700 hover:bg-gray-50 dark:text-gray-200 dark:hover:bg-gray-700">
-                  {avatarUrl ? 'Change photo' : 'Add photo'}
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={handleAvatarChange}
-                    className="hidden"
-                  />
-                </label>
-                <button
-                  type="button"
-                  onClick={handleRemoveAvatar}
-                  className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-900/20 disabled:opacity-60"
-                  disabled={avatarLoading || !avatarUrl}
-                >
-                  Remove photo
-                </button>
-              </div>
-            )}
-            </div>
-          </div>
+          <ProfilePhotoEditor
+            avatarUrl={avatarUrl}
+            userName={user?.name}
+            loading={avatarLoading}
+            onFileSelect={handleAvatarChange}
+            onRemove={handleRemoveAvatar}
+          />
         </div>
 
         <HeadteacherStatsCards stats={stats} />
 
         {/* Attendance unlock requests from teachers */}
         {unlockRequests.length > 0 && (
-          <Card className="p-6">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-3">
+          <Card className="p-5 border-l-4 border-l-amber-500 dark:border-l-amber-400">
+            <h2 className="text-base font-bold text-slate-900 dark:text-white mb-2">
               Attendance unlock requests
             </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
               Teachers have requested unlocks for the following dates. Review and unlock attendance if appropriate.
             </p>
             <div className="overflow-x-auto">
@@ -283,7 +257,7 @@ const HeadteacherDashboard = () => {
                               setUnlockingId(null);
                             }
                           }}
-                          className="px-3 py-1 rounded-lg bg-green-600 hover:bg-green-700 text-white text-xs font-medium disabled:opacity-50"
+                          className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium disabled:opacity-50"
                         >
                           {unlockingId === r.id ? 'Unlocking...' : 'Unlock'}
                         </button>

@@ -36,7 +36,7 @@ const AdminUsers = () => {
           <select
             value={role}
             onChange={(e) => setRole(e.target.value)}
-            className="px-3 py-2 rounded border dark:bg-gray-800 dark:border-gray-700"
+            className="ui-select ui-select-inline"
           >
             <option value="">All</option>
             <option value="admin">Admin</option>

@@ -35,6 +35,28 @@ const headteacherService = {
     return response.data;
   },
 
+  /** Class register history (same grid as teacher attendance history) */
+  getClassroomRegisterHistory: async (classroomId, monthOrOptions) => {
+    try {
+      let params = {};
+      if (monthOrOptions && typeof monthOrOptions === 'object' && !Array.isArray(monthOrOptions)) {
+        if (monthOrOptions.month) params.month = monthOrOptions.month;
+        if (monthOrOptions.term) params.term = monthOrOptions.term;
+      } else if (monthOrOptions) {
+        params = { month: monthOrOptions };
+      }
+      const response = await apiClient.get(`/headteacher/classrooms/${classroomId}/register`, { params });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching class register:', error);
+      return {
+        success: false,
+        historyRows: [],
+        message: error.response?.data?.message || error.message,
+      };
+    }
+  },
+
   // Seed default classrooms (P1–P6 or JHS 1–3) for headteacher's school
   seedDefaultClassrooms: async () => {
     const response = await apiClient.post('/headteacher/classrooms/seed-default');

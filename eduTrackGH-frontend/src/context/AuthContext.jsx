@@ -189,6 +189,11 @@ export const AuthProvider = ({ children }) => {
     setIsAuthenticated(false);
   };
 
+  const updateUser = (patch) => {
+    if (!patch || typeof patch !== 'object') return;
+    setUser((prev) => (prev ? { ...prev, ...patch } : prev));
+  };
+
   const value = {
     user,
     isAuthenticated,
@@ -197,6 +202,7 @@ export const AuthProvider = ({ children }) => {
     adminLogin,
     logout,
     register,
+    updateUser,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

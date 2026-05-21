@@ -8,7 +8,7 @@ import { useAuthContext } from '../context';
 import { ROUTES, ROLES } from '../utils/constants';
 import { TEACHER_MENU_ITEMS, HEADTEACHER_MENU_ITEMS, formatSchoolLevelLabel } from '../navigation/dashboardNavConfig';
 import ThemeSwitcher from '../components/common/ThemeSwitcher';
-import { NotificationButton } from '../components/common';
+import { NotificationButton, ProfileAvatar } from '../components/common';
 
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -93,12 +93,12 @@ const DashboardLayout = ({ children }) => {
       >
         <div className="h-14 flex items-center px-4 border-b border-[color:var(--glass-border)] shrink-0">
           <Link to={menuItems[0].path} className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-lg bg-brand flex items-center justify-center shrink-0">
+            <div className="ui-sidebar-logo w-8 h-8 rounded-lg bg-brand flex items-center justify-center shrink-0">
               <svg className="w-4 h-4 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
             </div>
-            <span className="text-sm font-semibold tracking-tight text-[color:var(--text-primary)] whitespace-nowrap">
+            <span className="ui-sidebar-title text-sm font-semibold tracking-tight text-[color:var(--text-primary)] whitespace-nowrap">
               Edu<span className="text-brand">Track</span> GH
             </span>
           </Link>
@@ -114,7 +114,7 @@ const DashboardLayout = ({ children }) => {
                 onClick={() => setSidebarOpen(false)}
                 className={`ui-nav-link ${isActive ? 'ui-nav-link-active' : ''}`}
               >
-                <svg className="w-[18px] h-[18px] shrink-0 opacity-80" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d={item.icon} />
                 </svg>
                 <span className="truncate">{item.name}</span>
@@ -125,11 +125,15 @@ const DashboardLayout = ({ children }) => {
 
         <div className="p-3 border-t border-[color:var(--glass-border)] shrink-0">
           <div className="ui-user-chip">
-            <div className="w-8 h-8 rounded-full bg-[color:var(--glass)] border border-[color:var(--glass-border)] flex items-center justify-center shrink-0">
-              <svg className="w-4 h-4 text-[color:var(--text-secondary)]" fill="currentColor" viewBox="0 0 20 20">
-                <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
-              </svg>
-            </div>
+            {user?.avatarUrl ? (
+              <ProfileAvatar key={user.avatarUrl || 'no-avatar'} src={user.avatarUrl} name={displayName} size="sm" />
+            ) : (
+              <div className="w-8 h-8 rounded-full bg-[color:var(--glass)] border border-[color:var(--glass-border)] flex items-center justify-center shrink-0">
+                <svg className="w-4 h-4 text-[color:var(--text-secondary)]" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clipRule="evenodd" />
+                </svg>
+              </div>
+            )}
             <div className="min-w-0 flex-1">
               <span className="ui-user-name" title={displayName}>
                 {displayName}

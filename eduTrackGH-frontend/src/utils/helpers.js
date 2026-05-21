@@ -30,10 +30,53 @@ export const fileToBase64 = (file) => {
   });
 };
 
+import { getApiBaseUrl, useDevApiProxy } from './envApi';
+
+/** Resolve API-relative avatar paths for img src */
+export const resolveAvatarUrl = (url) => {
+  if (!url || typeof url !== 'string') return '';
+  if (url.startsWith('blob:') || url.startsWith('data:')) return url;
+  if (url.startsWith('http://') || url.startsWith('https://')) return url;
+  if (url.startsWith('/')) {
+    if (useDevApiProxy()) return url;
+    const api = getApiBaseUrl();
+    const origin = api.replace(/\/api\/?$/, '');
+    return `${origin}${url}`;
+  }
+  return url;
+};
+
+/** Append or replace cache-bust param so replaced photos reload in the browser */
+export const withAvatarCacheBust = (url, version = Date.now()) => {
+  if (!url || typeof url !== 'string') return '';
+  if (url.startsWith('blob:') || url.startsWith('data:')) return url;
+  const base = url.split('?')[0];
+  return `${base}?v=${version}`;
+};
+
+/** Cloudinary delivery URL sized for crisp avatars/thumbnails */
+export const getOptimizedImageUrl = (url, { width = 128, height = 128, crop = 'fill' } = {}) => {
+  const resolved = resolveAvatarUrl(url);
+  if (!resolved || !resolved.includes('res.cloudinary.com') || !resolved.includes('/upload/')) {
+    return resolved;
+  }
+  const qIndex = resolved.indexOf('?');
+  const pathPart = qIndex >= 0 ? resolved.slice(0, qIndex) : resolved;
+  const queryPart = qIndex >= 0 ? resolved.slice(qIndex) : '';
+  const transform = `w_${width},h_${height},c_${crop},q_auto:best,f_auto,dpr_2.0`;
+  return pathPart.replace('/upload/', `/upload/${transform}/`) + queryPart;
+};
+
 // Compress image file to base64 (profile photos, etc.)
 export const compressImageFile = (
   file,
-  { maxDimension = 512, maxSizeBytes = 300 * 1024, startQuality = 0.82, minQuality = 0.4 } = {}
+  {
+    maxDimension = 384,
+    maxSizeBytes = 480 * 1024,
+    startQuality = 0.92,
+    minQuality = 0.72,
+    mimeType = 'image/jpeg',
+  } = {}
 ) => {
   return new Promise((resolve, reject) => {
     const img = new Image();
@@ -51,6 +94,10 @@ export const compressImageFile = (
       canvas.width = w;
       canvas.height = h;
       const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+      }
       ctx.drawImage(img, 0, 0, w, h);
 
       let quality = startQuality;
@@ -71,7 +118,7 @@ export const compressImageFile = (
             quality -= 0.1;
             tryExport();
           },
-          'image/jpeg',
+          mimeType,
           quality
         );
       };
