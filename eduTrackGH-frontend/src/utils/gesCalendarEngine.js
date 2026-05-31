@@ -46,14 +46,19 @@ export function buildEngineFromPayload(payload) {
     numberOfWeeks: Number(t.numberOfWeeks) || 12,
   }));
 
-  const holidaySet = new Set(payload.globalHolidayIsoList || []);
-  (payload.terms || []).forEach((t) => {
-    (t.holidays || []).forEach((h) => {
-      expandRangeIso(h.startDate, h.endDate).forEach((iso) => holidaySet.add(iso));
-    });
-  });
+  const globalHolidaySet = new Set(payload.globalHolidayIsoList || []);
+  const yearWideHolidaySet = new Set();
   (payload.yearWideHolidays || []).forEach((h) => {
-    expandRangeIso(h.startDate, h.endDate).forEach((iso) => holidaySet.add(iso));
+    expandRangeIso(h.startDate, h.endDate).forEach((iso) => yearWideHolidaySet.add(iso));
+  });
+
+  const termHolidaySets = new Map();
+  (payload.terms || []).forEach((t) => {
+    const set = new Set();
+    (t.holidays || []).forEach((h) => {
+      expandRangeIso(h.startDate, h.endDate).forEach((iso) => set.add(iso));
+    });
+    termHolidaySets.set(t.name, set);
   });
 
   const academicYearLabel = payload.academicYear || '—';
@@ -90,7 +95,12 @@ export function buildEngineFromPayload(payload) {
 
   function isHoliday(dateInput) {
     const iso = toIso(dateInput);
-    return iso ? holidaySet.has(iso) : false;
+    if (!iso) return false;
+    if (globalHolidaySet.has(iso) || yearWideHolidaySet.has(iso)) return true;
+    const termName = getTermForDate(iso);
+    if (!termName) return false;
+    const termSet = termHolidaySets.get(termName);
+    return termSet ? termSet.has(iso) : false;
   }
 
   function getTermForDate(dateInput) {
@@ -145,6 +155,26 @@ export function buildEngineFromPayload(payload) {
     return getSchoolDayDecision(dateInput, level).isSchoolDay;
   }
 
+  function getCurrentTermInfo(dateInput = new Date()) {
+    const iso = toIso(dateInput);
+    if (!iso) return null;
+    const termName = getTermForDate(iso);
+    if (!termName) return null;
+    const term = terms.find((t) => t.name === termName);
+    if (!term) return null;
+    const termHolidays = (payload.terms || []).find((t) => t.name === termName)?.holidays || [];
+    return {
+      termName,
+      label: term.label,
+      start: term.start,
+      end: term.end,
+      vacationStart: term.vacationStart,
+      vacationEnd: term.vacationEnd,
+      holidays: termHolidays,
+      yearWideHolidays: payload.yearWideHolidays || [],
+    };
+  }
+
   function getTermDateRange(termName) {
     const t = terms.find((x) => x.name === termName);
     return t ? { start: t.start, end: t.end } : null;
@@ -181,8 +211,11 @@ export function buildEngineFromPayload(payload) {
         cur.setUTCDate(cur.getUTCDate() + 1);
         continue;
       }
-      if (isBeceDay(iso, level)) out.push(enrichSchoolDayEntry({ date: iso, type: 'exam' }));
-      else out.push(enrichSchoolDayEntry({ date: iso, type: 'school' }));
+      if (isBeceDay(iso, level)) {
+        cur.setUTCDate(cur.getUTCDate() + 1);
+        continue;
+      }
+      out.push(enrichSchoolDayEntry({ date: iso, type: 'school' }));
       cur.setUTCDate(cur.getUTCDate() + 1);
     }
     return out;
@@ -197,8 +230,8 @@ export function buildEngineFromPayload(payload) {
     for (let d = 1; d <= count; d += 1) {
       const iso = `${String(y).padStart(4, '0')}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
       if (isWeekend(iso) || isHoliday(iso) || isVacation(iso) || !getTermForDate(iso)) continue;
-      if (isBeceDay(iso, level)) out.push(enrichSchoolDayEntry({ date: iso, type: 'exam' }));
-      else out.push(enrichSchoolDayEntry({ date: iso, type: 'school' }));
+      if (isBeceDay(iso, level)) continue;
+      out.push(enrichSchoolDayEntry({ date: iso, type: 'school' }));
     }
     return out;
   }
@@ -266,6 +299,7 @@ export function buildEngineFromPayload(payload) {
     isSchoolDay,
     getTermForDate,
     getTermDateRange,
+    getCurrentTermInfo,
     generateSchoolDaysForTerm,
     generateSchoolDaysForHistory,
     buildWeeksForTerm,
@@ -275,29 +309,19 @@ export function buildEngineFromPayload(payload) {
   };
 }
 
-/** Last-resort embedded fallback (matches legacy 2025/2026) if API unavailable */
+const STATUTORY = 'Statutory / public holiday';
+
+/** Last-resort embedded fallback (GES 2025/2026) if API unavailable */
 function getEmbeddedFallbackPayload() {
+  const day = (iso) => ({ name: STATUTORY, startDate: iso, endDate: iso });
+  const range = (start, end, name = STATUTORY) => ({ name, startDate: start, endDate: end });
   return {
     academicYear: '2025/2026',
     source: 'embedded-fallback',
     beceStart: '2026-05-04',
     beceEnd: '2026-05-11',
-    globalHolidayIsoList: [
-      '2025-09-21',
-      '2025-12-04',
-      '2025-12-25',
-      '2025-12-26',
-      '2026-01-01',
-      '2026-01-07',
-      '2026-03-06',
-      '2026-04-03',
-      '2026-04-06',
-      '2026-05-01',
-      '2026-07-01',
-      '2026-03-20',
-      '2026-03-21',
-      '2026-05-27',
-    ],
+    globalHolidayIsoList: [],
+    yearWideHolidays: [],
     terms: [
       {
         name: 'TERM_1',
@@ -306,8 +330,12 @@ function getEmbeddedFallbackPayload() {
         end: '2025-12-18',
         numberOfWeeks: 15,
         vacationStart: '2025-12-19',
-        vacationEnd: '2026-01-06',
-        holidays: [],
+        vacationEnd: '2026-01-07',
+        holidays: [
+          range('2025-10-31', '2025-11-03', 'Mid-term break'),
+          day('2025-09-21'),
+          day('2025-12-04'),
+        ],
       },
       {
         name: 'TERM_2',
@@ -317,7 +345,11 @@ function getEmbeddedFallbackPayload() {
         numberOfWeeks: 12,
         vacationStart: '2026-04-02',
         vacationEnd: '2026-04-20',
-        holidays: [],
+        holidays: [
+          range('2026-02-26', '2026-02-27', 'Mid-term break'),
+          day('2026-03-06'),
+          range('2026-03-20', '2026-03-21'),
+        ],
       },
       {
         name: 'TERM_3',
@@ -327,7 +359,12 @@ function getEmbeddedFallbackPayload() {
         numberOfWeeks: 13,
         vacationStart: '2026-07-24',
         vacationEnd: '2026-12-31',
-        holidays: [],
+        holidays: [
+          range('2026-06-04', '2026-06-05', 'Mid-term break'),
+          day('2026-05-01'),
+          day('2026-05-27'),
+          day('2026-07-01'),
+        ],
       },
     ],
   };

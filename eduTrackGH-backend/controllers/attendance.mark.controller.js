@@ -3,6 +3,7 @@
  */
 
 const { markDailyAttendance: markDaily, getAttendanceLockStatus } = require("../services/attendanceService");
+const { clearUnmarkedOnTeacherMark } = require("../services/headteacherNotificationService");
 const { emitAttendanceSubmitted, emitComplianceUpdated } = require("../utils/socketServer");
 
 const markDailyAttendance = async (req, res) => {
@@ -33,6 +34,7 @@ const markDailyAttendance = async (req, res) => {
     if (schoolIdStr) {
       emitAttendanceSubmitted({ schoolId: schoolIdStr, date, classroomId, teacherId });
       emitComplianceUpdated({ schoolId: schoolIdStr, date });
+      await clearUnmarkedOnTeacherMark({ schoolId, teacherId, dateStr: date });
     }
 
     return res.status(201).json({

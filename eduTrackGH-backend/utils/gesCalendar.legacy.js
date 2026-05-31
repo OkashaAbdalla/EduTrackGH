@@ -3,16 +3,20 @@
  * and as the default seed payload.
  */
 
+const { splitGlobalIsoListIntoTermHolidays } = require("./calendarHolidaySplit");
+
 const TERMS = [
   {
     name: "TERM_1",
+    label: "Term 1",
     start: "2025-09-02",
     end: "2025-12-18",
     vacationStart: "2025-12-19",
-    vacationEnd: "2026-01-06",
+    vacationEnd: "2026-01-07",
   },
   {
     name: "TERM_2",
+    label: "Term 2",
     start: "2026-01-08",
     end: "2026-04-01",
     vacationStart: "2026-04-02",
@@ -20,12 +24,20 @@ const TERMS = [
   },
   {
     name: "TERM_3",
+    label: "Term 3",
     start: "2026-04-21",
     end: "2026-07-23",
     vacationStart: "2026-07-24",
     vacationEnd: "2026-12-31",
   },
 ];
+
+/** GES two-day mid-term break per term (2025/2026). */
+const MID_TERM_BREAKS = {
+  TERM_1: { name: "Mid-term break", startDate: "2025-10-31", endDate: "2025-11-03" },
+  TERM_2: { name: "Mid-term break", startDate: "2026-02-26", endDate: "2026-02-27" },
+  TERM_3: { name: "Mid-term break", startDate: "2026-06-04", endDate: "2026-06-05" },
+};
 
 const HOLIDAYS = new Set([
   "2025-09-21",
@@ -115,10 +127,7 @@ function generateSchoolDaysForHistory(month, year, level) {
   for (let d = 1; d <= count; d += 1) {
     const iso = `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
     if (isWeekend(iso) || isHoliday(iso) || isVacation(iso) || !getTermForDate(iso)) continue;
-    if (isBeceDay(iso, level)) {
-      out.push({ date: iso, type: "exam" });
-      continue;
-    }
+    if (isBeceDay(iso, level)) continue;
     out.push({ date: iso, type: "school" });
   }
   return out;
@@ -129,9 +138,26 @@ function getTermDateRange(termName) {
   return t ? { start: t.start, end: t.end } : null;
 }
 
+function buildTermHolidaysForSeed() {
+  const boundaries = TERMS.map((t) => ({
+    termKey: t.name,
+    start: t.start,
+    end: t.end,
+    vacationStart: t.vacationStart,
+    vacationEnd: t.vacationEnd,
+  }));
+  const statutory = splitGlobalIsoListIntoTermHolidays(Array.from(HOLIDAYS), boundaries);
+  const out = {};
+  TERMS.forEach((t) => {
+    const mid = MID_TERM_BREAKS[t.name];
+    out[t.name] = [...(mid ? [mid] : []), ...(statutory[t.name] || [])];
+  });
+  return out;
+}
+
 /** Unified payload shape for calendarRuntime + frontend */
 function getLegacyCalendarPayload() {
-  const labels = { TERM_1: "Term 1", TERM_2: "Term 2", TERM_3: "Term 3" };
+  const holidaysByTerm = buildTermHolidaysForSeed();
   return {
     academicYear: "2025/2026",
     source: "legacy",
@@ -140,13 +166,13 @@ function getLegacyCalendarPayload() {
     globalHolidayIsoList: Array.from(HOLIDAYS),
     terms: TERMS.map((t) => ({
       name: t.name,
-      label: labels[t.name] || t.name,
+      label: t.label || t.name.replace("TERM_", "Term "),
       start: t.start,
       end: t.end,
       numberOfWeeks: TERM_WEEK_COUNTS[t.name] || 12,
       vacationStart: t.vacationStart,
       vacationEnd: t.vacationEnd,
-      holidays: [],
+      holidays: holidaysByTerm[t.name] || [],
     })),
   };
 }
@@ -154,6 +180,7 @@ function getLegacyCalendarPayload() {
 module.exports = {
   TERMS,
   HOLIDAYS,
+  MID_TERM_BREAKS,
   BECE_START,
   BECE_END,
   TERM_WEEK_COUNTS,
@@ -166,5 +193,6 @@ module.exports = {
   getTermForDate,
   generateSchoolDaysForHistory,
   getTermDateRange,
+  buildTermHolidaysForSeed,
   getLegacyCalendarPayload,
 };

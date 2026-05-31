@@ -3,13 +3,13 @@
  * Purpose: School-wide overview for headteachers
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card, Loader, ProfilePhotoEditor } from '../../components/common';
 import HeadteacherStatsCards from '../../components/headteacher/HeadteacherStatsCards';
 import HeadteacherQuickActions from '../../components/headteacher/HeadteacherQuickActions';
 import SchoolLocationSettings from '../../components/headteacher/SchoolLocationSettings';
-import { useAuthContext, useToast, useSocket } from '../../context';
+import { useAuthContext, useToast, useSocket, useConfirm } from '../../context';
 import authService from '../../services/authService';
 import { messageService, headteacherService } from '../../services';
 import { compressImageFile, withAvatarCacheBust } from '../../utils/helpers';
@@ -18,6 +18,7 @@ const HeadteacherDashboard = () => {
   const { user, updateUser } = useAuthContext();
   const { showToast } = useToast();
   const { socket } = useSocket();
+  const { requestConfirmation } = useConfirm();
   const schoolLevel = user?.schoolLevel; // PRIMARY or JHS
   const [stats, setStats] = useState({
     totalStudents: 0,
@@ -31,11 +32,13 @@ const HeadteacherDashboard = () => {
   const [schoolName, setSchoolName] = useState('');
   const [unlockRequests, setUnlockRequests] = useState([]);
   const [unlockingId, setUnlockingId] = useState(null);
+  const statsInitialLoadRef = useRef(true);
 
   useEffect(() => {
     const fetchStats = async () => {
+      const isInitial = statsInitialLoadRef.current;
       try {
-        setLoading(true);
+        if (isInitial) setLoading(true);
         const res = await headteacherService.getDashboardStats();
         if (res?.success && res?.stats) {
           setStats({
@@ -44,17 +47,22 @@ const HeadteacherDashboard = () => {
             teachersCompliant: res.stats.teachersCompliant || 0,
             flaggedStudents: res.stats.flaggedStudents || 0,
           });
-        } else {
+        } else if (isInitial) {
           showToast(res?.message || 'Failed to load dashboard stats', 'error');
         }
       } catch (err) {
-        showToast(err?.message || 'Failed to load dashboard stats', 'error');
+        if (isInitial) showToast(err?.message || 'Failed to load dashboard stats', 'error');
       } finally {
-        setLoading(false);
+        if (isInitial) {
+          setLoading(false);
+          statsInitialLoadRef.current = false;
+        }
       }
     };
     fetchStats();
-  }, []);
+    const pollId = setInterval(fetchStats, 30000);
+    return () => clearInterval(pollId);
+  }, [showToast]);
 
 
   const fetchUnlockRequests = useCallback(async () => {
@@ -85,14 +93,46 @@ const HeadteacherDashboard = () => {
 
   useEffect(() => {
     fetchUnlockRequests();
+    const pollId = setInterval(fetchUnlockRequests, 30000);
+    return () => clearInterval(pollId);
   }, [fetchUnlockRequests]);
 
   useEffect(() => {
     if (!socket) return;
     const handler = () => fetchUnlockRequests();
     socket.on('unlock_request', handler);
-    return () => socket.off('unlock_request', handler);
+    socket.on('compliance_updated', handler);
+    return () => {
+      socket.off('unlock_request', handler);
+      socket.off('compliance_updated', handler);
+    };
   }, [socket, fetchUnlockRequests]);
+
+  const handleUnlockRequest = async (request) => {
+    const confirmed = await requestConfirmation({
+      title: 'Unlock Attendance',
+      message: 'Are you sure to unlock attendance?',
+      confirmText: 'Confirm',
+      cancelText: 'Cancel',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
+
+    setUnlockingId(request.id);
+    try {
+      const res = await headteacherService.unlockAttendance(request.classroomId, request.attendanceDate);
+      if (res.success) {
+        setUnlockRequests((prev) => prev.filter((m) => m.id !== request.id));
+        showToast('Attendance unlocked for this date.', 'success');
+      } else {
+        showToast(res.message || 'Failed to unlock attendance', 'error');
+      }
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Failed to unlock attendance', 'error');
+    } finally {
+      setUnlockingId(null);
+    }
+  };
 
   const handleAvatarChange = async (event) => {
     const file = event.target.files?.[0];
@@ -236,28 +276,8 @@ const HeadteacherDashboard = () => {
                         <button
                           type="button"
                           disabled={unlockingId === r.id}
-                          onClick={async () => {
-                            setUnlockingId(r.id);
-                            try {
-                              const res = await headteacherService.unlockAttendance(
-                                r.classroomId,
-                                r.attendanceDate
-                              );
-                              if (res.success) {
-                                setUnlockRequests((prev) =>
-                                  prev.filter((m) => m.id !== r.id)
-                                );
-                                showToast('Attendance unlocked for this date.', 'success');
-                              } else {
-                                showToast(res.message || 'Failed to unlock attendance', 'error');
-                              }
-                            } catch (err) {
-                              showToast(err?.response?.data?.message || 'Failed to unlock attendance', 'error');
-                            } finally {
-                              setUnlockingId(null);
-                            }
-                          }}
-                          className="px-3 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-medium disabled:opacity-50"
+                          onClick={() => handleUnlockRequest(r)}
+                          className="inline-flex items-center px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold disabled:opacity-50 shadow-sm"
                         >
                           {unlockingId === r.id ? 'Unlocking...' : 'Unlock'}
                         </button>

@@ -4,16 +4,17 @@
 
 import { useState, useRef, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { useAuthContext } from '../context';
+import { useAuthContext, useConfirm } from '../context';
 import { ROUTES, ROLES } from '../utils/constants';
 import { TEACHER_MENU_ITEMS, HEADTEACHER_MENU_ITEMS, formatSchoolLevelLabel } from '../navigation/dashboardNavConfig';
 import ThemeSwitcher from '../components/common/ThemeSwitcher';
-import { NotificationButton, ProfileAvatar } from '../components/common';
+import { NotificationButton, HeadteacherNotificationButton, ProfileAvatar } from '../components/common';
 
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, logout } = useAuthContext();
+  const { requestConfirmation } = useConfirm();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [topbarScrolled, setTopbarScrolled] = useState(false);
   const mainRef = useRef(null);
@@ -21,7 +22,15 @@ const DashboardLayout = ({ children }) => {
   const userRole = user?.role || ROLES.TEACHER;
   const displayName = user?.name || user?.email || userRole.replace(/_/g, ' ');
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    const confirmed = await requestConfirmation({
+      title: 'Logout',
+      message: 'Are you sure to logout?',
+      confirmText: 'Confirm',
+      cancelText: 'Cancel',
+      tone: 'danger',
+    });
+    if (!confirmed) return;
     logout();
     navigate(ROUTES.HOME);
   };
@@ -181,6 +190,7 @@ const DashboardLayout = ({ children }) => {
             <div className="flex-1 min-w-0" />
             <div className="flex items-center gap-2">
               {userRole === ROLES.PARENT && <NotificationButton />}
+              {userRole === ROLES.HEADTEACHER && <HeadteacherNotificationButton />}
               <ThemeSwitcher />
             </div>
           </header>

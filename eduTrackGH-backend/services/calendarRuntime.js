@@ -6,6 +6,10 @@
 const Calendar = require("../models/Calendar");
 const { getLegacyCalendarPayload } = require("../utils/gesCalendar.legacy");
 const { isWeekend } = require("../utils/weekend");
+const {
+  toMongoHolidayEntries,
+  normalizeTermHolidays,
+} = require("../utils/calendarHolidaySplit");
 
 /** 10 minutes — calendar data changes rarely */
 const CACHE_TTL_MS = parseInt(process.env.CALENDAR_CACHE_TTL_MS, 10) || 10 * 60 * 1000;
@@ -61,14 +65,19 @@ function buildEngineFromPayload(payload) {
     numberOfWeeks: Number(t.numberOfWeeks) || 12,
   }));
 
-  const holidaySet = new Set(payload.globalHolidayIsoList || []);
-  (payload.terms || []).forEach((t) => {
-    (t.holidays || []).forEach((h) => {
-      expandRangeIso(h.startDate, h.endDate).forEach((iso) => holidaySet.add(iso));
-    });
-  });
+  const globalHolidaySet = new Set(payload.globalHolidayIsoList || []);
+  const yearWideHolidaySet = new Set();
   (payload.yearWideHolidays || []).forEach((h) => {
-    expandRangeIso(h.startDate, h.endDate).forEach((iso) => holidaySet.add(iso));
+    expandRangeIso(h.startDate, h.endDate).forEach((iso) => yearWideHolidaySet.add(iso));
+  });
+
+  const termHolidaySets = new Map();
+  (payload.terms || []).forEach((t) => {
+    const set = new Set();
+    (t.holidays || []).forEach((h) => {
+      expandRangeIso(h.startDate, h.endDate).forEach((iso) => set.add(iso));
+    });
+    termHolidaySets.set(t.name, set);
   });
 
   const toIso = (dateInput) => {
@@ -89,7 +98,12 @@ function buildEngineFromPayload(payload) {
 
   function isHolidayDate(dateInput) {
     const iso = toIso(dateInput);
-    return iso ? holidaySet.has(iso) : false;
+    if (!iso) return false;
+    if (globalHolidaySet.has(iso) || yearWideHolidaySet.has(iso)) return true;
+    const termName = getTermForDate(iso);
+    if (!termName) return false;
+    const termSet = termHolidaySets.get(termName);
+    return termSet ? termSet.has(iso) : false;
   }
 
   function getTermForDate(dateInput) {
@@ -163,10 +177,7 @@ function buildEngineFromPayload(payload) {
     for (let d = 1; d <= count; d += 1) {
       const iso = `${String(y).padStart(4, "0")}-${String(m).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
       if (isWeekendDate(iso) || isHolidayDate(iso) || isVacationDate(iso) || !getTermForDate(iso)) continue;
-      if (isBeceDay(iso, level)) {
-        out.push({ date: iso, type: "exam" });
-        continue;
-      }
+      if (isBeceDay(iso, level)) continue;
       out.push({ date: iso, type: "school" });
     }
     return out;
@@ -198,7 +209,6 @@ function docsToPayload(docs) {
   if (!docs.length) return null;
   const academicYear = docs[0].academicYear;
   const t1 = docs.find((d) => d.termKey === "TERM_1");
-  const yearWide = t1?.yearWideHolidays?.length ? t1.yearWideHolidays : [];
   const t3 = docs.find((d) => d.termKey === "TERM_3");
 
   const terms = docs.map((d) => ({
@@ -216,13 +226,19 @@ function docsToPayload(docs) {
     })),
   }));
 
+  const legacyYearWide = (t1?.yearWideHolidays || []).map((h) => ({
+    name: h.name,
+    startDate: h.startDate,
+    endDate: h.endDate,
+  }));
+
   return {
     academicYear,
     source: "database",
     beceStart: t3?.beceStart ? dateToIso(t3.beceStart) : null,
     beceEnd: t3?.beceEnd ? dateToIso(t3.beceEnd) : null,
     globalHolidayIsoList: [],
-    yearWideHolidays: yearWide.map((h) => ({ name: h.name, startDate: h.startDate, endDate: h.endDate })),
+    yearWideHolidays: legacyYearWide,
     terms,
   };
 }
@@ -233,13 +249,8 @@ async function seedFromLegacyIfEmpty() {
   if (process.env.DISABLE_GES_AUTO_SEED === "true") return;
 
   const p = getLegacyCalendarPayload();
-  const yearWide = (p.globalHolidayIsoList || []).map((iso) => ({
-    name: "Statutory / public holiday",
-    startDate: new Date(`${iso}T00:00:00.000Z`),
-    endDate: new Date(`${iso}T00:00:00.000Z`),
-  }));
 
-  const ops = p.terms.map((t, idx) => {
+  const ops = p.terms.map((t) => {
     const doc = {
       academicYear: p.academicYear,
       termKey: t.name,
@@ -249,11 +260,18 @@ async function seedFromLegacyIfEmpty() {
       numberOfWeeks: t.numberOfWeeks,
       vacationStart: t.vacationStart ? new Date(`${t.vacationStart}T00:00:00.000Z`) : undefined,
       vacationEnd: t.vacationEnd ? new Date(`${t.vacationEnd}T00:00:00.000Z`) : undefined,
-      holidays: [],
+      holidays: toMongoHolidayEntries(
+        normalizeTermHolidays(t.holidays || [], {
+          start: t.start,
+          end: t.end,
+          vacationStart: t.vacationStart,
+          vacationEnd: t.vacationEnd,
+        })
+      ),
+      yearWideHolidays: [],
       isActive: true,
       isDeleted: false,
     };
-    if (idx === 0) doc.yearWideHolidays = yearWide;
     if (t.name === "TERM_3" && p.beceStart && p.beceEnd) {
       doc.beceStart = new Date(`${p.beceStart}T00:00:00.000Z`);
       doc.beceEnd = new Date(`${p.beceEnd}T00:00:00.000Z`);

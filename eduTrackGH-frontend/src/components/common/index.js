@@ -23,3 +23,4 @@ export { default as Skeleton } from './Skeleton';
 export { default as Loader } from './Loader';
 export { default as Toast } from './Toast';
 export { default as NotificationButton } from './NotificationButton';
+export { default as HeadteacherNotificationButton } from './HeadteacherNotificationButton';

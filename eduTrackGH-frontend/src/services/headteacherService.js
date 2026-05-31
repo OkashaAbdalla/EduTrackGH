@@ -98,6 +98,16 @@ const headteacherService = {
     const response = await apiClient.put('/headteacher/set-location', body);
     return response.data;
   },
+
+  getNotifications: async () => {
+    try {
+      const response = await apiClient.get('/headteacher/notifications');
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching headteacher notifications:', error);
+      return { success: false, notifications: [], unreadCount: 0, message: error.response?.data?.message || error.message };
+    }
+  },
 };
 
 export default headteacherService;

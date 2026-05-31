@@ -43,6 +43,8 @@ const TeacherCompliance = () => {
 
   useEffect(() => {
     fetchCompliance();
+    const pollId = setInterval(fetchCompliance, 30000);
+    return () => clearInterval(pollId);
   }, [fetchCompliance]);
 
   useEffect(() => {

@@ -76,10 +76,7 @@ export default function MarkAttendanceStudentCard({
 
         {currentStatus === 'present' && (
           <div className="border-t border-gray-200 dark:border-gray-600 pt-4 space-y-4">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Verification (optional)</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">
-              Skip photo and reason to mark present quickly, or add either when you can.
-            </p>
+            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Verification (Optional)</p>
             {currentPhotoUrl ? (
               <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
                 <span>Photo captured</span>
@@ -113,7 +110,7 @@ export default function MarkAttendanceStudentCard({
                 )}
                 {cameraError && <p className="text-amber-600 dark:text-amber-400 text-sm">{cameraError}</p>}
                 <div className="pt-2">
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Or add a reason (optional):</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Add reason (Optional)</p>
                   <select
                     value={currentManualReason}
                     onChange={(e) => {

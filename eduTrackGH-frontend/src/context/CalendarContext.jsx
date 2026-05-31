@@ -52,6 +52,14 @@ export function CalendarProvider({ children }) {
     }
     setLoading(false);
     load();
+
+    const pollId = setInterval(load, 5 * 60 * 1000);
+    const onFocus = () => load();
+    window.addEventListener('focus', onFocus);
+    return () => {
+      clearInterval(pollId);
+      window.removeEventListener('focus', onFocus);
+    };
   }, [isAuthenticated, load]);
 
   const engine = useMemo(() => {

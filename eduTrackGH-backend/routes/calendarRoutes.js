@@ -15,12 +15,26 @@ const {
   deleteCalendar,
   activateAcademicYear,
   seedDefaultCalendar,
+  normalizeHolidayRows,
+  splitYearWideHolidays,
 } = require("../controllers/calendarController");
 
 router.get("/active", protect, getActiveCalendar);
 
 router.post("/actions/activate-year", protect, authorize("admin", "super_admin"), activateAcademicYear);
 router.post("/actions/seed-default", protect, authorize("admin", "super_admin"), seedDefaultCalendar);
+router.post(
+  "/actions/normalize-holidays",
+  protect,
+  authorize("admin", "super_admin"),
+  normalizeHolidayRows
+);
+router.post(
+  "/actions/split-year-wide-holidays",
+  protect,
+  authorize("admin", "super_admin"),
+  splitYearWideHolidays
+);
 
 router.get("/", protect, authorize("admin", "super_admin"), listCalendars);
 router.post("/", protect, authorize("admin", "super_admin"), createCalendar);

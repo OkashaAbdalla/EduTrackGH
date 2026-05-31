@@ -6,7 +6,18 @@ import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card, Button } from '../../components/common';
 import { useManageClasses } from '../../hooks/useManageClasses';
 import AssignTeacherModal from '../../components/headteacher/AssignTeacherModal';
-import ClassViewDetailsModal from '../../components/headteacher/ClassViewDetailsModal';
+
+const AssignIcon = () => (
+  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+  </svg>
+);
+
+const UnassignIcon = () => (
+  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7a4 4 0 11-8 0 4 4 0 018 0zM9 14a6 6 0 00-6 6v1h12v-1a6 6 0 00-6-6zM21 12h-6" />
+  </svg>
+);
 
 const ManageClasses = () => {
   const {
@@ -14,8 +25,6 @@ const ManageClasses = () => {
     teachers,
     loading,
     editingClass,
-    viewDetailsClass,
-    setViewDetailsClass,
     selectedTeacher,
     setSelectedTeacher,
     saving,
@@ -114,28 +123,28 @@ const ManageClasses = () => {
                           {classItem.teacherStatus || 'Not available'}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-center space-x-2">
-                        <button
-                          onClick={() => setViewDetailsClass(classItem)}
-                          className="inline-flex items-center px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition text-sm font-medium"
-                        >
-                          View Details
-                        </button>
-                        <button
-                          onClick={() => handleEditTeacher(classItem)}
-                          className="inline-flex items-center px-3 py-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 hover:bg-blue-200 dark:hover:bg-blue-900/50 transition text-sm font-medium"
-                        >
-                          Assign
-                        </button>
-                        {classItem.teacherId && (
+                      <td className="py-3 px-4">
+                        <div className="flex items-center justify-center gap-2">
                           <button
-                            onClick={() => handleUnassignTeacher(classItem)}
-                            disabled={saving}
-                            className="inline-flex items-center px-3 py-1.5 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50 transition text-sm font-medium disabled:opacity-50"
+                            type="button"
+                            onClick={() => handleEditTeacher(classItem)}
+                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white transition text-xs font-semibold shadow-sm"
                           >
-                            Unassign
+                            <AssignIcon />
+                            {classItem.teacherId ? 'Reassign' : 'Assign'}
                           </button>
-                        )}
+                          {classItem.teacherId && (
+                            <button
+                              type="button"
+                              onClick={() => handleUnassignTeacher(classItem)}
+                              disabled={saving}
+                              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-red-300 dark:border-red-800 bg-white dark:bg-red-950/30 text-red-700 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/50 transition text-xs font-semibold disabled:opacity-50"
+                            >
+                              <UnassignIcon />
+                              Unassign
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -154,10 +163,6 @@ const ManageClasses = () => {
           onSave={handleSaveAssignment}
           onUnassign={(c) => { handleUnassignTeacher(c); handleCancel(); }}
           onCancel={handleCancel}
-        />
-        <ClassViewDetailsModal
-          classItem={viewDetailsClass}
-          onClose={() => setViewDetailsClass(null)}
         />
       </div>
     </DashboardLayout>

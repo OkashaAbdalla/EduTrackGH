@@ -21,6 +21,12 @@ const calendarService = {
     apiClient.post('/calendar/actions/activate-year', { academicYear }),
 
   seedDefault: () => apiClient.post('/calendar/actions/seed-default', {}),
+
+  splitYearWideHolidays: (academicYear) =>
+    apiClient.post('/calendar/actions/split-year-wide-holidays', academicYear ? { academicYear } : {}),
+
+  normalizeHolidayRows: (academicYear) =>
+    apiClient.post('/calendar/actions/normalize-holidays', academicYear ? { academicYear } : {}),
 };
 
 export default calendarService;

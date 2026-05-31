@@ -14,7 +14,6 @@ export function useManageClasses() {
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editingClass, setEditingClass] = useState(null);
-  const [viewDetailsClass, setViewDetailsClass] = useState(null);
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [saving, setSaving] = useState(false);
   const [seeding, setSeeding] = useState(false);
@@ -142,8 +141,6 @@ export function useManageClasses() {
     saving,
     seeding,
     schoolLevel,
-    viewDetailsClass,
-    setViewDetailsClass,
     handleEditTeacher,
     handleUnassignTeacher,
     handleSaveAssignment,

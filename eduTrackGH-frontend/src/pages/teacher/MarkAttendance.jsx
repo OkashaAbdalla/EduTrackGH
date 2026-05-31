@@ -52,7 +52,6 @@ const MarkAttendance = () => {
     needsGeoFence,
     geoSubmitState,
     geoMessage,
-    refreshGeoPreview,
     submitBlockedByGeo,
   } = useMarkAttendance();
 
@@ -85,9 +84,7 @@ const MarkAttendance = () => {
       <div className="space-y-6 max-w-3xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mark Attendance</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
-            Mark one student at a time. Photo and manual reasons are optional when marking present.
-          </p>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Mark one student at a time.</p>
         </div>
 
         {error && (
@@ -124,7 +121,7 @@ const MarkAttendance = () => {
               </div>
             </div>
           </Card>
-        )}
+        )} 
 
         {classLoading && (
           <Card className="p-12">
@@ -260,14 +257,8 @@ const MarkAttendance = () => {
                   >
                     <p className="font-medium">School location check</p>
                     <p className="mt-1 opacity-90">{geoMessage || 'Checking location…'}</p>
-                    {geoSubmitState !== 'checking' && (
-                      <button
-                        type="button"
-                        onClick={refreshGeoPreview}
-                        className="mt-2 text-sm font-medium text-green-700 dark:text-green-400 underline"
-                      >
-                        Refresh location
-                      </button>
+                    {geoSubmitState === 'checking' && (
+                      <p className="mt-2 text-xs opacity-75">Verifying location automatically…</p>
                     )}
                   </div>
                 )}

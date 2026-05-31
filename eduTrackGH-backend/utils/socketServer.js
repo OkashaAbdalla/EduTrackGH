@@ -67,6 +67,12 @@ function emitChatMessage(data) {
   }
 }
 
+function emitHeadteacherNotification(data) {
+  if (io && data?.headteacherId) {
+    io.to(`user:${data.headteacherId}`).emit('headteacher_notification', data);
+  }
+}
+
 module.exports = {
   setupSocketServer,
   getIO,
@@ -74,4 +80,5 @@ module.exports = {
   emitUnlockRequest,
   emitComplianceUpdated,
   emitChatMessage,
+  emitHeadteacherNotification,
 };

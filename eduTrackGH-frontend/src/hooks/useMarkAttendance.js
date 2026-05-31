@@ -300,7 +300,7 @@ export function useMarkAttendance() {
       .catch(() => {
         setGeoSubmitState('unavailable');
         setGeoMessage(
-          'Could not verify location (permission blocked, or PC/Wi‑Fi signal too weak). Allow location for this site or tap Refresh location.'
+          'Could not verify location (permission blocked, or PC/Wi‑Fi signal too weak). The system will retry automatically.'
         );
         setGeoDistanceM(null);
       });
@@ -461,6 +461,13 @@ export function useMarkAttendance() {
     }
     runGeoPreview();
   }, [allDone, needsGeoFence, runGeoPreview]);
+
+  useEffect(() => {
+    if (!allDone || !needsGeoFence) return;
+    if (geoSubmitState !== 'blocked' && geoSubmitState !== 'unavailable') return;
+    const retryId = setInterval(() => runGeoPreview({ bypassCache: true }), 12000);
+    return () => clearInterval(retryId);
+  }, [allDone, needsGeoFence, geoSubmitState, runGeoPreview]);
 
   const submitBlockedByGeo = needsGeoFence && geoSubmitState !== 'ok';
 

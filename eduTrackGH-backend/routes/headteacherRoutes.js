@@ -20,6 +20,11 @@ const {
 } = require('../controllers/headteacherController');
 const { unlockAttendanceForHeadteacher } = require('../controllers/headteacher.classrooms.controller');
 const { getSchoolLocation, setSchoolLocation } = require('../controllers/headteacher.location.controller');
+const {
+  getMyNotifications: getHeadteacherNotifications,
+  markAsRead: markHeadteacherNotificationRead,
+  markAllAsRead: markAllHeadteacherNotificationsRead,
+} = require('../controllers/headteacherNotificationController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
 
@@ -46,6 +51,11 @@ router.get('/compliance', getTeachersCompliance);
 
 // Dashboard stats
 router.get('/dashboard-stats', getDashboardStats);
+
+// In-app notifications (unmarked attendance alerts)
+router.get('/notifications', getHeadteacherNotifications);
+router.patch('/notifications/read-all', markAllHeadteacherNotificationsRead);
+router.patch('/notifications/:id/read', markHeadteacherNotificationRead);
 
 // School GPS boundary for attendance
 router.get('/school-location', getSchoolLocation);

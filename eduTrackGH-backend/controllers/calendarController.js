@@ -8,6 +8,37 @@ const {
   getActiveCalendarForApi,
   getLegacyCalendarPayload,
 } = require("../services/calendarRuntime");
+const { splitAllYearWideHolidays, normalizeAllHolidays } = require("../services/calendarHolidayMigration");
+const {
+  toMongoHolidayEntries,
+  normalizeTermHolidays,
+  dateToIso,
+  holidayListSignature,
+} = require("../utils/calendarHolidaySplit");
+
+function boundaryFromBody(body) {
+  return {
+    start: dateToIso(body.startDate),
+    end: dateToIso(body.endDate),
+    vacationStart: dateToIso(body.vacationStart),
+    vacationEnd: dateToIso(body.vacationEnd),
+  };
+}
+
+function normalizeHolidaysFromBody(holidays, body) {
+  return toMongoHolidayEntries(normalizeTermHolidays(holidays || [], boundaryFromBody(body)));
+}
+
+function normalizeHolidaysForTerm(holidays, term) {
+  return toMongoHolidayEntries(
+    normalizeTermHolidays(holidays || [], {
+      start: term.start,
+      end: term.end,
+      vacationStart: term.vacationStart,
+      vacationEnd: term.vacationEnd,
+    })
+  );
+}
 
 function toDate(d) {
   if (!d) return null;
@@ -47,9 +78,25 @@ const listCalendars = async (req, res) => {
 /** GET /api/calendar/:id */
 const getCalendarById = async (req, res) => {
   try {
-    const doc = await Calendar.findOne({ _id: req.params.id, isDeleted: { $ne: true } }).lean();
+    const doc = await Calendar.findOne({ _id: req.params.id, isDeleted: { $ne: true } });
     if (!doc) return res.status(404).json({ success: false, message: "Not found" });
-    return res.json({ success: true, calendar: doc });
+
+    const boundary = {
+      start: dateToIso(doc.startDate),
+      end: dateToIso(doc.endDate),
+      vacationStart: dateToIso(doc.vacationStart),
+      vacationEnd: dateToIso(doc.vacationEnd),
+    };
+    const normalized = toMongoHolidayEntries(
+      normalizeTermHolidays(doc.holidays || [], boundary)
+    );
+    if (holidayListSignature(doc.holidays) !== holidayListSignature(normalized)) {
+      doc.holidays = normalized;
+      await doc.save();
+      invalidateActiveCalendarCache();
+    }
+
+    return res.json({ success: true, calendar: doc.toObject() });
   } catch (e) {
     return res.status(500).json({ success: false, message: e.message || "Failed" });
   }
@@ -129,10 +176,10 @@ const createCalendar = async (req, res) => {
       numberOfWeeks: Number(req.body.numberOfWeeks),
       vacationStart: req.body.vacationStart ? toDate(req.body.vacationStart) : undefined,
       vacationEnd: req.body.vacationEnd ? toDate(req.body.vacationEnd) : undefined,
-      holidays: Array.isArray(req.body.holidays) ? req.body.holidays : [],
+      holidays: normalizeHolidaysFromBody(req.body.holidays, req.body),
       beceStart: req.body.beceStart ? toDate(req.body.beceStart) : undefined,
       beceEnd: req.body.beceEnd ? toDate(req.body.beceEnd) : undefined,
-      yearWideHolidays: isT1 && Array.isArray(req.body.yearWideHolidays) ? req.body.yearWideHolidays : [],
+      yearWideHolidays: [],
       isActive: !!req.body.isActive,
       isDeleted: false,
     });
@@ -177,7 +224,17 @@ const updateCalendar = async (req, res) => {
       } else if (f === "numberOfWeeks") {
         doc[f] = Number(req.body[f]);
       } else if (["holidays", "yearWideHolidays"].includes(f)) {
-        doc[f] = req.body[f];
+        if (f === "holidays") {
+          doc[f] = normalizeHolidaysFromBody(req.body.holidays, {
+            startDate: doc.startDate,
+            endDate: doc.endDate,
+            vacationStart: doc.vacationStart,
+            vacationEnd: doc.vacationEnd,
+            ...req.body,
+          });
+        } else {
+          doc[f] = req.body[f];
+        }
       } else if (f === "academicYear") {
         doc[f] = String(req.body[f]).trim();
       } else {
@@ -243,13 +300,8 @@ const seedDefaultCalendar = async (req, res) => {
       });
     }
     const p = getLegacyCalendarPayload();
-    const yearWide = (p.globalHolidayIsoList || []).map((iso) => ({
-      name: "Statutory / public holiday",
-      startDate: new Date(`${iso}T00:00:00.000Z`),
-      endDate: new Date(`${iso}T00:00:00.000Z`),
-    }));
 
-    const docs = p.terms.map((t, idx) => ({
+    const docs = p.terms.map((t) => ({
       academicYear: p.academicYear,
       termKey: t.name,
       termLabel: t.label,
@@ -258,8 +310,8 @@ const seedDefaultCalendar = async (req, res) => {
       numberOfWeeks: t.numberOfWeeks,
       vacationStart: t.vacationStart ? new Date(`${t.vacationStart}T00:00:00.000Z`) : undefined,
       vacationEnd: t.vacationEnd ? new Date(`${t.vacationEnd}T00:00:00.000Z`) : undefined,
-      holidays: [],
-      yearWideHolidays: idx === 0 ? yearWide : [],
+      holidays: normalizeHolidaysForTerm(t.holidays || [], t),
+      yearWideHolidays: [],
       beceStart: t.name === "TERM_3" && p.beceStart ? new Date(`${p.beceStart}T00:00:00.000Z`) : undefined,
       beceEnd: t.name === "TERM_3" && p.beceEnd ? new Date(`${p.beceEnd}T00:00:00.000Z`) : undefined,
       isActive: true,
@@ -274,6 +326,30 @@ const seedDefaultCalendar = async (req, res) => {
   }
 };
 
+/** POST /api/calendar/actions/normalize-holidays — dedupe rows, drop vacation-only dates */
+const normalizeHolidayRows = async (req, res) => {
+  try {
+    const academicYear = req.body?.academicYear ? String(req.body.academicYear).trim() : null;
+    const result = await normalizeAllHolidays(academicYear);
+    invalidateActiveCalendarCache();
+    return res.json({ success: true, ...result });
+  } catch (e) {
+    return res.status(500).json({ success: false, message: e.message || "Normalize failed" });
+  }
+};
+
+/** POST /api/calendar/actions/split-year-wide-holidays — move Term 1 year-wide into each term */
+const splitYearWideHolidays = async (req, res) => {
+  try {
+    const academicYear = req.body?.academicYear ? String(req.body.academicYear).trim() : null;
+    const result = await splitAllYearWideHolidays(academicYear);
+    invalidateActiveCalendarCache();
+    return res.json({ success: true, ...result });
+  } catch (e) {
+    return res.status(500).json({ success: false, message: e.message || "Split failed" });
+  }
+};
+
 module.exports = {
   getActiveCalendar,
   listCalendars,
@@ -283,4 +359,6 @@ module.exports = {
   deleteCalendar,
   activateAcademicYear,
   seedDefaultCalendar,
+  normalizeHolidayRows,
+  splitYearWideHolidays,
 };
