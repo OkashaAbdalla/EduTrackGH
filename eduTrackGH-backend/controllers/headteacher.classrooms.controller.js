@@ -127,6 +127,25 @@ const unlockAttendanceForHeadteacher = async (req, res) => {
       });
     }
 
+    try {
+      const { emitAttendanceUnlocked } = require('../utils/socketServer');
+      const teacherId = classroom.teacherId?.toString?.() || classroom.teacherId;
+      if (teacherId) {
+        const dateIso =
+          typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
+            ? date
+            : dateOnly.toISOString().split('T')[0];
+        emitAttendanceUnlocked({
+          teacherId,
+          classroomId: classroomId.toString(),
+          date: dateIso,
+          schoolId: schoolId.toString(),
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to emit attendance_unlocked:', e.message);
+    }
+
     // Resolve related teacher messages (best effort)
     try {
       await TeacherMessage.updateMany(

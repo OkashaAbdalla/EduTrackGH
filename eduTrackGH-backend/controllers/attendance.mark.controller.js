@@ -2,7 +2,7 @@
  * Attendance – mark daily, lock status (thin controller)
  */
 
-const { markDailyAttendance: markDaily, getAttendanceLockStatus } = require("../services/attendanceService");
+const { markDailyAttendance: markDaily, getAttendanceLockStatus, getDailyAttendanceRecords } = require("../services/attendanceService");
 const { clearUnmarkedOnTeacherMark } = require("../services/headteacherNotificationService");
 const { emitAttendanceSubmitted, emitComplianceUpdated } = require("../utils/socketServer");
 
@@ -59,8 +59,8 @@ const getLockStatus = async (req, res) => {
     if (!classroomId || !date) {
       return res.status(400).json({ success: false, message: "classroomId and date are required" });
     }
-    const { locked } = await getAttendanceLockStatus({ classroomId, date, teacherId });
-    return res.json({ success: true, locked });
+    const { locked, hasExistingRecords, recordCount } = await getAttendanceLockStatus({ classroomId, date, teacherId });
+    return res.json({ success: true, locked, hasExistingRecords, recordCount });
   } catch (error) {
     const status = error.status || 500;
     const message = error.message || "Failed to check lock status";
@@ -69,4 +69,21 @@ const getLockStatus = async (req, res) => {
   }
 };
 
-module.exports = { markDailyAttendance, getLockStatus };
+const getDailyRecords = async (req, res) => {
+  try {
+    const { classroomId, date } = req.params;
+    const teacherId = req.user._id;
+    if (!classroomId || !date) {
+      return res.status(400).json({ success: false, message: "classroomId and date are required" });
+    }
+    const result = await getDailyAttendanceRecords({ classroomId, date, teacherId });
+    return res.json({ success: true, ...result });
+  } catch (error) {
+    const status = error.status || 500;
+    const message = error.message || "Failed to load attendance records";
+    if (status === 500) console.error("getDailyRecords error:", error);
+    return res.status(status).json({ success: false, message });
+  }
+};
+
+module.exports = { markDailyAttendance, getLockStatus, getDailyRecords };

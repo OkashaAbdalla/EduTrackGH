@@ -90,6 +90,27 @@ const unlockAttendance = async (req, res) => {
     if (result.matchedCount === 0) {
       return res.status(404).json({ success: false, message: 'No attendance records found for this classroom and date' });
     }
+
+    try {
+      const classroom = await Classroom.findById(classroomId).select('teacherId schoolId').lean();
+      const { emitAttendanceUnlocked } = require('../utils/socketServer');
+      const teacherId = classroom?.teacherId?.toString?.();
+      if (teacherId) {
+        const dateIso =
+          typeof date === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(date)
+            ? date
+            : dateOnly.toISOString().split('T')[0];
+        emitAttendanceUnlocked({
+          teacherId,
+          classroomId: classroomId.toString(),
+          date: dateIso,
+          schoolId: classroom?.schoolId?.toString?.() || '',
+        });
+      }
+    } catch (e) {
+      console.warn('Failed to emit attendance_unlocked:', e.message);
+    }
+
     res.json({ success: true, message: `Unlocked ${result.modifiedCount} attendance record(s)`, modifiedCount: result.modifiedCount });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || 'Failed to unlock attendance' });

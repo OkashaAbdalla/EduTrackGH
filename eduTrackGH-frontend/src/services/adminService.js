@@ -126,6 +126,7 @@ const adminService = {
 
   updateSystemSettings: async (settings) => {
     const response = await apiClient.put('/admin/settings', { settings });
+    cacheService.invalidate('/admin/settings');
     return response.data;
   },
 
@@ -203,6 +204,11 @@ const adminService = {
     return response.data;
   },
 
+  deleteUser: async (id) => {
+    const response = await apiClient.delete(`/admin/users/${id}`);
+    return response.data;
+  },
+
   getStudents: async (params = {}) => {
     const response = await apiClient.get('/admin/students', { params });
     return response.data;
@@ -213,8 +219,8 @@ const adminService = {
     return response.data;
   },
 
-  getClassroomsGlobal: async () => {
-    const response = await apiClient.get('/admin/classrooms');
+  getClassroomsGlobal: async (params = {}) => {
+    const response = await apiClient.get('/admin/classrooms', { params });
     return response.data;
   },
 

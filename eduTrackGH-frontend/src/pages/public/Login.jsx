@@ -4,7 +4,7 @@
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthLayout, FormInput } from '../../components/common';
+import { AuthLayout, FormInput, MaintenanceBanner } from '../../components/common';
 import { useToast, useAuthContext } from '../../context';
 import { ROUTES } from '../../utils/constants';
 import { validateLoginForm, getRoleRedirectPath } from '../../utils/loginHelpers';
@@ -53,6 +53,11 @@ const Login = () => {
           'warning'
         );
         navigate(ROUTES.VERIFY_EMAIL, { replace: true });
+      } else if (result.code === 'MAINTENANCE') {
+        showToast(
+          result.message || 'The system is under maintenance. Please try again later.',
+          'warning'
+        );
       } else {
         showToast(result.message || 'Invalid email or password', 'error');
       }
@@ -65,6 +70,7 @@ const Login = () => {
 
   return (
     <AuthLayout>
+      <MaintenanceBanner />
       <div className="mb-3 flex items-center justify-start">
         <Link
           to={ROUTES.HOME}

@@ -10,6 +10,7 @@ export default function MarkAttendanceStudentCard({
   currentStudent,
   currentIndex,
   studentsLength,
+  headerNote,
   currentStatus,
   setCurrentStatus,
   currentPhotoUrl,
@@ -36,7 +37,7 @@ export default function MarkAttendanceStudentCard({
   return (
     <Card className="p-6 border-2 border-green-500 dark:border-green-600">
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
-        Student {currentIndex + 1} of {studentsLength}
+        {headerNote || `Student ${currentIndex + 1} of ${studentsLength}`}
       </p>
       <p className="font-semibold text-lg text-gray-900 dark:text-white mb-4">{currentStudent.fullName}</p>
 

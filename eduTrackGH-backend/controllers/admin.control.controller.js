@@ -5,11 +5,14 @@ const School = require('../models/School');
 const DailyAttendance = require('../models/DailyAttendance');
 const AttendanceFlag = require('../models/AttendanceFlag');
 const Notification = require('../models/Notification');
-const AdminConfig = require('../models/AdminConfig');
 const AuthAuditLog = require('../models/AuthAuditLog');
 const { sendEmail, emailTemplates } = require('../utils/sendEmail');
+const {
+  DEFAULT_GPS_SETTINGS,
+  getConfig,
+  setConfig,
+} = require('../services/adminConfigService');
 
-const DEFAULT_GPS_SETTINGS = { defaultRadius: 100, maxRadius: 300, gpsEnforced: true };
 const DEFAULT_NOTIFICATION_SETTINGS = { emailEnabled: true, smsEnabled: false, absenceThreshold: 3 };
 
 const toIso = (d) => {
@@ -30,16 +33,6 @@ const haversineMeters = (lat1, lon1, lat2, lon2) => {
   const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
   return R * c;
 };
-
-async function getConfig(key, fallback) {
-  const row = await AdminConfig.findOne({ key }).lean();
-  return row?.value ?? fallback;
-}
-
-async function setConfig(key, value) {
-  await AdminConfig.findOneAndUpdate({ key }, { $set: { value } }, { upsert: true, new: true });
-  return value;
-}
 
 const getGpsSettings = async (_req, res) => {
   try {
@@ -243,11 +236,58 @@ const updateAdminUserStatus = async (req, res) => {
   }
 };
 
+const deleteAdminUser = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (String(req.user._id) === String(id)) {
+      return res.status(400).json({ success: false, message: 'You cannot delete your own account' });
+    }
+
+    const user = await User.findById(id);
+    if (!user) return res.status(404).json({ success: false, message: 'User not found' });
+    if (user.role === 'super_admin') {
+      return res.status(403).json({ success: false, message: 'Super admin accounts cannot be deleted' });
+    }
+
+    if (user.role === 'headteacher' && user.school) {
+      const school = await School.findById(user.school);
+      if (school) {
+        const slotKey =
+          user.schoolLevel === 'JHS'
+            ? 'jhsHeadteacher'
+            : user.schoolLevel === 'BOTH'
+            ? 'primaryHeadteacher'
+            : 'primaryHeadteacher';
+        if (String(school[slotKey] || '') === String(user._id)) school[slotKey] = null;
+        if (String(school.headteacher || '') === String(user._id)) school.headteacher = null;
+        await school.save();
+      }
+    }
+
+    await User.deleteOne({ _id: user._id });
+    return res.json({ success: true, message: 'User deleted successfully' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to delete user' });
+  }
+};
+
 const getAdminStudents = async (req, res) => {
   try {
-    const { schoolId, classroomId, grade } = req.query;
+    const { schoolId, classroomId, grade, schoolName } = req.query;
     const q = {};
-    if (schoolId) q.schoolId = schoolId;
+    if (schoolId) {
+      q.schoolId = schoolId;
+    } else if (schoolName && String(schoolName).trim()) {
+      const name = String(schoolName).trim();
+      const schools = await School.find({ name: new RegExp(name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') })
+        .select('_id')
+        .lean();
+      const ids = schools.map((s) => s._id);
+      if (!ids.length) {
+        return res.json({ success: true, count: 0, students: [] });
+      }
+      q.schoolId = { $in: ids };
+    }
     if (classroomId) q.$or = [{ classroom: classroomId }, { classroomId }];
     if (grade) q.grade = grade;
 
@@ -324,7 +364,12 @@ const getAdminStudentById = async (req, res) => {
 
 const getAdminClassrooms = async (req, res) => {
   try {
-    const classrooms = await Classroom.find({})
+    const { schoolId } = req.query;
+    const filter = {};
+    if (schoolId && String(schoolId).trim()) {
+      filter.schoolId = schoolId;
+    }
+    const classrooms = await Classroom.find(filter)
       .populate('schoolId', 'name')
       .populate('teacherId', 'fullName email')
       .select('name grade schoolId teacherId studentCount isActive')
@@ -789,6 +834,7 @@ module.exports = {
   getAdminAlerts,
   getAdminUsers,
   updateAdminUserStatus,
+  deleteAdminUser,
   getAdminStudents,
   getAdminStudentById,
   getAdminClassrooms,

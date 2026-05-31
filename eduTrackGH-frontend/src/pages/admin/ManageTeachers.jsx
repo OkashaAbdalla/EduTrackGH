@@ -7,11 +7,12 @@
 import { useState, useEffect } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
-import { useToast } from '../../context';
+import { useToast, useConfirm } from '../../context';
 import adminService from '../../services/adminService';
 
 const ManageTeachers = () => {
   const { showToast } = useToast();
+  const { requestConfirmation } = useConfirm();
   const [teachers, setTeachers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
@@ -206,14 +207,23 @@ const ManageTeachers = () => {
   };
 
   const handleToggleStatus = async (id) => {
+    const teacher = teachers.find((t) => t._id === id);
+    const nextActive = teacher?.status !== 'active';
+    const ok = await requestConfirmation({
+      title: nextActive ? 'Activate teacher' : 'Deactivate teacher',
+      message: `${nextActive ? 'Activate' : 'Deactivate'} ${teacher?.fullName || 'this teacher'}? They will ${nextActive ? 'be able to' : 'no longer be able to'} sign in.`,
+      confirmText: nextActive ? 'Activate' : 'Deactivate',
+      cancelText: 'Cancel',
+      tone: nextActive ? 'primary' : 'danger',
+    });
+    if (!ok) return;
+
     try {
       const response = await adminService.toggleTeacherStatus(id);
       setTeachers(teachers.map(t => 
         t._id === id ? response.data : t
       ));
-      const teacher = teachers.find(t => t._id === id);
-      const newStatus = teacher?.status === 'active' ? 'inactive' : 'active';
-      showToast(`Teacher ${newStatus === 'active' ? 'activated' : 'deactivated'} successfully`, 'success');
+      showToast(`Teacher ${nextActive ? 'activated' : 'deactivated'} successfully`, 'success');
     } catch (error) {
       console.error('Failed to update teacher status:', error);
       showToast('Failed to update teacher status', 'error');

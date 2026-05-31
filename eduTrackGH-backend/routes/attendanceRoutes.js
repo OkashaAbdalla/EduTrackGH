@@ -8,6 +8,7 @@ const router = express.Router();
 const {
   markDailyAttendance,
   getLockStatus,
+  getDailyRecords,
   getClassroomDailyHistory,
   getFlaggedStudentsForClassroom,
   uploadPhoto,
@@ -23,6 +24,7 @@ router.use(protect);
 // Teacher routes (EduTrack GH daily attendance)
 router.post("/upload-photo", authorize("teacher"), uploadPhoto);
 router.get("/daily/status/:classroomId/:date", authorize("teacher"), getLockStatus);
+router.get("/daily/records/:classroomId/:date", authorize("teacher"), getDailyRecords);
 router.post("/daily", authorize("teacher"), validateDailyAttendancePayload, markDailyAttendance);
 router.delete("/classroom/:classroomId/week/:weekStartDate", authorize("teacher"), deleteAttendanceWeek);
 router.get(

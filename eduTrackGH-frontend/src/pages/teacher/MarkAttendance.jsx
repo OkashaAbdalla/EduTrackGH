@@ -10,6 +10,12 @@ import MarkAttendanceStudentCard from '../../components/teacher/MarkAttendanceSt
 import { messageService } from '../../services';
 import { useToast } from '../../context';
 
+const STATUS_STYLES = {
+  present: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+  absent: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+  late: 'bg-orange-100 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300',
+};
+
 const MarkAttendance = () => {
   const { showToast } = useToast();
   const {
@@ -26,7 +32,6 @@ const MarkAttendance = () => {
     saving,
     error,
     currentIndex,
-    entries,
     currentStatus,
     setCurrentStatus,
     currentPhotoUrl,
@@ -53,18 +58,58 @@ const MarkAttendance = () => {
     geoSubmitState,
     geoMessage,
     submitBlockedByGeo,
+    correctionMode,
+    studentSearch,
+    setStudentSearch,
+    filteredStudents,
+    selectedStudentId,
+    setSelectedStudentId,
+    selectedStudent,
+    pendingCorrections,
+    completeCorrection,
+    readyToSubmit,
+    getEffectiveStatus,
+    stats,
   } = useMarkAttendance();
 
   const [showUnlockForm, setShowUnlockForm] = useState(false);
   const [unlockMessage, setUnlockMessage] = useState('');
   const [sendingUnlock, setSendingUnlock] = useState(false);
 
-  const currentStudent = students[currentIndex];
-  const stats = {
-    present: entries.filter((e) => e.status === 'present').length,
-    absent: entries.filter((e) => e.status === 'absent').length,
-    late: entries.filter((e) => e.status === 'late').length,
-  };
+  const currentStudent = correctionMode ? selectedStudent : students[currentIndex];
+
+  const renderSubmitSection = () => (
+    <Card className="p-6 space-y-4">
+      <p className="text-green-600 dark:text-green-400 font-medium">
+        {correctionMode
+          ? `${pendingCorrections.length} student${pendingCorrections.length === 1 ? '' : 's'} ready to save. Unchanged students will not be affected.`
+          : 'All students marked.'}
+      </p>
+      {needsGeoFence && (
+        <div
+          className={`rounded-lg border px-4 py-3 text-sm ${
+            geoSubmitState === 'ok'
+              ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-900 dark:text-green-200'
+              : geoSubmitState === 'blocked'
+              ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-900 dark:text-red-200'
+              : geoSubmitState === 'checking'
+              ? 'bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200'
+              : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200'
+          }`}
+        >
+          <p className="font-medium">School location check</p>
+          <p className="mt-1 opacity-90">{geoMessage || 'Checking location…'}</p>
+        </div>
+      )}
+      <button
+        onClick={handleSubmit}
+        disabled={saving || submitBlockedByGeo}
+        className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg disabled:opacity-50"
+      >
+        {saving ? 'Saving...' : correctionMode ? 'Save corrections' : 'Submit Attendance'}
+      </button>
+    </Card>
+  );
 
   if (initialLoading) {
     return (
@@ -84,7 +129,11 @@ const MarkAttendance = () => {
       <div className="space-y-6 max-w-3xl mx-auto">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mark Attendance</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Mark one student at a time.</p>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">
+            {correctionMode
+              ? 'Correction mode — search and update individual students without redoing the whole class.'
+              : 'Mark one student at a time.'}
+          </p>
         </div>
 
         {error && (
@@ -121,7 +170,7 @@ const MarkAttendance = () => {
               </div>
             </div>
           </Card>
-        )} 
+        )}
 
         {classLoading && (
           <Card className="p-12">
@@ -155,9 +204,7 @@ const MarkAttendance = () => {
             </button>
             {showUnlockForm && (
               <div className="mt-4 space-y-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                  Message to headteacher
-                </label>
+                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">Message to headteacher</label>
                 <textarea
                   rows={3}
                   value={unlockMessage}
@@ -173,22 +220,22 @@ const MarkAttendance = () => {
                     setSendingUnlock(true);
                     try {
                       await messageService.sendAttendanceUnlockRequest({
-                            classroomId: selectedClass,
-                            attendanceDate: selectedDate,
-                            message: unlockMessage.trim(),
-                          });
-                          setUnlockMessage('');
-                          setShowUnlockForm(false);
-                          showToast('Unlock request sent to headteacher', 'success');
-                        } catch (err) {
-                          showToast(err?.response?.data?.message || 'Failed to send unlock request', 'error');
-                        } finally {
-                          setSendingUnlock(false);
-                        }
-                      }}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-                    >
-                      {sendingUnlock ? 'Sending...' : 'Send unlock request'}
+                        classroomId: selectedClass,
+                        attendanceDate: selectedDate,
+                        message: unlockMessage.trim(),
+                      });
+                      setUnlockMessage('');
+                      setShowUnlockForm(false);
+                      showToast('Unlock request sent to headteacher', 'success');
+                    } catch (err) {
+                      showToast(err?.response?.data?.message || 'Failed to send unlock request', 'error');
+                    } finally {
+                      setSendingUnlock(false);
+                    }
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
+                >
+                  {sendingUnlock ? 'Sending...' : 'Send unlock request'}
                 </button>
               </div>
             )}
@@ -197,6 +244,17 @@ const MarkAttendance = () => {
 
         {!lockStatusLoading && !isDateLocked && !classLoading && students.length > 0 && (
           <>
+            {correctionMode && (
+              <Card className="p-4 bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-700">
+                <p className="font-semibold text-blue-900 dark:text-blue-100">Correction mode</p>
+                <p className="text-sm text-blue-800 dark:text-blue-200 mt-1">
+                  Attendance was already submitted for this date. Use the search box below to find a student,
+                  update their status, then click <strong>Save corrections</strong>. Students you do not change
+                  stay as they are and their parents will not be notified again.
+                </p>
+              </Card>
+            )}
+
             <div className="grid grid-cols-3 gap-4">
               <Card className="p-4 text-center">
                 <p className="text-sm text-gray-600 dark:text-gray-400">Present</p>
@@ -212,7 +270,58 @@ const MarkAttendance = () => {
               </Card>
             </div>
 
-            {!allDone && currentStudent && (
+            {correctionMode && (
+              <Card className="p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Search student
+                  </label>
+                  <input
+                    type="search"
+                    value={studentSearch}
+                    onChange={(e) => setStudentSearch(e.target.value)}
+                    placeholder="Type a name or student ID..."
+                    className="ui-select w-full"
+                  />
+                </div>
+                <div className="max-h-64 overflow-y-auto divide-y dark:divide-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg">
+                  {filteredStudents.map((student) => {
+                    const status = getEffectiveStatus(student._id);
+                    const isPending = pendingCorrections.some((e) => e.studentId === student._id);
+                    const isSelected = selectedStudentId === student._id;
+                    return (
+                      <button
+                        key={student._id}
+                        type="button"
+                        onClick={() => setSelectedStudentId(student._id)}
+                        className={`w-full flex items-center justify-between gap-3 px-4 py-3 text-left transition ${
+                          isSelected ? 'bg-green-50 dark:bg-green-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                        }`}
+                      >
+                        <span className="font-medium text-gray-900 dark:text-white">{student.fullName}</span>
+                        <span className="flex items-center gap-2 shrink-0">
+                          {isPending && (
+                            <span className="text-xs text-blue-600 dark:text-blue-400">Pending save</span>
+                          )}
+                          {status ? (
+                            <span className={`text-xs px-2 py-0.5 rounded-full capitalize ${STATUS_STYLES[status] || ''}`}>
+                              {status}
+                            </span>
+                          ) : (
+                            <span className="text-xs text-gray-500">Not marked</span>
+                          )}
+                        </span>
+                      </button>
+                    );
+                  })}
+                  {filteredStudents.length === 0 && (
+                    <p className="px-4 py-6 text-center text-sm text-gray-500 dark:text-gray-400">No students match your search.</p>
+                  )}
+                </div>
+              </Card>
+            )}
+
+            {!correctionMode && !allDone && currentStudent && (
               <MarkAttendanceStudentCard
                 currentStudent={currentStudent}
                 currentIndex={currentIndex}
@@ -240,83 +349,37 @@ const MarkAttendance = () => {
               />
             )}
 
-            {allDone && (
-              <Card className="p-6 space-y-4">
-                <p className="text-green-600 dark:text-green-400 font-medium">All students marked.</p>
-                {needsGeoFence && (
-                  <div
-                    className={`rounded-lg border px-4 py-3 text-sm ${
-                      geoSubmitState === 'ok'
-                        ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 text-green-900 dark:text-green-200'
-                        : geoSubmitState === 'blocked'
-                        ? 'bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-900 dark:text-red-200'
-                        : geoSubmitState === 'checking'
-                        ? 'bg-gray-50 dark:bg-gray-900/40 border-gray-200 dark:border-gray-700 text-gray-800 dark:text-gray-200'
-                        : 'bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-200'
-                    }`}
-                  >
-                    <p className="font-medium">School location check</p>
-                    <p className="mt-1 opacity-90">{geoMessage || 'Checking location…'}</p>
-                    {geoSubmitState === 'checking' && (
-                      <p className="mt-2 text-xs opacity-75">Verifying location automatically…</p>
-                    )}
-                  </div>
-                )}
-                <button
-                  onClick={handleSubmit}
-                  disabled={saving || submitBlockedByGeo}
-                  className="px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg disabled:opacity-50"
-                >
-                  {saving ? 'Saving...' : 'Submit Attendance'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setShowUnlockForm((v) => !v)}
-                  className="text-sm text-blue-600 dark:text-blue-400 underline mt-2"
-                >
-                  Need to correct or unlock this day? Notify headteacher
-                </button>
-                {showUnlockForm && (
-                  <div className="mt-3 space-y-2">
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
-                      Message to headteacher
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={unlockMessage}
-                      onChange={(e) => setUnlockMessage(e.target.value)}
-                      placeholder="Explain what needs to be corrected and why you need this date unlocked..."
-                      className="w-full px-3 py-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg text-gray-900 dark:text-white"
-                    />
-                    <button
-                      type="button"
-                      disabled={sendingUnlock || !unlockMessage.trim() || !selectedClass}
-                      onClick={async () => {
-                        if (!selectedClass) return;
-                        setSendingUnlock(true);
-                        try {
-                          await messageService.sendAttendanceUnlockRequest({
-                            classroomId: selectedClass,
-                            attendanceDate: selectedDate,
-                            message: unlockMessage.trim(),
-                          });
-                          setUnlockMessage('');
-                          setShowUnlockForm(false);
-                          showToast('Unlock request sent to headteacher', 'success');
-                        } catch (err) {
-                          showToast(err?.response?.data?.message || 'Failed to send unlock request', 'error');
-                        } finally {
-                          setSendingUnlock(false);
-                        }
-                      }}
-                      className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium disabled:opacity-50"
-                    >
-                      {sendingUnlock ? 'Sending...' : 'Send unlock request'}
-                    </button>
-                  </div>
-                )}
-              </Card>
+            {correctionMode && selectedStudent && (
+              <MarkAttendanceStudentCard
+                currentStudent={selectedStudent}
+                currentIndex={0}
+                studentsLength={1}
+                headerNote={`Updating: ${selectedStudent.fullName}`}
+                currentStatus={currentStatus}
+                setCurrentStatus={setCurrentStatus}
+                currentPhotoUrl={currentPhotoUrl}
+                setCurrentPhotoUrl={setCurrentPhotoUrl}
+                setCurrentVerificationType={setCurrentVerificationType}
+                currentManualReason={currentManualReason}
+                setCurrentManualReason={setCurrentManualReason}
+                currentManualOther={currentManualOther}
+                setCurrentManualOther={setCurrentManualOther}
+                videoRef={videoRef}
+                cameraActive={cameraActive}
+                cameraError={cameraError}
+                capturing={capturing}
+                uploading={uploading}
+                startCamera={startCamera}
+                stopCamera={stopCamera}
+                capturePhoto={capturePhoto}
+                setManualVerification={setManualVerification}
+                canCompleteCurrent={canCompleteCurrent}
+                completeCurrent={completeCorrection}
+              />
             )}
+
+            {!correctionMode && allDone && renderSubmitSection()}
+            {correctionMode && readyToSubmit && renderSubmitSection()}
           </>
         )}
 

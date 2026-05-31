@@ -168,6 +168,8 @@ const getClassroomRegisterHistoryForHeadteacher = async (req, res) => {
   }
 };
 
+const { getAttendanceSettings } = require("../services/adminConfigService");
+
 const getFlaggedStudentsForClassroom = async (req, res) => {
   try {
     const { classroomId } = req.params;
@@ -207,13 +209,28 @@ const getFlaggedStudentsForClassroom = async (req, res) => {
       }
     });
 
-    const threshold = 3;
+    const attendanceSettings = await getAttendanceSettings();
+    const consecutiveThreshold = Number(attendanceSettings?.chronicAbsenteeismThreshold) || 3;
+    const pctThreshold = Number(attendanceSettings?.absenteeismPercentageThreshold) || 10;
+
     const flagged = students
       .map((s) => {
         const agg = byStudent[String(s._id)] || { total: 0, absences: 0, lastAbsent: null };
-        if (agg.absences >= threshold && agg.total > 0) {
-          const rate = Math.round(((agg.total - agg.absences) / agg.total) * 100);
-          return { id: s._id, name: s.fullName, studentId: s.studentId, gender: s.gender, absences: agg.absences, rate, lastAbsent: agg.lastAbsent };
+        if (agg.total <= 0) return null;
+        const absenceRate = Math.round((agg.absences / agg.total) * 100);
+        const attendanceRate = 100 - absenceRate;
+        const byConsecutive = agg.absences >= consecutiveThreshold;
+        const byPercentage = absenceRate >= pctThreshold;
+        if (byConsecutive || byPercentage) {
+          return {
+            id: s._id,
+            name: s.fullName,
+            studentId: s.studentId,
+            gender: s.gender,
+            absences: agg.absences,
+            rate: attendanceRate,
+            lastAbsent: agg.lastAbsent,
+          };
         }
         return null;
       })

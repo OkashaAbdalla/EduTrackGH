@@ -2,10 +2,14 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import adminService from '../../services/adminService';
+import { useToast, useConfirm } from '../../context';
 
 const AdminNotificationControl = () => {
+  const { showToast } = useToast();
+  const { requestConfirmation } = useConfirm();
   const [settings, setSettings] = useState({ emailEnabled: true, smsEnabled: false, absenceThreshold: 3 });
   const [exportInfo, setExportInfo] = useState(null);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     adminService.getNotificationSettingsControl().then((r) => {
@@ -14,8 +18,25 @@ const AdminNotificationControl = () => {
   }, []);
 
   const save = async () => {
-    const r = await adminService.updateNotificationSettingsControl(settings);
-    if (r.settings) setSettings(r.settings);
+    const ok = await requestConfirmation({
+      title: 'Save notification settings',
+      message: 'Apply email/SMS toggles and absence threshold for all schools?',
+      confirmText: 'Save',
+      cancelText: 'Cancel',
+      tone: 'primary',
+    });
+    if (!ok) return;
+
+    setSaving(true);
+    try {
+      const r = await adminService.updateNotificationSettingsControl(settings);
+      if (r.settings) setSettings(r.settings);
+      showToast('Notification settings saved', 'success');
+    } catch {
+      showToast('Failed to save notification settings', 'error');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const exportData = async () => {
@@ -34,7 +55,9 @@ const AdminNotificationControl = () => {
             <label className="text-sm">Absence threshold</label>
             <input type="number" value={settings.absenceThreshold} onChange={(e)=>setSettings({...settings,absenceThreshold:Number(e.target.value)})} className="ml-2 px-3 py-1 rounded border dark:bg-gray-800 dark:border-gray-700" />
           </div>
-          <button onClick={save} className="px-3 py-2 rounded bg-green-600 text-white text-sm">Save Notification Settings</button>
+          <button onClick={save} disabled={saving} className="px-3 py-2 rounded bg-green-600 text-white text-sm disabled:opacity-50">
+            {saving ? 'Saving...' : 'Save Notification Settings'}
+          </button>
         </Card>
         <Card className="p-4">
           <button onClick={exportData} className="px-3 py-2 rounded bg-blue-600 text-white text-sm">Export System Summary</button>

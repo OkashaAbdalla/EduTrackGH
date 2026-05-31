@@ -5,7 +5,7 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import classroomService from '../services/classroomService';
 import attendanceService from '../services/attendanceService';
-import { useToast, useCalendar } from '../context';
+import { useToast, useCalendar, useSocket } from '../context';
 import { compressImageForAttendance } from '../utils/attendancePhoto';
 import { isGeoFenceConfigured, haversineMeters } from '../utils/geo';
 
@@ -127,6 +127,7 @@ function readStablePosition({ bypassCache = false } = {}) {
 
 export function useMarkAttendance() {
   const { showToast } = useToast();
+  const { socket } = useSocket();
   const { engine } = useCalendar();
   const [classrooms, setClassrooms] = useState([]);
   const [selectedClass, setSelectedClass] = useState('');
@@ -153,8 +154,14 @@ export function useMarkAttendance() {
   const [geoDistanceM, setGeoDistanceM] = useState(null);
   const [isDateLocked, setIsDateLocked] = useState(false);
   const [lockStatusLoading, setLockStatusLoading] = useState(false);
+  const [existingRecords, setExistingRecords] = useState(() => new Map());
+  const [correctionMode, setCorrectionMode] = useState(false);
+  const [studentSearch, setStudentSearch] = useState('');
+  const [selectedStudentId, setSelectedStudentId] = useState(null);
+  const [pendingCorrections, setPendingCorrections] = useState([]);
   const videoRef = useRef(null);
   const streamRef = useRef(null);
+  const prevLockedRef = useRef(false);
 
   const fetchClassrooms = useCallback(async () => {
     try {
@@ -182,16 +189,12 @@ export function useMarkAttendance() {
     try {
       setClassLoading(true);
       setError(null);
-      const response = await classroomService.getClassroomStudents(selectedClass);
-      if (response.success && response.students) {
-        setStudents(response.students);
-        setCurrentIndex(0);
-        setEntries([]);
-        setCurrentStatus(null);
-        setCurrentPhotoUrl(null);
-        setCurrentVerificationType(null);
-        setCurrentManualReason('');
-        setCurrentManualOther('');
+      setStudentSearch('');
+      setSelectedStudentId(null);
+      setPendingCorrections([]);
+      const studentsRes = await classroomService.getClassroomStudents(selectedClass);
+      if (studentsRes.success && studentsRes.students) {
+        setStudents(studentsRes.students);
       } else setError('Failed to load students.');
     } catch (err) {
       setError('Error loading students.');
@@ -200,7 +203,74 @@ export function useMarkAttendance() {
     }
   }, [selectedClass]);
 
-  useEffect(() => { fetchStudents(); }, [fetchStudents]);
+  const refreshLockAndRecords = useCallback(
+    async ({ silent = false } = {}) => {
+      if (!selectedClass || !selectedDate) {
+        setIsDateLocked(false);
+        setExistingRecords(new Map());
+        setCorrectionMode(false);
+        prevLockedRef.current = false;
+        return;
+      }
+      if (!silent) setLockStatusLoading(true);
+      try {
+        const [lockRes, dailyRes] = await Promise.all([
+          attendanceService.getAttendanceLockStatus(selectedClass, selectedDate),
+          attendanceService.getDailyAttendanceRecords(selectedClass, selectedDate),
+        ]);
+        const locked = !!(lockRes.success && lockRes.locked);
+        const recordMap = new Map();
+        if (dailyRes.success && Array.isArray(dailyRes.records)) {
+          dailyRes.records.forEach((r) => {
+            if (r.studentId) recordMap.set(r.studentId, r.status);
+          });
+        }
+        const hasSaved = recordMap.size > 0;
+
+        if (prevLockedRef.current && !locked && hasSaved) {
+          showToast('Attendance unlocked. Search for a student below to make corrections.', 'success');
+        }
+        prevLockedRef.current = locked;
+
+        setIsDateLocked(locked);
+        setExistingRecords(recordMap);
+        setCorrectionMode(hasSaved);
+        if (!hasSaved) {
+          setCurrentIndex(0);
+          setEntries([]);
+          setCurrentStatus(null);
+          setCurrentPhotoUrl(null);
+          setCurrentVerificationType(null);
+          setCurrentManualReason('');
+          setCurrentManualOther('');
+        }
+      } catch {
+        if (!silent) {
+          setIsDateLocked(false);
+        }
+      } finally {
+        if (!silent) setLockStatusLoading(false);
+      }
+    },
+    [selectedClass, selectedDate, showToast]
+  );
+
+  useEffect(() => {
+    fetchStudents();
+    refreshLockAndRecords();
+  }, [fetchStudents, refreshLockAndRecords]);
+
+  useEffect(() => {
+    if (!correctionMode || !selectedStudentId) return;
+    setCurrentPhotoUrl(null);
+    setCurrentVerificationType(null);
+    setCurrentManualReason('');
+    setCurrentManualOther('');
+    setCameraError(null);
+    const pending = pendingCorrections.find((e) => e.studentId === selectedStudentId);
+    const saved = existingRecords.get(selectedStudentId);
+    setCurrentStatus(pending?.status || saved || null);
+  }, [selectedStudentId, correctionMode, pendingCorrections, existingRecords]);
 
   const selectedClassroom = useMemo(
     () => classrooms.find((c) => c._id === selectedClass) || null,
@@ -225,27 +295,42 @@ export function useMarkAttendance() {
     [selectedClassroom, showToast, engine]
   );
 
-  // Check if selected date is locked when class + date change
+  // Real-time unlock: headteacher unlocks → teacher page updates without refresh
   useEffect(() => {
-    if (!selectedClass || !selectedDate) {
-      setIsDateLocked(false);
-      return;
-    }
-    let cancelled = false;
-    setLockStatusLoading(true);
-    attendanceService.getAttendanceLockStatus(selectedClass, selectedDate).then((res) => {
-      if (!cancelled) {
-        setIsDateLocked(!!(res.success && res.locked));
-        setLockStatusLoading(false);
+    if (!socket || !selectedClass || !selectedDate) return;
+    const handler = (data) => {
+      const cid = data?.classroomId?.toString?.() || data?.classroomId;
+      const dateStr = data?.date;
+      if (cid === selectedClass && dateStr === selectedDate) {
+        refreshLockAndRecords({ silent: true });
       }
-    }).catch(() => {
-      if (!cancelled) {
-        setIsDateLocked(false);
-        setLockStatusLoading(false);
+    };
+    socket.on('attendance_unlocked', handler);
+    return () => socket.off('attendance_unlocked', handler);
+  }, [socket, selectedClass, selectedDate, refreshLockAndRecords]);
+
+  // Poll while locked so unlock is picked up even if socket misses the event
+  useEffect(() => {
+    if (!selectedClass || !selectedDate || !isDateLocked) return;
+    const id = setInterval(() => refreshLockAndRecords({ silent: true }), 12000);
+    return () => clearInterval(id);
+  }, [selectedClass, selectedDate, isDateLocked, refreshLockAndRecords]);
+
+  // Refresh when teacher returns to this tab
+  useEffect(() => {
+    if (!selectedClass || !selectedDate) return;
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') {
+        refreshLockAndRecords({ silent: true });
       }
-    });
-    return () => { cancelled = true; };
-  }, [selectedClass, selectedDate]);
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    window.addEventListener('focus', onVisible);
+    return () => {
+      document.removeEventListener('visibilitychange', onVisible);
+      window.removeEventListener('focus', onVisible);
+    };
+  }, [selectedClass, selectedDate, refreshLockAndRecords]);
 
   useEffect(() => {
     if (!navigator.geolocation) return;
@@ -450,29 +535,128 @@ export function useMarkAttendance() {
     setCameraError(null);
   }, [canCompleteCurrent, currentIndex, currentStatus, currentPhotoUrl, currentVerificationType, currentManualReason, currentManualOther, students, location]);
 
-  const allDone = currentIndex >= students.length && students.length > 0;
+  const buildEntryForStudent = useCallback(
+    (studentId) => {
+      const entry = {
+        studentId,
+        status: currentStatus,
+        markedAt: new Date().toISOString(),
+        location: location || undefined,
+      };
+      if (currentStatus === 'present') {
+        if (currentVerificationType === 'photo' && currentPhotoUrl) {
+          entry.verificationType = 'photo';
+          entry.photoUrl = currentPhotoUrl;
+        } else if (currentVerificationType === 'manual') {
+          const manualReason =
+            currentManualReason === 'Other' ? currentManualOther.trim() || 'Other' : currentManualReason;
+          if (manualReason) {
+            entry.verificationType = 'manual';
+            entry.manualReason = manualReason;
+          }
+        }
+      }
+      return entry;
+    },
+    [
+      currentStatus,
+      currentPhotoUrl,
+      currentVerificationType,
+      currentManualReason,
+      currentManualOther,
+      location,
+    ]
+  );
+
+  const resetMarkingForm = useCallback(() => {
+    setCurrentStatus(null);
+    setCurrentPhotoUrl(null);
+    setCurrentVerificationType(null);
+    setCurrentManualReason('');
+    setCurrentManualOther('');
+    setCameraError(null);
+  }, []);
+
+  const completeCorrection = useCallback(() => {
+    if (!canCompleteCurrent() || !selectedStudentId) return;
+    const entry = buildEntryForStudent(selectedStudentId);
+    setPendingCorrections((prev) => {
+      const next = prev.filter((e) => e.studentId !== selectedStudentId);
+      return [...next, entry];
+    });
+    setSelectedStudentId(null);
+    resetMarkingForm();
+  }, [canCompleteCurrent, selectedStudentId, buildEntryForStudent, resetMarkingForm]);
+
+  const allDone = !correctionMode && currentIndex >= students.length && students.length > 0;
+  const readyToSubmit = correctionMode ? pendingCorrections.length > 0 : allDone;
+
+  const filteredStudents = useMemo(() => {
+    const q = studentSearch.trim().toLowerCase();
+    if (!q) return students;
+    return students.filter((s) => {
+      const name = (s.fullName || s.name || '').toLowerCase();
+      const sid = (s.studentId || s.admissionNumber || '').toLowerCase();
+      return name.includes(q) || sid.includes(q);
+    });
+  }, [students, studentSearch]);
+
+  const selectedStudent = useMemo(
+    () => students.find((s) => s._id === selectedStudentId) || null,
+    [students, selectedStudentId]
+  );
+
+  const getEffectiveStatus = useCallback(
+    (studentId) => {
+      const pending = pendingCorrections.find((e) => e.studentId === studentId);
+      if (pending) return pending.status;
+      return existingRecords.get(studentId) || null;
+    },
+    [pendingCorrections, existingRecords]
+  );
+
+  const stats = useMemo(() => {
+    if (correctionMode) {
+      let present = 0;
+      let absent = 0;
+      let late = 0;
+      for (const s of students) {
+        const status = getEffectiveStatus(s._id);
+        if (status === 'present') present += 1;
+        else if (status === 'absent') absent += 1;
+        else if (status === 'late') late += 1;
+      }
+      return { present, absent, late };
+    }
+    return {
+      present: entries.filter((e) => e.status === 'present').length,
+      absent: entries.filter((e) => e.status === 'absent').length,
+      late: entries.filter((e) => e.status === 'late').length,
+    };
+  }, [correctionMode, students, getEffectiveStatus, entries]);
 
   useEffect(() => {
-    if (!allDone || !needsGeoFence) {
+    if (!readyToSubmit || !needsGeoFence) {
       setGeoSubmitState('idle');
       setGeoMessage('');
       setGeoDistanceM(null);
       return;
     }
     runGeoPreview();
-  }, [allDone, needsGeoFence, runGeoPreview]);
+  }, [readyToSubmit, needsGeoFence, runGeoPreview]);
 
   useEffect(() => {
-    if (!allDone || !needsGeoFence) return;
+    if (!readyToSubmit || !needsGeoFence) return;
     if (geoSubmitState !== 'blocked' && geoSubmitState !== 'unavailable') return;
     const retryId = setInterval(() => runGeoPreview({ bypassCache: true }), 12000);
     return () => clearInterval(retryId);
-  }, [allDone, needsGeoFence, geoSubmitState, runGeoPreview]);
+  }, [readyToSubmit, needsGeoFence, geoSubmitState, runGeoPreview]);
 
   const submitBlockedByGeo = needsGeoFence && geoSubmitState !== 'ok';
 
   const handleSubmit = useCallback(async () => {
-    if (!selectedClass || !allDone || entries.length === 0) return;
+    const payload = correctionMode ? pendingCorrections : entries;
+    if (!selectedClass || !readyToSubmit || payload.length === 0) return;
     const levelRef = selectedClassroom?.grade || selectedClassroom?.level || '';
     if (!engine.isSchoolDay(selectedDate, levelRef)) {
       showToast(
@@ -539,14 +723,21 @@ export function useMarkAttendance() {
       const response = await attendanceService.markDailyAttendance(
         selectedClass,
         selectedDate,
-        entries,
+        payload,
         coords
       );
       if (response.success) {
-        showToast(`Attendance saved for ${response.count ?? entries.length} students.`, 'success');
-        setEntries([]);
-        setCurrentIndex(0);
+        showToast(`Attendance saved for ${response.count ?? payload.length} student${(response.count ?? payload.length) === 1 ? '' : 's'}.`, 'success');
+        if (correctionMode) {
+          setPendingCorrections([]);
+          setSelectedStudentId(null);
+        } else {
+          setEntries([]);
+          setCurrentIndex(0);
+        }
+        prevLockedRef.current = true;
         setIsDateLocked(true);
+        refreshLockAndRecords({ silent: true });
       } else showToast(response.message || 'Failed to save attendance', 'error');
     } catch (err) {
       const msg = err?.response?.data?.message || err?.message || 'Failed to save attendance';
@@ -558,11 +749,14 @@ export function useMarkAttendance() {
     selectedClass,
     selectedDate,
     entries,
-    allDone,
+    pendingCorrections,
+    correctionMode,
+    readyToSubmit,
     showToast,
     selectedClassroom,
     needsGeoFence,
     engine,
+    refreshLockAndRecords,
   ]);
 
   return {
@@ -609,5 +803,17 @@ export function useMarkAttendance() {
     geoDistanceM,
     refreshGeoPreview,
     submitBlockedByGeo,
+    correctionMode,
+    studentSearch,
+    setStudentSearch,
+    filteredStudents,
+    selectedStudentId,
+    setSelectedStudentId,
+    selectedStudent,
+    pendingCorrections,
+    completeCorrection,
+    readyToSubmit,
+    getEffectiveStatus,
+    stats,
   };
 }

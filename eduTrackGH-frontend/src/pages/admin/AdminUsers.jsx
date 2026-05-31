@@ -2,11 +2,15 @@ import { useEffect, useState } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import adminService from '../../services/adminService';
+import { useToast, useConfirm } from '../../context';
 
 const AdminUsers = () => {
+  const { showToast } = useToast();
+  const { requestConfirmation } = useConfirm();
   const [role, setRole] = useState('');
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [deletingId, setDeletingId] = useState(null);
 
   const load = async () => {
     setLoading(true);
@@ -22,9 +26,31 @@ const AdminUsers = () => {
     load();
   }, [role]);
 
-  const toggleStatus = async (u) => {
-    await adminService.updateUserStatus(u._id || u.id, { isActive: !u.isActive });
-    load();
+  const handleDelete = async (u) => {
+    const id = u._id || u.id;
+    const ok = await requestConfirmation({
+      title: 'Delete user',
+      message: `Permanently delete ${u.fullName || u.email}?\n\nRole: ${u.role}\nEmail: ${u.email}\n\nThis cannot be undone.`,
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      tone: 'danger',
+    });
+    if (!ok) return;
+
+    setDeletingId(id);
+    try {
+      const res = await adminService.deleteUser(id);
+      if (res.success) {
+        showToast(res.message || 'User deleted', 'success');
+        load();
+      } else {
+        showToast(res.message || 'Failed to delete user', 'error');
+      }
+    } catch (err) {
+      showToast(err?.response?.data?.message || 'Failed to delete user', 'error');
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   return (
@@ -57,22 +83,31 @@ const AdminUsers = () => {
               </tr>
             </thead>
             <tbody>
-              {users.map((u) => (
-                <tr key={u._id || u.id} className="border-t dark:border-gray-800">
-                  <td className="px-3 py-2">{u.fullName}</td>
-                  <td className="px-3 py-2">{u.email}</td>
-                  <td className="px-3 py-2 capitalize">{u.role}</td>
-                  <td className="px-3 py-2">{u.isActive ? 'Active' : 'Inactive'}</td>
-                  <td className="px-3 py-2">
-                    <button
-                      onClick={() => toggleStatus(u)}
-                      className="px-2 py-1 rounded bg-green-600 text-white text-xs"
-                    >
-                      {u.isActive ? 'Deactivate' : 'Activate'}
-                    </button>
-                  </td>
-                </tr>
-              ))}
+              {users.map((u) => {
+                const id = u._id || u.id;
+                return (
+                  <tr key={id} className="border-t dark:border-gray-800">
+                    <td className="px-3 py-2">{u.fullName}</td>
+                    <td className="px-3 py-2">{u.email}</td>
+                    <td className="px-3 py-2 capitalize">{u.role}</td>
+                    <td className="px-3 py-2">{u.isActive ? 'Active' : 'Inactive'}</td>
+                    <td className="px-3 py-2">
+                      {u.role === 'super_admin' ? (
+                        <span className="text-xs text-gray-500 dark:text-gray-400">Protected</span>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(u)}
+                          disabled={deletingId === id}
+                          className="px-2 py-1 rounded bg-red-600 hover:bg-red-700 text-white text-xs disabled:opacity-50"
+                        >
+                          {deletingId === id ? 'Deleting...' : 'Delete'}
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
           {!loading && users.length === 0 && <p className="p-4 text-gray-500">No users found.</p>}

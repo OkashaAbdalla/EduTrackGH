@@ -1,29 +1,90 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import adminService from '../../services/adminService';
 
 const AdminStudents = () => {
   const [students, setStudents] = useState([]);
+  const [schools, setSchools] = useState([]);
+  const [schoolFilter, setSchoolFilter] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const load = async () => {
-      setLoading(true);
+    const loadSchools = async () => {
       try {
-        const data = await adminService.getStudents();
-        setStudents(data.students || []);
-      } finally {
-        setLoading(false);
+        const data = await adminService.getSchools();
+        setSchools(data.schools || []);
+      } catch {
+        setSchools([]);
       }
     };
-    load();
+    loadSchools();
   }, []);
+
+  const loadStudents = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = {};
+      if (schoolFilter) params.schoolId = schoolFilter;
+      const data = await adminService.getStudents(params);
+      setStudents(data.students || []);
+    } catch {
+      setStudents([]);
+    } finally {
+      setLoading(false);
+    }
+  }, [schoolFilter]);
+
+  useEffect(() => {
+    loadStudents();
+  }, [loadStudents]);
+
+  const schoolOptions = useMemo(() => {
+    const fromApi = schools.map((s) => ({
+      id: s._id || s.id,
+      name: s.name || '',
+    }));
+    const names = new Set(fromApi.map((s) => s.name));
+    students.forEach((st) => {
+      if (st.school && !names.has(st.school)) {
+        names.add(st.school);
+      }
+    });
+    return fromApi.sort((a, b) => a.name.localeCompare(b.name));
+  }, [schools, students]);
 
   return (
     <DashboardLayout>
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Students (Read Only)</h1>
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Students (Read Only)</h1>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[220px]">
+            Filter by school
+            <select
+              className="ui-select ui-select-sm w-full mt-1"
+              value={schoolFilter}
+              onChange={(e) => setSchoolFilter(e.target.value)}
+            >
+              <option value="">All schools</option>
+              {schoolOptions.map((s) => (
+                <option key={s.id || s.name} value={s.id || ''}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          {loading
+            ? 'Loading…'
+            : `${students.length} student${students.length === 1 ? '' : 's'}${
+                schoolFilter
+                  ? ` at ${schoolOptions.find((s) => s.id === schoolFilter)?.name || 'selected school'}`
+                  : ''
+              }`}
+        </p>
+
         <Card className="p-0 overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800/50">
@@ -37,6 +98,13 @@ const AdminStudents = () => {
               </tr>
             </thead>
             <tbody>
+              {!loading && students.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-3 py-6 text-center text-gray-500 dark:text-slate-400">
+                    No students found for this filter.
+                  </td>
+                </tr>
+              )}
               {students.map((s) => (
                 <tr key={s.id} className="border-t dark:border-gray-800">
                   <td className="px-3 py-2">{s.fullName}</td>

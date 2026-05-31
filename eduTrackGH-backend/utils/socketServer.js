@@ -1,6 +1,6 @@
 /**
  * Socket.IO server setup with JWT auth
- * Events: attendance_submitted, unlock_request, compliance_updated, chat_message
+ * Events: attendance_submitted, attendance_unlocked, unlock_request, compliance_updated, chat_message
  */
 
 const jwt = require('jsonwebtoken');
@@ -55,6 +55,12 @@ function emitUnlockRequest(data) {
   if (io) io.to(`user:${data.headteacherId}`).emit('unlock_request', data);
 }
 
+function emitAttendanceUnlocked(data) {
+  if (io && data?.teacherId) {
+    io.to(`user:${data.teacherId}`).emit('attendance_unlocked', data);
+  }
+}
+
 function emitComplianceUpdated(data) {
   if (io) io.to(`school:${data.schoolId}`).emit('compliance_updated', data);
 }
@@ -78,6 +84,7 @@ module.exports = {
   getIO,
   emitAttendanceSubmitted,
   emitUnlockRequest,
+  emitAttendanceUnlocked,
   emitComplianceUpdated,
   emitChatMessage,
   emitHeadteacherNotification,

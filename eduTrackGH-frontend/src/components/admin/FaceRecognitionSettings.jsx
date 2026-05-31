@@ -27,7 +27,7 @@ const FaceRecognitionSettings = ({ settings, onUpdate }) => {
             </span>
           </label>
           <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 ml-7">
-            Allow students to mark attendance using face recognition
+            Saved for future use when face recognition is enabled in the app.
           </p>
         </div>
 

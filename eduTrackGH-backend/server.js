@@ -65,6 +65,7 @@ app.use(
 
 // Routes - Admin login is registered inside authRoutes at /api/auth/${ADMIN_LOGIN_PATH}
 // Rate limiting only applies to failed login attempts, not successful ones
+app.use("/api/public", require("./routes/publicRoutes"));
 app.use("/api/auth", require("./routes/authRoutes"));
 app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/classrooms", require("./routes/classroomRoutes"));

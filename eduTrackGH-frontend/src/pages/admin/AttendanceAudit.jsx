@@ -6,8 +6,10 @@ import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import { useAttendanceAudit } from '../../hooks/useAttendanceAudit';
 import AuditRecordsTable, { AuditFlagsTable } from '../../components/admin/AuditRecordsTable';
+import { useConfirm } from '../../context';
 
 const AttendanceAudit = () => {
+  const { requestConfirmation } = useConfirm();
   const {
     schools,
     classrooms,
@@ -70,7 +72,16 @@ const AttendanceAudit = () => {
             <div className="flex items-end gap-2">
               {filters.classroomId && filters.date && (
                 <button
-                  onClick={() => handleUnlock(filters.classroomId, filters.date)}
+                  onClick={async () => {
+                    const ok = await requestConfirmation({
+                      title: 'Unlock attendance',
+                      message: `Unlock attendance for this classroom on ${filters.date}? Teachers will be able to make corrections.`,
+                      confirmText: 'Unlock',
+                      cancelText: 'Cancel',
+                      tone: 'danger',
+                    });
+                    if (ok) handleUnlock(filters.classroomId, filters.date);
+                  }}
                   className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium"
                 >
                   Unlock Attendance

@@ -10,11 +10,15 @@ const FormInput = ({
   name,
   value,
   onChange,
+  onBlur,
   placeholder,
   required = false,
   error = '',
   hint = '',
   autoComplete,
+  min,
+  max,
+  step,
 }) => {
   const [showPassword, setShowPassword] = useState(false);
   const isPasswordField = type === 'password';
@@ -31,9 +35,13 @@ const FormInput = ({
           name={name}
           value={value}
           onChange={onChange}
+          onBlur={onBlur}
           required={required}
           placeholder={placeholder}
           autoComplete={autoComplete}
+          min={min}
+          max={max}
+          step={step}
           className={`ui-input ${isPasswordField ? 'pr-11' : ''} ${error ? 'ui-input-error' : ''}`}
         />
 

@@ -54,6 +54,16 @@ const attendanceService = {
     }
   },
 
+  // Load saved attendance records for correction mode (teacher)
+  getDailyAttendanceRecords: async (classroomId, date) => {
+    try {
+      const response = await apiClient.get(`/attendance/daily/records/${classroomId}/${date}`);
+      return response.data;
+    } catch (error) {
+      return { success: false, records: [], message: error.response?.data?.message || error.message };
+    }
+  },
+
   // Mark daily attendance for a class (teacher)
   markDailyAttendance: async (classroomId, date, attendanceData, coords = {}) => {
     try {

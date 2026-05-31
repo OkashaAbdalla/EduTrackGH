@@ -29,6 +29,7 @@ const {
   getAdminAlerts,
   getAdminUsers,
   updateAdminUserStatus,
+  deleteAdminUser,
   getAdminStudents,
   getAdminStudentById,
   getAdminClassrooms,
@@ -97,6 +98,7 @@ router.get('/gps-logs', getGpsLogs);
 router.get('/alerts', getAdminAlerts);
 router.get('/users', getAdminUsers);
 router.patch('/users/:id/status', validateUpdateAdminUserStatus, updateAdminUserStatus);
+router.delete('/users/:id', deleteAdminUser);
 router.get('/students', getAdminStudents);
 router.get('/students/:id', getAdminStudentById);
 router.get('/classrooms', getAdminClassrooms);

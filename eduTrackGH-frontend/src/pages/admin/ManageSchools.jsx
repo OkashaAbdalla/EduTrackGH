@@ -8,8 +8,10 @@ import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card, Button, Modal } from '../../components/common';
 import { SchoolCard, SchoolForm } from '../../components/admin';
 import useSchools from '../../hooks/useSchools';
+import { useConfirm } from '../../context';
 
 const ManageSchools = () => {
+  const { requestConfirmation } = useConfirm();
   const { schools, headteachers, loading, createSchool, updateSchool, toggleSchoolStatus } = useSchools();
   const [filter, setFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -87,6 +89,15 @@ const ManageSchools = () => {
   };
 
   const handleToggleStatus = async (school) => {
+    const nextActive = !school.isActive;
+    const ok = await requestConfirmation({
+      title: nextActive ? 'Activate school' : 'Deactivate school',
+      message: `${nextActive ? 'Activate' : 'Deactivate'} "${school.name}"? ${nextActive ? 'Users can access this school again.' : 'This school will be marked inactive.'}`,
+      confirmText: nextActive ? 'Activate' : 'Deactivate',
+      cancelText: 'Cancel',
+      tone: nextActive ? 'primary' : 'danger',
+    });
+    if (!ok) return;
     await toggleSchoolStatus(school);
   };
 

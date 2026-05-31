@@ -13,15 +13,17 @@ import {
   SystemSettingsSection,
 } from '../../components/admin';
 import adminService from '../../services/adminService';
-import { useToast } from '../../context';
+import { useToast, useConfirm } from '../../context';
 
 const SystemSettings = () => {
   const { showToast } = useToast();
+  const { requestConfirmation } = useConfirm();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [settings, setSettings] = useState({
     attendance: {
-      markingDeadlineHour: 9,
+      markingWindowStart: '07:30',
+      markingWindowEnd: '09:00',
       chronicAbsenteeismThreshold: 3,
       absenteeismPercentageThreshold: 10,
       gracePeriodHours: 24,
@@ -59,10 +61,42 @@ const SystemSettings = () => {
   };
 
   const handleSave = async () => {
+    const ok = await requestConfirmation({
+      title: 'Save system settings',
+      message:
+        'Applies attendance deadlines, absenteeism thresholds, notifications, and system access rules for all schools.',
+      confirmText: 'Save',
+      cancelText: 'Cancel',
+      tone: 'primary',
+    });
+    if (!ok) return;
+
+    const payload = {
+      ...settings,
+      attendance: {
+        ...settings.attendance,
+        chronicAbsenteeismThreshold:
+          settings.attendance.chronicAbsenteeismThreshold === '' ||
+          settings.attendance.chronicAbsenteeismThreshold == null
+            ? 3
+            : Number(settings.attendance.chronicAbsenteeismThreshold),
+        absenteeismPercentageThreshold:
+          settings.attendance.absenteeismPercentageThreshold === '' ||
+          settings.attendance.absenteeismPercentageThreshold == null
+            ? 10
+            : Number(settings.attendance.absenteeismPercentageThreshold),
+        gracePeriodHours:
+          settings.attendance.gracePeriodHours === '' || settings.attendance.gracePeriodHours == null
+            ? 24
+            : Number(settings.attendance.gracePeriodHours),
+      },
+    };
+
     try {
       setSaving(true);
-      const response = await adminService.updateSystemSettings(settings);
+      const response = await adminService.updateSystemSettings(payload);
       if (response.success) {
+        if (response.settings) setSettings(response.settings);
         showToast('Settings saved successfully', 'success');
       } else {
         showToast(response.message || 'Failed to save settings', 'error');
@@ -75,13 +109,13 @@ const SystemSettings = () => {
   };
 
   const updateSetting = (section, key, value) => {
-    setSettings({
-      ...settings,
+    setSettings((prev) => ({
+      ...prev,
       [section]: {
-        ...settings[section],
+        ...prev[section],
         [key]: value,
       },
-    });
+    }));
   };
 
   if (loading) {

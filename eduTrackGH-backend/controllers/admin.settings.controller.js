@@ -1,28 +1,41 @@
 /**
- * Admin – system settings
+ * Admin – system settings (persisted in AdminConfig)
  */
 
-const getSystemSettings = async (req, res) => {
+const {
+  getSystemSettings,
+  saveSystemSettings,
+  invalidateSystemSettingsCache,
+} = require("../services/adminConfigService");
+
+const getSystemSettingsHandler = async (_req, res) => {
   try {
-    const settings = {
-      attendance: { markingDeadlineHour: 9, chronicAbsenteeismThreshold: 3, absenteeismPercentageThreshold: 10, gracePeriodHours: 24 },
-      faceRecognition: { confidenceThreshold: 0.7, enabled: true },
-      notifications: { emailEnabled: true, smsEnabled: false },
-      system: { maintenanceMode: false, allowRegistration: true },
-    };
-    res.json({ success: true, settings });
+    const settings = await getSystemSettings();
+    return res.json({ success: true, settings });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to get settings' });
+    return res.status(500).json({ success: false, message: "Failed to get settings" });
   }
 };
 
 const updateSystemSettings = async (req, res) => {
   try {
-    const { settings } = req.body;
-    res.json({ success: true, message: 'Settings updated successfully', settings });
+    const { settings } = req.body || {};
+    if (!settings || typeof settings !== "object") {
+      return res.status(400).json({ success: false, message: "Settings payload is required" });
+    }
+    const saved = await saveSystemSettings(settings);
+    invalidateSystemSettingsCache();
+    return res.json({
+      success: true,
+      message: "Settings updated successfully",
+      settings: saved,
+    });
   } catch (error) {
-    res.status(500).json({ success: false, message: 'Failed to update settings' });
+    return res.status(500).json({ success: false, message: error.message || "Failed to update settings" });
   }
 };
 
-module.exports = { getSystemSettings, updateSystemSettings };
+module.exports = {
+  getSystemSettings: getSystemSettingsHandler,
+  updateSystemSettings,
+};

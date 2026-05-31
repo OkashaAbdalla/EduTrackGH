@@ -16,6 +16,13 @@ const {
 const { approvedInClassroom } = require("../utils/studentQuery");
 const School = require("../models/School");
 const { haversineMeters, isGeoFenceActive } = require("../utils/geo");
+const { validateAttendanceMarkingWindow } = require("../utils/attendanceDatePolicy");
+const {
+  getAttendanceSettings,
+  getConfig,
+  DEFAULT_GPS_SETTINGS,
+  getNotificationSettingsFromSystem,
+} = require("./adminConfigService");
 
 function studentInClassroom(student, classroomId) {
   const cid = classroomId.toString();
@@ -127,7 +134,8 @@ async function markDailyAttendance({
 
   const schoolDoc = await School.findById(schoolId).select("location").lean();
   const fenceLoc = schoolDoc?.location;
-  if (isGeoFenceActive(fenceLoc)) {
+  const gpsPolicy = await getConfig("gps_settings", DEFAULT_GPS_SETTINGS);
+  if (gpsPolicy?.gpsEnforced !== false && isGeoFenceActive(fenceLoc)) {
     const MAX_BUFFER_M = 10;
     const tLat = teacherLatitude != null ? Number(teacherLatitude) : NaN;
     const tLng = teacherLongitude != null ? Number(teacherLongitude) : NaN;
@@ -197,6 +205,16 @@ async function markDailyAttendance({
     };
   }
 
+  const attendanceSettings = await getAttendanceSettings();
+  const windowCheck = validateAttendanceMarkingWindow(dateOnly, attendanceSettings);
+  if (!windowCheck.ok) {
+    throw {
+      status: 400,
+      message: windowCheck.message,
+      code: windowCheck.code || "MARKING_WINDOW_CLOSED",
+    };
+  }
+
   // Early lock check: if any attendance for this classroom+date is locked, reject immediately.
   // Locked attendance remains locked until headteacher unlocks, regardless of day.
   const anyLocked = await DailyAttendance.findOne({ classroomId, date: dateOnly, isLocked: true });
@@ -205,7 +223,8 @@ async function markDailyAttendance({
   }
 
   const savedRecords = [];
-  const smsEnabled = process.env.SMS_ENABLED === "true";
+  const notifSettings = await getNotificationSettingsFromSystem();
+  const smsEnabled = process.env.SMS_ENABLED === "true" && notifSettings.smsEnabled;
   const validStatuses = new Set(["present", "late", "absent"]);
   const candidateStudentIds = [
     ...new Set(
@@ -343,8 +362,55 @@ async function getAttendanceLockStatus({ classroomId, date, teacherId }) {
     dateOnly.setUTCHours(0, 0, 0, 0);
   }
 
-  const anyLocked = await DailyAttendance.findOne({ classroomId, date: dateOnly, isLocked: true });
-  return { locked: !!anyLocked };
+  const records = await DailyAttendance.find({ classroomId, date: dateOnly })
+    .select("studentId status isLocked")
+    .lean();
+  const anyLocked = records.some((r) => r.isLocked);
+  return {
+    locked: !!anyLocked,
+    hasExistingRecords: records.length > 0,
+    recordCount: records.length,
+  };
 }
 
-module.exports = { markDailyAttendance, getAttendanceLockStatus, runFlagDetection, studentInClassroom };
+/**
+ * Fetch saved attendance records for a classroom+date (teacher correction mode).
+ */
+async function getDailyAttendanceRecords({ classroomId, date, teacherId }) {
+  const classroom = await Classroom.findById(classroomId);
+  if (!classroom) throw { status: 404, message: "Classroom not found" };
+  if (classroom.teacherId.toString() !== teacherId.toString()) throw { status: 403, message: "Unauthorized" };
+
+  let dateOnly;
+  if (typeof date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    const [y, m, d] = date.split("-").map((v) => parseInt(v, 10));
+    dateOnly = new Date(Date.UTC(y, m - 1, d));
+  } else {
+    dateOnly = new Date(date);
+    dateOnly.setUTCHours(0, 0, 0, 0);
+  }
+
+  const records = await DailyAttendance.find({ classroomId, date: dateOnly })
+    .select("studentId status isLocked markedAt verificationType")
+    .lean();
+
+  return {
+    records: records.map((r) => ({
+      studentId: r.studentId.toString(),
+      status: r.status,
+      isLocked: !!r.isLocked,
+      markedAt: r.markedAt,
+      verificationType: r.verificationType || null,
+    })),
+    hasExistingRecords: records.length > 0,
+    locked: records.some((r) => r.isLocked),
+  };
+}
+
+module.exports = {
+  markDailyAttendance,
+  getAttendanceLockStatus,
+  getDailyAttendanceRecords,
+  runFlagDetection,
+  studentInClassroom,
+};

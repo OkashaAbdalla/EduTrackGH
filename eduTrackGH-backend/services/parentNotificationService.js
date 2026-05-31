@@ -6,6 +6,7 @@ const School = require("../models/School");
 const Classroom = require("../models/Classroom");
 const { sendParentNotificationEmail } = require("./emailService");
 const { linkStudentToParentUser } = require("./parentService");
+const { getSystemSettings } = require("./adminConfigService");
 
 function isoToUtcDateStart(iso) {
   const [y, m, d] = String(iso).split("-").map((v) => Number(v));
@@ -78,6 +79,8 @@ async function sendNotificationEmailIfNeeded({
   message,
 }) {
   if (!parentEmail || notification.emailSentAt) return;
+  const { notifications } = await getSystemSettings();
+  if (notifications?.emailEnabled === false) return;
   try {
     const result = await sendParentNotificationEmail(parentEmail, {
       studentName,
@@ -143,8 +146,10 @@ async function queueParentAttendanceAlert({ studentId, classroomId, schoolId, da
       });
 
       if (status === "absent") {
+        const { attendance } = await getSystemSettings();
+        const streakThreshold = Number(attendance?.chronicAbsenteeismThreshold) || 3;
         const streak = await getConsecutiveAbsences(studentId, classroomId, dateIso);
-        if (streak >= 3) {
+        if (streak >= streakThreshold) {
           const warningMessage = `Warning: ${studentName} has been absent for ${streak} consecutive school days as of ${dateIso}.`;
           const warningNotif = await createOrUpdateNotification({
             parentId: parentUser._id,

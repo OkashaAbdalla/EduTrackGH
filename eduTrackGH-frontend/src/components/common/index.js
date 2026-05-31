@@ -3,6 +3,7 @@
  * Purpose: Centralized exports for common/shared components
  */
 
+export { default as MaintenanceBanner } from './MaintenanceBanner';
 export { default as Navbar } from './Navbar';
 export { default as HeroSection } from './HeroSection';
 export { default as AuthCard } from './AuthCard';

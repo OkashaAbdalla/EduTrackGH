@@ -14,6 +14,7 @@ const {
 } = require('../services/emailService');
 
 const { saveProfilePhoto, removeProfilePhoto } = require('../utils/profilePhotoStorage');
+const { getSystemSettings } = require('../services/adminConfigService');
 
 const getRequestMeta = (req) => ({
   ipAddress:
@@ -59,6 +60,14 @@ const register = async (req, res) => {
   try {
     const { fullName, email, password } = req.body;
     const phone = (req.body.phone && String(req.body.phone).trim()) || '';
+
+    const systemSettings = await getSystemSettings();
+    if (systemSettings.system?.allowRegistration === false) {
+      return res.status(403).json({
+        success: false,
+        message: 'New registrations are temporarily disabled.',
+      });
+    }
 
     if (!isEmailConfigured()) {
       return res.status(503).json({
@@ -157,6 +166,18 @@ const login = async (req, res) => {
         code: 'EMAIL_NOT_VERIFIED',
         message: 'Please verify your email before signing in. Check your inbox for the verification link.',
         email: user.email,
+      });
+    }
+
+    const systemSettings = await getSystemSettings();
+    if (
+      systemSettings.system?.maintenanceMode &&
+      !['super_admin', 'admin'].includes(user.role)
+    ) {
+      return res.status(503).json({
+        success: false,
+        code: 'MAINTENANCE',
+        message: 'The system is under maintenance. Please try again later.',
       });
     }
 

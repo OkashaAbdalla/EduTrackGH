@@ -13,6 +13,7 @@ import {
   presentEquivalent,
   schoolDaysFromWeeks,
 } from '../../utils/attendanceRegisterStats';
+import { downloadStyledRegisterExcel } from '../../utils/registerExcelExport';
 
 const formatMonthYearHuman = (yyyyMm) => {
   if (!yyyyMm || !/^\d{4}-\d{2}$/.test(yyyyMm)) return yyyyMm;
@@ -256,49 +257,15 @@ const AttendanceRegisterView = ({
   };
 
   const exportExcel = () => {
-    if (!historyRows.length) return;
-    let html = '<table><tr><th>No.</th><th>Name</th>';
-    weeks.forEach((w, wi) => {
-      w.days.forEach((d) => {
-        html += `<th>W${wi + 1} ${d.monthAbbr || ''} ${d.year || ''} ${d.day} ${d.dayName}</th>`;
-      });
-      html += `<th>W${wi + 1} P</th><th>W${wi + 1} A</th><th>W${wi + 1} L</th>`;
+    downloadStyledRegisterExcel({
+      historyRows,
+      weeks,
+      marksMap,
+      subtitlePeriod,
+      className: selectedClassroom?.name || '',
+      exportFilePrefix,
+      periodLabelForExport,
     });
-    html += '<th>Term P</th><th>Term A</th><th>Term L</th><th>Rate</th></tr>';
-
-    historyRows.forEach((row, idx) => {
-      html += `<tr><td>${idx + 1}</td><td>${row.name}</td>`;
-      let termP = 0;
-      let termA = 0;
-      let termL = 0;
-      weeks.forEach((w) => {
-        let wP = 0;
-        let wA = 0;
-        let wL = 0;
-        w.days.forEach((d) => {
-          if (d.type === 'exam') {
-            html += '<td>EXAM</td>';
-            return;
-          }
-          const s = marksMap.get(`${row.studentId}:${d.date}`) || '';
-          html += `<td>${s === 'present' ? 'P' : s === 'late' ? 'L' : s === 'absent' ? 'A' : ''}</td>`;
-          if (s === 'present') wP += 1;
-          else if (s === 'absent') wA += 1;
-          else if (s === 'late') wL += 1;
-        });
-        termP += wP;
-        termA += wA;
-        termL += wL;
-        html += `<td>${presentEquivalent(wP, wL)}</td><td>${wA}</td><td>${wL}</td>`;
-      });
-      html += `<td>${presentEquivalent(termP, termL)}</td><td>${termA}</td><td>${termL}</td><td>${attendanceRatePercent(termP, termA, termL)}%</td></tr>`;
-    });
-    html += '</table>';
-
-    const link = document.createElement('a');
-    link.href = `data:application/vnd.ms-excel;charset=utf-8,${encodeURIComponent(html)}`;
-    link.download = `${exportFilePrefix}-${periodLabelForExport}.xls`;
-    link.click();
   };
 
   const classToggleBtn = (active) =>
