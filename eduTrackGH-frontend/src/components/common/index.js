@@ -25,3 +25,4 @@ export { default as Loader } from './Loader';
 export { default as Toast } from './Toast';
 export { default as NotificationButton } from './NotificationButton';
 export { default as HeadteacherNotificationButton } from './HeadteacherNotificationButton';
+export { default as StaffNotificationBell } from './StaffNotificationBell';

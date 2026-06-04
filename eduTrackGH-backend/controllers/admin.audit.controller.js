@@ -92,8 +92,9 @@ const unlockAttendance = async (req, res) => {
     }
 
     try {
-      const classroom = await Classroom.findById(classroomId).select('teacherId schoolId').lean();
+      const classroom = await Classroom.findById(classroomId).select('name grade teacherId schoolId').lean();
       const { emitAttendanceUnlocked } = require('../utils/socketServer');
+      const { notifyAttendanceUnlocked } = require('../services/staffNotificationService');
       const teacherId = classroom?.teacherId?.toString?.();
       if (teacherId) {
         const dateIso =
@@ -105,6 +106,17 @@ const unlockAttendance = async (req, res) => {
           classroomId: classroomId.toString(),
           date: dateIso,
           schoolId: classroom?.schoolId?.toString?.() || '',
+        });
+        const classLabel = classroom?.name
+          ? `${classroom.name}${classroom.grade ? ` (${classroom.grade})` : ''}`
+          : classroom?.grade || 'Class';
+        await notifyAttendanceUnlocked({
+          teacherId,
+          headteacherName: 'Administrator',
+          schoolId: classroom.schoolId,
+          classroomId,
+          classroomName: classLabel,
+          attendanceDate: dateIso,
         });
       }
     } catch (e) {

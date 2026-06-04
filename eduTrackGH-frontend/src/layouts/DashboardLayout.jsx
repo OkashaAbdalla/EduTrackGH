@@ -8,7 +8,7 @@ import { useAuthContext, useConfirm } from '../context';
 import { ROUTES, ROLES } from '../utils/constants';
 import { TEACHER_MENU_ITEMS, HEADTEACHER_MENU_ITEMS, formatSchoolLevelLabel } from '../navigation/dashboardNavConfig';
 import ThemeSwitcher from '../components/common/ThemeSwitcher';
-import { NotificationButton, HeadteacherNotificationButton, ProfileAvatar } from '../components/common';
+import { NotificationButton, StaffNotificationBell, ProfileAvatar } from '../components/common';
 
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
@@ -190,7 +190,7 @@ const DashboardLayout = ({ children }) => {
             <div className="flex-1 min-w-0" />
             <div className="flex items-center gap-2">
               {userRole === ROLES.PARENT && <NotificationButton />}
-              {userRole === ROLES.HEADTEACHER && <HeadteacherNotificationButton />}
+              {(userRole === ROLES.HEADTEACHER || userRole === ROLES.TEACHER) && <StaffNotificationBell />}
               <ThemeSwitcher />
             </div>
           </header>

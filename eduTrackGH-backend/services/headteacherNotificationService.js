@@ -9,6 +9,7 @@ const HeadteacherNotification = require('../models/HeadteacherNotification');
 const { getClassroomLevelFilter } = require('./headteacherService');
 const { getEngine } = require('./calendarRuntime');
 const { emitHeadteacherNotification } = require('../utils/socketServer');
+const { getNotificationsForUser: getStaffNotificationsForUser, markAllNotificationsRead: markAllStaffRead } = require('./staffNotificationService');
 
 function getDateOnlyUtc(dateStr) {
   const [y, m, d] = dateStr.split('-').map((v) => parseInt(v, 10));
@@ -166,16 +167,15 @@ async function getNotificationsForHeadteacher(headteacher) {
   await syncUnmarkedNotifications(headteacher);
   const headteacherId = headteacher._id;
 
-  const [notifications, unreadCount] = await Promise.all([
-    HeadteacherNotification.find({ headteacherId })
-      .sort({ createdAt: -1 })
-      .limit(100)
-      .lean(),
+  const [complianceRows, complianceUnread, staffBundle] = await Promise.all([
+    HeadteacherNotification.find({ headteacherId }).sort({ createdAt: -1 }).limit(100).lean(),
     HeadteacherNotification.countDocuments({ headteacherId, read: false }),
+    getStaffNotificationsForUser(headteacherId),
   ]);
 
-  const list = notifications.map((n) => ({
+  const complianceList = complianceRows.map((n) => ({
     id: n._id,
+    source: 'compliance',
     type: n.type,
     teacherName: n.teacherName,
     message: n.message,
@@ -184,7 +184,13 @@ async function getNotificationsForHeadteacher(headteacher) {
     createdAt: n.createdAt,
   }));
 
-  return { notifications: list, unreadCount };
+  const merged = [...complianceList, ...staffBundle.notifications]
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    .slice(0, 100);
+
+  const unreadCount = complianceUnread + staffBundle.unreadCount;
+
+  return { notifications: merged, unreadCount };
 }
 
 async function markNotificationRead(headteacherId, notificationId) {
@@ -197,6 +203,7 @@ async function markNotificationRead(headteacherId, notificationId) {
 
 async function markAllNotificationsRead(headteacherId) {
   await HeadteacherNotification.updateMany({ headteacherId, read: false }, { $set: { read: true } });
+  await markAllStaffRead(headteacherId);
 }
 
 async function clearUnmarkedOnTeacherMark({ schoolId, teacherId, dateStr }) {

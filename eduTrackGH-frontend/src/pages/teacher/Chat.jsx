@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
 import ChatConversation from '../../components/chat/ChatConversation';
@@ -10,6 +11,8 @@ import ChatListItem from '../../components/chat/ChatListItem';
 import chatService from '../../services/chatService';
 
 const Chat = () => {
+  const location = useLocation();
+  const openUserId = location.state?.openUserId;
   const [conversations, setConversations] = useState([]);
   const [selected, setSelected] = useState({ id: null, name: '' });
   const [loading, setLoading] = useState(true);
@@ -20,6 +23,19 @@ const Chat = () => {
         const res = await chatService.getConversations();
         const list = res.conversations || [];
         setConversations(list);
+        if (openUserId) {
+          const conv = list.find((c) => (c.otherId?.toString?.() || c.otherId) === String(openUserId));
+          if (conv) {
+            setSelected({
+              id: conv.otherId?.toString?.() || conv.otherId,
+              name: conv.otherName || 'Headteacher',
+              avatarUrl: conv.otherAvatarUrl || '',
+            });
+            return;
+          }
+          setSelected({ id: String(openUserId), name: 'Headteacher', avatarUrl: '' });
+          return;
+        }
         if (list.length > 0 && !selected.id) {
           const first = list[0];
           setSelected({
@@ -35,7 +51,7 @@ const Chat = () => {
       }
     };
     load();
-  }, []);
+  }, [openUserId]);
 
   return (
     <DashboardLayout>

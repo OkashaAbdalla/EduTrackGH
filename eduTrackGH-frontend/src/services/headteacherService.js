@@ -108,6 +108,16 @@ const headteacherService = {
       return { success: false, notifications: [], unreadCount: 0, message: error.response?.data?.message || error.message };
     }
   },
+
+  markNotificationRead: async (id, source) => {
+    try {
+      const params = source ? { source } : {};
+      const response = await apiClient.patch(`/headteacher/notifications/${id}/read`, null, { params });
+      return response.data;
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || error.message };
+    }
+  },
 };
 
 export default headteacherService;

@@ -9,6 +9,7 @@ const School = require('../models/School');
 const Classroom = require('../models/Classroom');
 const { sendEmail } = require('../utils/sendEmail');
 const { emitUnlockRequest } = require('../utils/socketServer');
+const { notifyUnlockRequest } = require('../services/staffNotificationService');
 const { getSchoolDayDecision } = require('../services/calendarRuntime');
 
 // Teacher: create attendance unlock request for headteacher
@@ -38,7 +39,7 @@ const createAttendanceUnlockRequest = async (req, res) => {
     }
 
     const school = await School.findById(schoolId).select('name');
-    const classroom = await Classroom.findById(classroomId).select('grade teacherId schoolId').lean();
+    const classroom = await Classroom.findById(classroomId).select('name grade teacherId schoolId').lean();
     if (!classroom) {
       return res.status(404).json({ success: false, message: 'Classroom not found' });
     }
@@ -110,6 +111,24 @@ const createAttendanceUnlockRequest = async (req, res) => {
     }
 
     emitUnlockRequest({ headteacherId: headteacher._id.toString(), teacherId: teacher._id.toString(), schoolId, classroomId, attendanceDate: dateOnly, message });
+
+    try {
+      const classLabel = classroom.name
+        ? `${classroom.name}${classroom.grade ? ` (${classroom.grade})` : ''}`
+        : classroom.grade || 'Class';
+      await notifyUnlockRequest({
+        headteacherId: headteacher._id,
+        teacherId: teacher._id,
+        teacherName: teacher.fullName || 'Teacher',
+        schoolId,
+        classroomId,
+        classroomName: classLabel,
+        attendanceDate: dateOnly,
+        requestMessage: message,
+      });
+    } catch (err) {
+      console.warn('Staff unlock notification failed:', err.message);
+    }
 
     res.status(201).json({
       success: true,

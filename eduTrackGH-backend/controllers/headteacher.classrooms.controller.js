@@ -101,7 +101,7 @@ const unlockAttendanceForHeadteacher = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Classroom ID and date are required' });
     }
 
-    const classroom = await Classroom.findOne({ _id: classroomId, schoolId });
+    const classroom = await Classroom.findOne({ _id: classroomId, schoolId }).select('name grade teacherId schoolId');
     if (!classroom) {
       return res.status(404).json({ success: false, message: 'Classroom not found for your school' });
     }
@@ -129,6 +129,7 @@ const unlockAttendanceForHeadteacher = async (req, res) => {
 
     try {
       const { emitAttendanceUnlocked } = require('../utils/socketServer');
+      const { notifyAttendanceUnlocked } = require('../services/staffNotificationService');
       const teacherId = classroom.teacherId?.toString?.() || classroom.teacherId;
       if (teacherId) {
         const dateIso =
@@ -140,6 +141,17 @@ const unlockAttendanceForHeadteacher = async (req, res) => {
           classroomId: classroomId.toString(),
           date: dateIso,
           schoolId: schoolId.toString(),
+        });
+        const classLabel = classroom.name
+          ? `${classroom.name}${classroom.grade ? ` (${classroom.grade})` : ''}`
+          : classroom.grade || 'Class';
+        await notifyAttendanceUnlocked({
+          teacherId,
+          headteacherName: req.user.fullName || 'Headteacher',
+          schoolId,
+          classroomId,
+          classroomName: classLabel,
+          attendanceDate: dateIso,
         });
       }
     } catch (e) {

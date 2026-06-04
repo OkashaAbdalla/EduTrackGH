@@ -3,6 +3,7 @@
  */
 
 import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import classroomService from '../services/classroomService';
 import attendanceService from '../services/attendanceService';
 import { useToast, useCalendar, useSocket } from '../context';
@@ -126,6 +127,7 @@ function readStablePosition({ bypassCache = false } = {}) {
 }
 
 export function useMarkAttendance() {
+  const [searchParams] = useSearchParams();
   const { showToast } = useToast();
   const { socket } = useSocket();
   const { engine } = useCalendar();
@@ -169,7 +171,16 @@ export function useMarkAttendance() {
       const response = await classroomService.getTeacherClassrooms();
       if (response.success && response.classrooms?.length > 0) {
         setClassrooms(response.classrooms);
-        if (response.classrooms.length === 1) setSelectedClass(response.classrooms[0]._id);
+        const urlClass = searchParams.get('classroomId');
+        const urlDate = searchParams.get('date');
+        if (urlDate && /^\d{4}-\d{2}-\d{2}$/.test(urlDate)) {
+          setSelectedDate(urlDate);
+        }
+        if (urlClass && response.classrooms.some((c) => String(c._id) === urlClass)) {
+          setSelectedClass(urlClass);
+        } else if (response.classrooms.length === 1) {
+          setSelectedClass(response.classrooms[0]._id);
+        }
         setError(null);
       } else {
         setError('No classrooms assigned. Contact your headteacher to be assigned a class.');
@@ -180,7 +191,7 @@ export function useMarkAttendance() {
     } finally {
       setInitialLoading(false);
     }
-  }, []);
+  }, [searchParams]);
 
   useEffect(() => { fetchClassrooms(); }, [fetchClassrooms]);
 

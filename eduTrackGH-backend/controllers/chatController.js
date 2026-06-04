@@ -8,6 +8,7 @@ const User = require('../models/User');
 const School = require('../models/School');
 const { sendEmail, emailTemplates } = require('../utils/sendEmail');
 const { emitChatMessage } = require('../utils/socketServer');
+const { notifyChatMessage } = require('../services/staffNotificationService');
 
 async function sendMessage(req, res) {
   try {
@@ -54,6 +55,21 @@ async function sendMessage(req, res) {
     }
 
     emitChatMessage({ headteacherId: headteacherId.toString(), teacherId: targetTeacherId.toString(), ...saved });
+
+    const recipientId = senderRole === 'headteacher' ? targetTeacherId : headteacherId;
+    const otherUserId = senderRole === 'headteacher' ? headteacherId : targetTeacherId;
+    try {
+      await notifyChatMessage({
+        recipientId,
+        senderId: user._id,
+        senderName: user.fullName || user.email,
+        schoolId,
+        message: message.trim(),
+        otherUserId,
+      });
+    } catch (err) {
+      console.warn('Staff chat notification failed:', err.message);
+    }
 
     return res.status(201).json({ success: true, message: saved });
   } catch (error) {

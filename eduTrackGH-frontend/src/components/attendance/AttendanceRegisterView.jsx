@@ -257,6 +257,7 @@ const AttendanceRegisterView = ({
   };
 
   const exportExcel = () => {
+    const termMeta = engine.TERMS.find((t) => t.name === selectedTerm);
     downloadStyledRegisterExcel({
       historyRows,
       weeks,
@@ -265,6 +266,18 @@ const AttendanceRegisterView = ({
       className: selectedClassroom?.name || '',
       exportFilePrefix,
       periodLabelForExport,
+      pageTitle,
+      pageTitleAccent,
+      summary,
+      meta: {
+        className: selectedClassroom?.name || '',
+        classGrade: selectedClassroom?.grade || '',
+        periodMode,
+        termLabel: termMeta?.label || selectedTerm,
+        termName: selectedTerm,
+        academicYear: engine.GES_ACADEMIC_YEAR_LABEL,
+        weekCount: weeks.length,
+      },
     });
   };
 
