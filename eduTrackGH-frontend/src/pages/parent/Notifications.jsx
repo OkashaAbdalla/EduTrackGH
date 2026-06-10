@@ -149,7 +149,7 @@ const Notifications = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-4xl mx-auto">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">SMS and email alerts about your children</p>
           <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Unread: {unreadCount}</p>
           <div className="mt-3">
@@ -195,11 +195,11 @@ const Notifications = () => {
                 <div className="flex items-start space-x-4">
                   {getTypeIcon(notif.type)}
                   <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <h3 className="font-semibold text-gray-900 dark:text-white">
+                    <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
+                      <h3 className="font-semibold text-gray-900 dark:text-white min-w-0 break-words">
                         {notif.child} • {notif.status}
                       </h3>
-                      <span className="text-xs text-gray-500 dark:text-gray-500">{notif.date}</span>
+                      <span className="text-xs text-gray-500 dark:text-gray-500 shrink-0">{notif.date}</span>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{notif.message}</p>
                     {!notif.read && (

@@ -35,7 +35,7 @@ const AdminViewAs = () => {
   return (
     <DashboardLayout>
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">View-As Mode</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">View-As Mode</h1>
         <Card className="p-4">
           <form onSubmit={inspect} className="grid grid-cols-1 md:grid-cols-4 gap-3">
             <select value={targetRole} onChange={(e) => setTargetRole(e.target.value)} className="ui-select w-full max-w-xs">

@@ -73,7 +73,7 @@ const CreateAssistantHeadteacher = () => {
     <DashboardLayout>
       <div className="max-w-2xl mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Create Assistant Headteacher</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Create Assistant Headteacher</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Link an assistant to a headteacher for temporary school cover</p>
         </div>
         {error && <div className="p-3 rounded-lg bg-red-50 text-red-700 text-sm">{error}</div>}
@@ -120,7 +120,7 @@ const CreateAssistantHeadteacher = () => {
               ))}
             </select>
           </div>
-          <div className="flex gap-2 items-end">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
             <FormInput
               label="Temporary Password"
               type="text"

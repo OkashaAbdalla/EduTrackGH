@@ -304,11 +304,11 @@ const AttendanceRegisterView = ({
   return (
     <DashboardLayout>
       <div className="space-y-4 rounded-xl border border-gray-200 bg-white text-gray-900 shadow-sm dark:border-slate-800 dark:bg-slate-950 dark:text-slate-200">
-        <div className="sticky top-0 z-20 flex flex-wrap items-end justify-between gap-3 border-b border-gray-200 bg-white/95 px-4 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95">
-          <div className="text-xl font-extrabold tracking-tight text-gray-900 dark:text-white">
+        <div className="sticky top-0 z-20 flex flex-col gap-3 border-b border-gray-200 bg-white/95 px-3 sm:px-4 py-3 backdrop-blur dark:border-slate-800 dark:bg-slate-900/95 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
+          <div className="text-lg sm:text-xl font-extrabold tracking-tight text-gray-900 dark:text-white shrink-0">
             {pageTitle} <span className="text-indigo-600 dark:text-indigo-400">{pageTitleAccent}</span>
           </div>
-          <div className="flex flex-wrap items-end gap-2">
+          <div className="flex flex-wrap items-end gap-2 w-full sm:w-auto">
             {classrooms.length > 0 && (
               <div className="flex flex-col gap-1">
                 <label className="text-[10px] uppercase tracking-widest text-gray-500 dark:text-slate-500">

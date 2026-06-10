@@ -13,7 +13,7 @@ export function AuditFlagsTable({ flags, flagsLoading }) {
       {flagsLoading ? (
         <div className="animate-pulse h-10 bg-gray-200 dark:bg-gray-700 rounded" />
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto table-scroll">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-600">
@@ -59,7 +59,7 @@ export default function AuditRecordsTable({ records, loading, filters }) {
             : 'Select school, classroom, or date to load audit data'}
         </p>
       ) : (
-        <div className="overflow-x-auto">
+        <div className="overflow-x-auto table-scroll">
           <table className="min-w-full text-sm">
             <thead>
               <tr className="border-b border-gray-200 dark:border-gray-600">

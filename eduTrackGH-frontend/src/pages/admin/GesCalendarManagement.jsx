@@ -329,7 +329,7 @@ const GesCalendarManagement = () => {
       <div className="max-w-5xl mx-auto space-y-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">GES Calendar</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">GES Calendar</h1>
             <p className="text-sm text-gray-600 dark:text-gray-400">
               Manage academic terms, holidays, and BECE window. One academic year can be active at a time.
             </p>
@@ -407,7 +407,7 @@ const GesCalendarManagement = () => {
         {loading ? (
           <p className="text-gray-600 dark:text-slate-400">Loading…</p>
         ) : (
-          <Card className="overflow-x-auto p-0">
+          <Card className="overflow-x-auto table-scroll p-0">
             <table className="min-w-full text-left text-sm">
               <thead className="bg-gray-50 dark:bg-slate-900/50">
                 <tr>

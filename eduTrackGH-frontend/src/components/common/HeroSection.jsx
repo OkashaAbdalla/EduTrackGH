@@ -14,8 +14,8 @@ const HeroSection = () => {
 
       {/* Heading */}
       <div className="space-y-1">
-        <h1 className="text-4xl md:text-5xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">Digital Presence</h1>
-        <h1 className="text-4xl md:text-5xl font-bold text-green-600 dark:text-green-400 leading-tight tracking-tight">Every Child Matters.</h1>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 dark:text-white leading-tight tracking-tight">Digital Presence</h1>
+        <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-green-600 dark:text-green-400 leading-tight tracking-tight">Every Child Matters.</h1>
       </div>
 
       {/* Description */}

@@ -242,14 +242,14 @@ const ManageTeachers = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-2">Manage Teachers</h1>
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">Manage Teachers</h1>
             <p className="text-gray-600 dark:text-gray-400">Create, view, and manage teacher accounts</p>
           </div>
           <button
             onClick={handleOpenCreateModal}
-            className="px-4 py-2.5 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 transition font-medium flex items-center space-x-2"
+            className="w-full sm:w-auto px-4 py-2.5 rounded-lg bg-gradient-to-r from-green-600 to-green-700 text-white hover:from-green-700 hover:to-green-800 transition font-medium flex items-center justify-center space-x-2"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -326,8 +326,55 @@ const ManageTeachers = () => {
               <p className="text-gray-600 dark:text-gray-400">No teachers match your search or filter</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <>
+            <div className="sm:hidden divide-y divide-gray-200 dark:divide-gray-700">
+              {filteredTeachers.map((teacher) => (
+                <div key={teacher._id} className="p-4 space-y-3">
+                  <div>
+                    <p className="font-semibold text-gray-900 dark:text-white">{teacher.fullName}</p>
+                    <p className="text-sm text-gray-600 dark:text-gray-400 break-all">{teacher.email}</p>
+                    {teacher.phone && <p className="text-sm text-gray-600 dark:text-gray-400">{teacher.phone}</p>}
+                  </div>
+                  <div className="flex flex-wrap gap-2 text-sm">
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                      teacher.schoolLevel === 'PRIMARY'
+                        ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400'
+                        : 'bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400'
+                    }`}>
+                      {teacher.schoolLevel}
+                    </span>
+                    <span className="text-gray-600 dark:text-gray-400">{teacher.assignedClasses?.length || 0} classes</span>
+                    <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                      teacher.status === 'active'
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                        : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                    }`}>
+                      {teacher.status.charAt(0).toUpperCase() + teacher.status.slice(1)}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <button
+                      onClick={() => handleEditTeacher(teacher)}
+                      className="flex-1 min-[120px] inline-flex items-center justify-center px-3 py-2 rounded-lg bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 text-xs font-medium"
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => handleToggleStatus(teacher._id)}
+                      className={`flex-1 min-[120px] inline-flex items-center justify-center px-3 py-2 rounded-lg text-xs font-medium ${
+                        teacher.status === 'active'
+                          ? 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400'
+                          : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+                      }`}
+                    >
+                      {teacher.status === 'active' ? 'Deactivate' : 'Activate'}
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="hidden sm:block overflow-x-auto table-scroll">
+              <table className="w-full min-w-[640px]">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
                     <th className="px-6 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">Name</th>
@@ -397,13 +444,14 @@ const ManageTeachers = () => {
                 </tbody>
               </table>
             </div>
+            </>
           )}
         </Card>
       </div>
 
       {/* Create/Edit Teacher Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-2 sm:p-4">
           <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 animate-scale-in">
             <div className="space-y-4">
               {/* Header */}
@@ -503,7 +551,7 @@ const ManageTeachers = () => {
                 {/* Assign Classes */}
                 <div>
                   <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">Assign Classes</label>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {classOptions[formData.schoolLevel].map((className) => (
                       <button
                         key={className}

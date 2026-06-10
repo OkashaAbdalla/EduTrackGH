@@ -62,7 +62,7 @@ const AdminAnalytics = () => {
       <div className="space-y-5">
         {/* Header */}
         <div className="mb-4">
-          <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">Analytics</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-1">Analytics</h1>
           <p className="text-sm text-slate-600 dark:text-slate-400">Attendance insights and performance metrics</p>
         </div>
 

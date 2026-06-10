@@ -5,9 +5,8 @@
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import DashboardLayout from '../../layouts/DashboardLayout';
-import { Card } from '../../components/common';
 import ChatConversation from '../../components/chat/ChatConversation';
-import ChatListItem from '../../components/chat/ChatListItem';
+import ChatInboxLayout from '../../components/chat/ChatInboxLayout';
 import chatService from '../../services/chatService';
 
 const Chat = () => {
@@ -47,56 +46,23 @@ const Chat = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-4xl">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Messages</h1>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="p-4 lg:col-span-1">
-            <h2 className="font-semibold text-gray-900 dark:text-white mb-3">Conversations</h2>
-            {loading ? (
-              <div className="animate-pulse h-24 bg-gray-200 dark:bg-gray-700 rounded" />
-            ) : (
-              <div className="space-y-0.5">
-                {conversations.map((c) => {
-                  const id = c.otherId?.toString?.() || c.otherId;
-                  return (
-                    <ChatListItem
-                      key={id}
-                      name={c.otherName || 'Teacher'}
-                      avatarUrl={c.otherAvatarUrl}
-                      lastMessage={c.lastMessage}
-                      lastAt={c.lastAt}
-                      active={selected.id === id}
-                      onClick={() =>
-                        setSelected({
-                          id,
-                          name: c.otherName || 'Teacher',
-                          avatarUrl: c.otherAvatarUrl || '',
-                        })
-                      }
-                    />
-                  );
-                })}
-                {conversations.length === 0 && <p className="text-sm text-gray-500">No conversations yet</p>}
-              </div>
-            )}
-          </Card>
-          <div className="lg:col-span-2">
-            {selected.id ? (
-              <ChatConversation
-                otherId={selected.id}
-                otherName={selected.name}
-                otherAvatarUrl={selected.avatarUrl}
-                currentRole="headteacher"
-                onBack={() => setSelected({ id: null, name: '', avatarUrl: '' })}
-              />
-            ) : (
-              <Card className="p-8 text-center text-gray-500 dark:text-gray-400">
-                Select a teacher to start a conversation
-              </Card>
-            )}
-          </div>
-        </div>
-      </div>
+      <ChatInboxLayout
+        title="Messages"
+        conversations={conversations}
+        selected={selected}
+        onSelect={setSelected}
+        loading={loading}
+        emptyListText="No conversations yet"
+        emptySelectionText="Select a teacher to start a conversation"
+      >
+        <ChatConversation
+          otherId={selected.id}
+          otherName={selected.name}
+          otherAvatarUrl={selected.avatarUrl}
+          currentRole="headteacher"
+          onBack={() => setSelected({ id: null, name: '', avatarUrl: '' })}
+        />
+      </ChatInboxLayout>
     </DashboardLayout>
   );
 };

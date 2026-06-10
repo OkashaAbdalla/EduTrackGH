@@ -35,7 +35,7 @@ export default function MarkAttendanceStudentCard({
   if (!currentStudent) return null;
 
   return (
-    <Card className="p-6 border-2 border-green-500 dark:border-green-600">
+    <Card className="p-4 sm:p-6 border-2 border-green-500 dark:border-green-600">
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-2">
         {headerNote || `Student ${currentIndex + 1} of ${studentsLength}`}
       </p>
@@ -44,7 +44,7 @@ export default function MarkAttendanceStudentCard({
       <div className="space-y-4">
         <div>
           <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Status</p>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             {['present', 'late', 'absent'].map((s) => (
               <button
                 key={s}
@@ -59,7 +59,7 @@ export default function MarkAttendanceStudentCard({
                     stopCamera();
                   }
                 }}
-                className={`px-4 py-2 rounded-lg font-medium capitalize ${
+                className={`flex-1 min-[100px] sm:flex-none px-4 py-2.5 rounded-lg font-medium capitalize ${
                   currentStatus === s
                     ? s === 'present'
                       ? 'bg-green-600 text-white'
@@ -98,7 +98,7 @@ export default function MarkAttendanceStudentCard({
                   )}
                 </div>
                 {cameraActive && (
-                  <div className="rounded-lg overflow-hidden bg-black max-w-xl w-full h-80">
+                  <div className="rounded-lg overflow-hidden bg-black w-full max-w-xl aspect-[4/3] max-h-[50dvh] sm:max-h-none sm:h-80">
                     <video
                       ref={videoRef}
                       autoPlay

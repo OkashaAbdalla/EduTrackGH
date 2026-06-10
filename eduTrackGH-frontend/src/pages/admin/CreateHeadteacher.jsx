@@ -101,7 +101,7 @@ const CreateHeadteacher = () => {
     <DashboardLayout>
       <div className="max-w-2xl mx-auto">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Create Headteacher Account</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1">Create Headteacher Account</h1>
           <p className="text-gray-600 dark:text-gray-400 text-sm">Add a new headteacher to manage a school</p>
         </div>
 
@@ -204,7 +204,7 @@ const CreateHeadteacher = () => {
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Temporary Password
               </label>
-              <div className="flex gap-2">
+              <div className="flex flex-col gap-2 sm:flex-row">
                 <input
                   type="text"
                   name="tempPassword"
@@ -227,7 +227,7 @@ const CreateHeadteacher = () => {
               </p>
             </div>
 
-            <div className="flex gap-3 pt-4">
+            <div className="flex flex-col-reverse sm:flex-row gap-3 pt-4">
               <button
                 type="submit"
                 disabled={loading}
@@ -238,7 +238,7 @@ const CreateHeadteacher = () => {
               <button
                 type="button"
                 onClick={() => navigate(ROUTES.ADMIN_DASHBOARD)}
-                className="px-6 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                className="w-full sm:w-auto px-6 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 py-3 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition"
               >
                 Cancel
               </button>

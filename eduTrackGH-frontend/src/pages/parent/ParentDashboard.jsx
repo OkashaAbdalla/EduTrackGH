@@ -87,7 +87,7 @@ const ParentDashboard = () => {
                     </div>
                     
                     {/* Stats Row */}
-                    <div className="flex items-center gap-4 text-xs">
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
                       <div className="flex items-center gap-1.5">
                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
                         <span className="text-gray-500 dark:text-gray-400">Rate:</span>

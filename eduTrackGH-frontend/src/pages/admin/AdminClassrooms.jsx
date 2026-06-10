@@ -49,8 +49,8 @@ const AdminClassrooms = () => {
     <DashboardLayout>
       <div className="space-y-4">
         <div className="flex flex-wrap items-end justify-between gap-3">
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Classrooms (Read Only)</h1>
-          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 min-w-[220px]">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Classrooms (Read Only)</h1>
+          <label className="text-sm font-medium text-gray-700 dark:text-gray-300 w-full sm:w-auto sm:min-w-[220px]">
             Filter by school
             <select
               className="ui-select ui-select-sm w-full mt-1"
@@ -71,7 +71,7 @@ const AdminClassrooms = () => {
           {loading ? 'Loading…' : `${rows.length} classroom${rows.length === 1 ? '' : 's'}`}
         </p>
 
-        <Card className="p-0 overflow-x-auto">
+        <Card className="p-0 overflow-x-auto table-scroll">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800/50">
               <tr>

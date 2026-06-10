@@ -131,7 +131,7 @@ const TeacherDashboard = () => {
         {/* Header – teacher name, school, assigned class */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">
             Welcome{profile.fullName ? `, ${profile.fullName}` : ''}
           </h1>
           {profile.schoolName && (

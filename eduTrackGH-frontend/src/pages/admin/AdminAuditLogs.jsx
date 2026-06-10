@@ -34,8 +34,8 @@ const AdminAuditLogs = () => {
   return (
     <DashboardLayout>
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Audit Logs</h1>
-        <Card className="p-0 overflow-x-auto">
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Audit Logs</h1>
+        <Card className="p-0 overflow-x-auto table-scroll">
           {loading ? (
             <div className="p-4 text-sm text-gray-600 dark:text-gray-300">Loading audit logs...</div>
           ) : null}

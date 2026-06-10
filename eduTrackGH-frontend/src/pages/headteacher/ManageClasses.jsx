@@ -52,7 +52,7 @@ const ManageClasses = ({ apiService = headteacherService } = {}) => {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Classes</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Manage Classes</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your school&apos;s classes and assign teachers</p>
         </div>
 
@@ -92,8 +92,8 @@ const ManageClasses = ({ apiService = headteacherService } = {}) => {
         ) : (
           <Card className="p-6">
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">All Classes</h2>
-            <div className="overflow-x-auto">
-              <table className="w-full">
+            <div className="overflow-x-auto table-scroll">
+              <table className="w-full min-w-[560px]">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700">
                     <th className="text-left py-3 px-4 text-sm font-medium text-gray-700 dark:text-gray-300">Class</th>

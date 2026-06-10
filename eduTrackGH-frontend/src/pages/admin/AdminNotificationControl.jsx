@@ -47,7 +47,7 @@ const AdminNotificationControl = () => {
   return (
     <DashboardLayout>
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Notification Control</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Notification Control</h1>
         <Card className="p-4 space-y-3">
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!settings.emailEnabled} onChange={(e)=>setSettings({...settings,emailEnabled:e.target.checked})} /> Email enabled</label>
           <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={!!settings.smsEnabled} onChange={(e)=>setSettings({...settings,smsEnabled:e.target.checked})} /> SMS enabled</label>

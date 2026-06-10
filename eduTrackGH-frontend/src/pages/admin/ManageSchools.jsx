@@ -108,16 +108,16 @@ const ManageSchools = () => {
   return (
     <DashboardLayout>
       <div className="max-w-7xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">Manage Schools</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1">Manage Schools</h1>
             <p className="text-gray-600 dark:text-gray-400 text-sm">View and manage all schools in the system</p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 w-full sm:w-auto">
             <select
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
-              className="ui-select ui-select-inline"
+              className="ui-select ui-select-inline w-full sm:w-auto"
             >
               <option value="all">All Schools</option>
               <option value="active">Active</option>
@@ -128,7 +128,7 @@ const ManageSchools = () => {
                 resetForm();
                 setShowCreateModal(true);
               }}
-              className="bg-green-600 hover:bg-green-700 text-white"
+              className="bg-green-600 hover:bg-green-700 text-white w-full sm:w-auto justify-center"
             >
               + Add School
             </Button>

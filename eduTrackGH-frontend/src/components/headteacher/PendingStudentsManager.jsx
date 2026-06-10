@@ -99,7 +99,7 @@ const PendingStudentsManager = () => {
       <div className="divide-y divide-gray-200 dark:divide-gray-700">
         {students.map((student) => (
           <div key={student._id} className="p-6 hover:bg-gray-50 dark:hover:bg-gray-800/50">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center space-x-3">
                   <div className="flex-shrink-0">
@@ -118,7 +118,7 @@ const PendingStudentsManager = () => {
                         Pending
                       </span>
                     </div>
-                    <div className="mt-1 flex items-center space-x-4 text-sm text-gray-500 dark:text-gray-400">
+                    <div className="mt-1 flex flex-wrap gap-x-4 gap-y-1 text-sm text-gray-500 dark:text-gray-400">
                       <span>ID: {student.studentId}</span>
                       {student.classroomId && (
                         <span>Class: {student.classroomId.name}</span>
@@ -141,7 +141,7 @@ const PendingStudentsManager = () => {
                 </div>
               </div>
               
-              <div className="flex items-center space-x-2 ml-4">
+              <div className="flex flex-wrap gap-2 sm:ml-4 w-full sm:w-auto">
                 <Button
                   size="sm"
                   variant="secondary"

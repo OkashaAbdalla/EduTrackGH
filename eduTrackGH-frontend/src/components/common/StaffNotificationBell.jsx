@@ -319,7 +319,7 @@ const StaffNotificationBell = () => {
       </button>
 
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-80 md:w-96 ui-modal shadow-2xl z-50 max-h-[500px] overflow-hidden flex flex-col">
+        <div className="absolute right-0 mt-2 w-[calc(100vw-1rem)] max-w-80 sm:w-80 md:w-96 ui-modal shadow-2xl z-50 max-h-[min(500px,80dvh)] overflow-hidden flex flex-col">
           <div className="px-4 py-3 border-b border-[color:var(--glass-border)] flex items-center justify-between">
             <div>
               <h3 className="text-sm font-semibold text-[color:var(--text-primary)]">Notifications</h3>

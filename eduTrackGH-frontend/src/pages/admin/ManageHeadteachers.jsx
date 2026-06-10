@@ -110,9 +110,9 @@ const ManageHeadteachers = () => {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mb-1">
               Manage Headteachers
             </h1>
             <p className="text-gray-600 dark:text-gray-400 text-sm">
@@ -122,7 +122,7 @@ const ManageHeadteachers = () => {
           <select
             value={filter}
             onChange={(e) => setFilter(e.target.value)}
-            className="ui-select ui-select-inline"
+            className="ui-select ui-select-inline w-full sm:w-auto"
           >
             <option value="all">All Headteachers</option>
             <option value="active">Active</option>
@@ -157,8 +157,75 @@ const ManageHeadteachers = () => {
             </p>
           </div>
         ) : (
-          <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden">
-            <table className="w-full">
+          <>
+          <div className="sm:hidden space-y-3">
+            {filteredHeadteachers.map((ht) => (
+              <div
+                key={ht.id}
+                className="rounded-lg border border-gray-200 bg-white p-4 dark:border-gray-700 dark:bg-gray-800 space-y-3"
+              >
+                <div>
+                  <p className="font-semibold text-gray-900 dark:text-white">{ht.fullName}</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400 break-all">{ht.email}</p>
+                  {ht.phone && <p className="text-sm text-gray-600 dark:text-gray-400">{ht.phone}</p>}
+                </div>
+                <div className="flex flex-wrap items-center gap-2 text-sm">
+                  <span className="text-gray-600 dark:text-gray-400">School:</span>
+                  <span className="font-medium text-gray-900 dark:text-white">{ht.schoolName || 'Unassigned'}</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-xs font-medium ${
+                      ht.status === 'active'
+                        ? 'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
+                        : 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300'
+                    }`}
+                  >
+                    {ht.status.charAt(0).toUpperCase() + ht.status.slice(1)}
+                  </span>
+                </div>
+                <div>
+                  <label className="text-xs font-medium text-gray-600 dark:text-gray-400">Assign to school</label>
+                  <select
+                    value={ht.schoolId || ''}
+                    onChange={(e) => handleAssign(ht.id, e.target.value || null)}
+                    disabled={assigningId === ht.id || deletingId === ht.id}
+                    className="ui-select ui-select-sm w-full mt-1"
+                  >
+                    <option value="">Unassigned</option>
+                    {schools
+                      .filter((s) => {
+                        if (!s?.isActive) return false;
+                        if (!ht.schoolLevel) return true;
+                        if (s.schoolLevel === 'BOTH') {
+                          const slotTaken =
+                            ht.schoolLevel === 'PRIMARY'
+                              ? s.primaryHeadteacher && String(s.primaryHeadteacher?._id || s.primaryHeadteacher) !== String(ht.id)
+                              : s.jhsHeadteacher && String(s.jhsHeadteacher?._id || s.jhsHeadteacher) !== String(ht.id);
+                          return !slotTaken;
+                        }
+                        if (s.schoolLevel !== ht.schoolLevel) return false;
+                        if (!s.headteacher) return true;
+                        return String(s.headteacher?._id || s.headteacher) === String(ht.id);
+                      })
+                      .map((s) => (
+                        <option key={s._id} value={s._id}>
+                          {s.name} ({s.schoolLevel})
+                        </option>
+                      ))}
+                  </select>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => handleDelete(ht.id, ht.email)}
+                  disabled={deletingId === ht.id}
+                  className="w-full sm:w-auto inline-flex items-center justify-center rounded-lg bg-red-600 px-3 py-2 text-xs font-semibold text-white hover:bg-red-700 disabled:opacity-60"
+                >
+                  {deletingId === ht.id ? 'Deleting...' : 'Delete'}
+                </button>
+              </div>
+            ))}
+          </div>
+          <div className="hidden sm:block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 overflow-x-auto table-scroll">
+            <table className="w-full min-w-[720px]">
               <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
                 <tr>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-gray-700 dark:text-gray-300">
@@ -259,6 +326,7 @@ const ManageHeadteachers = () => {
               </tbody>
             </table>
           </div>
+          </>
         )}
       </div>
     </DashboardLayout>

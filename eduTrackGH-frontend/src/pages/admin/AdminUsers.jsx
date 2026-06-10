@@ -56,7 +56,7 @@ const AdminUsers = () => {
   return (
     <DashboardLayout>
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Users</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Users</h1>
         <Card className="p-4">
           <label className="text-sm text-gray-600 dark:text-gray-400 mr-2">Filter role</label>
           <select
@@ -71,7 +71,7 @@ const AdminUsers = () => {
             <option value="parent">Parent</option>
           </select>
         </Card>
-        <Card className="p-0 overflow-x-auto">
+        <Card className="p-0 overflow-x-auto table-scroll">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800/50">
               <tr>

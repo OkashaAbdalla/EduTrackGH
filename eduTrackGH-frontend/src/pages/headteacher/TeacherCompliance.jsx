@@ -79,7 +79,7 @@ const TeacherCompliance = ({ apiService = headteacherService, messageRoute = ROU
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Teacher Compliance</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Teacher Compliance</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             {schoolLevel === 'PRIMARY'
               ? "Monitor Primary section teachers' daily attendance marking"
@@ -150,8 +150,8 @@ const TeacherCompliance = ({ apiService = headteacherService, messageRoute = ROU
                     : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
                 }`}
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center space-x-3">
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -182,7 +182,7 @@ const TeacherCompliance = ({ apiService = headteacherService, messageRoute = ROU
                       </div>
                     </div>
                   </div>
-                  <div className="text-right flex items-center gap-3">
+                  <div className="flex flex-wrap items-center gap-2 sm:justify-end sm:text-right shrink-0">
                     {neutral ? (
                       <span className="inline-block px-3 py-1 rounded text-sm font-medium bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200">
                         No attendance expected

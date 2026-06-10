@@ -71,9 +71,9 @@ const SchoolReports = () => {
   return (
     <DashboardLayout>
       <div className="space-y-6 max-w-6xl mx-auto">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">School Reports</h1>
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">School Reports</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               {schoolLevel === 'PRIMARY'
                 ? 'Primary Section (P1-P6) - Comprehensive attendance analytics'
@@ -85,7 +85,7 @@ const SchoolReports = () => {
           <button
             onClick={handleExportReport}
             disabled={loading || classReports.length === 0}
-            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition"
+            className="w-full sm:w-auto shrink-0 px-4 py-2 bg-green-600 hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-lg font-medium transition"
           >
             Export Report
           </button>
@@ -114,8 +114,8 @@ const SchoolReports = () => {
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
             </div>
           ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto table-scroll">
+            <table className="w-full min-w-[400px]">
               <thead>
                 <tr className="border-b border-gray-200 dark:border-gray-700">
                   <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Class</th>

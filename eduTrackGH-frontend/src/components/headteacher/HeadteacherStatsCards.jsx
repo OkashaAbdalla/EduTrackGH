@@ -89,7 +89,7 @@ export default function HeadteacherStatsCards({ stats }) {
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
                 {t.label}
               </p>
-              <p className="text-3xl font-bold text-slate-900 dark:text-white mb-0.5">
+              <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-0.5">
                 {t.format(stats[t.valueKey], stats)}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-500">{t.hint}</p>

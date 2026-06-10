@@ -62,9 +62,9 @@ const ManageTeachers = ({ apiService = headteacherService, readOnly = false } = 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex justify-between items-start">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
               {readOnly ? 'View Teachers' : 'Manage Teachers'}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
@@ -72,7 +72,7 @@ const ManageTeachers = ({ apiService = headteacherService, readOnly = false } = 
             </p>
           </div>
           {!readOnly && (
-          <Button variant="primary" onClick={handleOpenCreateModal}>
+          <Button variant="primary" onClick={handleOpenCreateModal} className="w-full sm:w-auto justify-center">
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             Create Teacher
           </Button>

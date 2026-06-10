@@ -199,7 +199,7 @@ const AssistantDashboard = () => {
       <div className="space-y-6 max-w-6xl mx-auto">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Assistant Headteacher</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Assistant Headteacher</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               {isActing ? 'You are currently acting on behalf of your headteacher' : 'Standby — waiting for delegation'}
             </p>

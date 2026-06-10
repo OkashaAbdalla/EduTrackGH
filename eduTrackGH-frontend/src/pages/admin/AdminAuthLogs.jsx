@@ -29,7 +29,7 @@ const AdminAuthLogs = () => {
   return (
     <DashboardLayout>
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Auth Logs</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Auth Logs</h1>
         <Card className="p-4">
           <form className="grid grid-cols-1 md:grid-cols-4 gap-3" onSubmit={onFilter}>
             <input
@@ -56,7 +56,7 @@ const AdminAuthLogs = () => {
             <button type="submit" className="px-3 py-2 rounded bg-green-600 text-white">Apply</button>
           </form>
         </Card>
-        <Card className="p-0 overflow-x-auto">
+        <Card className="p-0 overflow-x-auto table-scroll">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800/50">
               <tr>

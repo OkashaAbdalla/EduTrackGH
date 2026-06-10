@@ -128,7 +128,7 @@ const MarkAttendance = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-3xl mx-auto">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Mark Attendance</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Mark Attendance</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             {correctionMode
               ? 'Correction mode — search and update individual students without redoing the whole class.'
@@ -255,7 +255,7 @@ const MarkAttendance = () => {
               </Card>
             )}
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 min-[360px]:grid-cols-3 gap-3 sm:gap-4">
               <Card className="p-4 text-center">
                 <p className="text-sm text-gray-600 dark:text-gray-400">Present</p>
                 <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.present}</p>

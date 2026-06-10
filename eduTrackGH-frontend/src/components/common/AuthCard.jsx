@@ -12,7 +12,7 @@ const AuthCard = () => {
   const { handleGoogleCredential, handleGoogleError } = useGoogleLoginHandler();
 
   return (
-    <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl p-8 shadow-2xl transition-all duration-300 hover:shadow-green-500/10 hover:shadow-2xl hover:border-green-500/30 group max-w-md mx-auto lg:mx-0">
+    <div className="bg-white/90 dark:bg-gray-800/90 backdrop-blur-xl border border-gray-200/50 dark:border-gray-700/50 rounded-2xl p-5 sm:p-8 shadow-2xl transition-all duration-300 hover:shadow-green-500/10 hover:shadow-2xl hover:border-green-500/30 group max-w-md mx-auto lg:mx-0 w-full">
       <div className="space-y-5">
         {/* Header */}
         <div className="text-center relative">
@@ -53,7 +53,7 @@ const AuthCard = () => {
         </div>
 
         {/* Social Login */}
-        <div className="grid grid-cols-2 gap-3">
+        <div className="grid grid-cols-1 min-[400px]:grid-cols-2 gap-3">
           <GoogleSignInButton
             fullWidth
             onCredential={handleGoogleCredential}

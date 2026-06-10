@@ -29,16 +29,16 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="ui-modal-backdrop fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="flex min-h-full items-center justify-center p-4">
+      <div className="flex min-h-full items-end sm:items-center justify-center p-2 sm:p-4">
         <div
-          className={`ui-modal ${sizeClasses[size]} transform transition-all`}
+          className={`ui-modal w-full ${sizeClasses[size]} max-h-[92dvh] flex flex-col transform transition-all`}
           onClick={(e) => e.stopPropagation()}
           role="dialog"
           aria-modal="true"
         >
           {title && (
-            <div className="flex items-center justify-between px-5 py-4 border-b border-[color:var(--glass-border)]">
-              <h3 className="ui-section-title">{title}</h3>
+            <div className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 border-b border-[color:var(--glass-border)] shrink-0">
+              <h3 className="ui-section-title text-base sm:text-lg pr-2">{title}</h3>
               <button
                 type="button"
                 onClick={onClose}
@@ -52,7 +52,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
             </div>
           )}
 
-          <div className="px-5 py-4">{children}</div>
+          <div className="px-4 sm:px-5 py-4 overflow-y-auto flex-1 min-h-0">{children}</div>
         </div>
       </div>
     </div>

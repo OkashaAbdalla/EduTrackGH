@@ -68,7 +68,7 @@ const AdminGpsAudit = () => {
   return (
     <DashboardLayout>
       <div className="space-y-4">
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">GPS Audit</h1>
+        <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">GPS Audit</h1>
 
         {loading && <p className="text-sm text-gray-500 dark:text-slate-400">Loading…</p>}
 
@@ -117,7 +117,7 @@ const AdminGpsAudit = () => {
           </Card>
         )}
 
-        <Card className="p-0 overflow-x-auto">
+        <Card className="p-0 overflow-x-auto table-scroll">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 dark:bg-gray-800/50">
               <tr>

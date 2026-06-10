@@ -216,7 +216,7 @@ const HeadteacherDashboard = () => {
       <div className="space-y-6 max-w-6xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 dark:text-white mb-1">
+            <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-1">
               Welcome{user?.name ? `, ${user.name}` : ''}
             </h1>
             {schoolName && (
@@ -249,8 +249,8 @@ const HeadteacherDashboard = () => {
             <p className="text-sm text-slate-600 dark:text-slate-400 mb-3">
               Teachers have requested unlocks for the following dates. Review and unlock attendance if appropriate.
             </p>
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
+            <div className="overflow-x-auto table-scroll">
+              <table className="w-full min-w-[480px] text-sm">
                 <thead>
                   <tr className="border-b border-gray-200 dark:border-gray-700">
                     <th className="text-left py-2 px-3 text-gray-700 dark:text-gray-300">Date</th>

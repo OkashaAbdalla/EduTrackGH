@@ -18,7 +18,7 @@ const HeadteacherAssistantChat = () => {
     <DashboardLayout>
       <div className="space-y-6 max-w-3xl mx-auto">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Assistant Headteacher</h1>
+          <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Assistant Headteacher</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
             Message {assistant?.fullName || 'your assistant'} and send delegation requests
           </p>

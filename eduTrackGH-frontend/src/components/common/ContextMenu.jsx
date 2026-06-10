@@ -5,6 +5,10 @@
 import { useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
+const MENU_MIN_W = 140;
+const ITEM_H = 36;
+const PAD = 8;
+
 /**
  * @param {object} props
  * @param {number} props.x
@@ -34,11 +38,17 @@ const ContextMenu = ({ x, y, items, onClose }) => {
     };
   }, [onClose]);
 
+  const menuH = items.length * ITEM_H + PAD;
+  const maxX = typeof window !== 'undefined' ? window.innerWidth - MENU_MIN_W - PAD : x;
+  const maxY = typeof window !== 'undefined' ? window.innerHeight - menuH - PAD : y;
+  const safeX = Math.max(PAD, Math.min(x, maxX));
+  const safeY = Math.max(PAD, Math.min(y, maxY));
+
   const menu = (
     <div
       ref={ref}
       className="fixed z-[9999] min-w-[140px] rounded-lg border border-[color:var(--glass-border)] bg-[color:var(--bg-elevated)] py-1 shadow-xl"
-      style={{ left: x, top: y }}
+      style={{ left: safeX, top: safeY }}
       role="menu"
     >
       {items.map((item) => (

@@ -53,7 +53,7 @@ const ManageAssistantHeadteachers = () => {
       <div className="space-y-6 max-w-5xl mx-auto">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Assistant Headteachers</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Assistant Headteachers</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">School-level cover accounts linked to headteachers</p>
           </div>
           <Link

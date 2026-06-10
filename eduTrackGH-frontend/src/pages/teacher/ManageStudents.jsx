@@ -196,7 +196,7 @@ const ManageStudents = () => {
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Manage Students</h1>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Manage Students</h1>
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               Propose new students for headteacher approval
             </p>
@@ -227,46 +227,79 @@ const ManageStudents = () => {
               </div>
             </div>
 
-            <div className="mt-4 overflow-x-auto">
-              <div className="min-w-[520px] overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-950">
-                <div className="grid grid-cols-4 gap-0 bg-gray-50 text-[11px] font-bold uppercase tracking-wider text-gray-600 dark:bg-slate-900 dark:text-slate-400">
-                  <div className="px-4 py-3">Class</div>
-                  <div className="px-4 py-3 text-center">Boys</div>
-                  <div className="px-4 py-3 text-center">Girls</div>
-                  <div className="px-4 py-3 text-right">Action</div>
-                </div>
-
-                {summaryLoading ? (
-                  <div className="flex items-center justify-center py-10">
-                    <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-green-600"></div>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-200 dark:divide-slate-800">
-                    {classrooms.map((c) => {
-                      const s = classSummaries[c._id] || { boys: 0, girls: 0, total: c.studentCount || 0 };
-                      return (
-                        <div key={c._id} className="grid grid-cols-4 gap-0 text-sm text-gray-900 dark:text-slate-200">
-                          <div className="px-4 py-3 font-semibold">
-                            {c.name || 'Class'}{c.grade ? ` (${c.grade})` : ''}
-                          </div>
-                          <div className="px-4 py-3 text-center tabular-nums">{s.boys}</div>
-                          <div className="px-4 py-3 text-center tabular-nums">{s.girls}</div>
-                          <div className="px-4 py-3 text-right">
-                            <button
-                              type="button"
-                              onClick={() => openDetails(c._id)}
-                              className="font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
-                            >
-                              View details
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+            {summaryLoading ? (
+              <div className="mt-4 flex items-center justify-center py-10">
+                <div className="h-10 w-10 animate-spin rounded-full border-b-2 border-green-600"></div>
               </div>
-            </div>
+            ) : (
+              <>
+                <div className="mt-4 space-y-2 sm:hidden">
+                  {classrooms.map((c) => {
+                    const s = classSummaries[c._id] || { boys: 0, girls: 0, total: c.studentCount || 0 };
+                    return (
+                      <div
+                        key={c._id}
+                        className="rounded-lg border border-gray-200 bg-white p-3 dark:border-slate-800 dark:bg-slate-950"
+                      >
+                        <div className="font-semibold text-gray-900 dark:text-slate-200">
+                          {c.name || 'Class'}
+                          {c.grade ? ` (${c.grade})` : ''}
+                        </div>
+                        <div className="mt-2 flex gap-4 text-sm text-gray-600 dark:text-slate-400">
+                          <span>
+                            Boys: <strong className="text-gray-900 dark:text-slate-200">{s.boys}</strong>
+                          </span>
+                          <span>
+                            Girls: <strong className="text-gray-900 dark:text-slate-200">{s.girls}</strong>
+                          </span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => openDetails(c._id)}
+                          className="mt-3 text-sm font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400"
+                        >
+                          View details
+                        </button>
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className="mt-4 hidden sm:block overflow-x-auto">
+                  <div className="overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+                    <div className="grid grid-cols-4 gap-0 bg-gray-50 text-[11px] font-bold uppercase tracking-wider text-gray-600 dark:bg-slate-900 dark:text-slate-400">
+                      <div className="px-4 py-3">Class</div>
+                      <div className="px-4 py-3 text-center">Boys</div>
+                      <div className="px-4 py-3 text-center">Girls</div>
+                      <div className="px-4 py-3 text-right">Action</div>
+                    </div>
+                    <div className="divide-y divide-gray-200 dark:divide-slate-800">
+                      {classrooms.map((c) => {
+                        const s = classSummaries[c._id] || { boys: 0, girls: 0, total: c.studentCount || 0 };
+                        return (
+                          <div key={c._id} className="grid grid-cols-4 gap-0 text-sm text-gray-900 dark:text-slate-200">
+                            <div className="px-4 py-3 font-semibold">
+                              {c.name || 'Class'}
+                              {c.grade ? ` (${c.grade})` : ''}
+                            </div>
+                            <div className="px-4 py-3 text-center tabular-nums">{s.boys}</div>
+                            <div className="px-4 py-3 text-center tabular-nums">{s.girls}</div>
+                            <div className="px-4 py-3 text-right">
+                              <button
+                                type="button"
+                                onClick={() => openDetails(c._id)}
+                                className="font-semibold text-indigo-600 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300"
+                              >
+                                View details
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </>
+            )}
           </Card>
         )}
 
@@ -366,7 +399,7 @@ const ManageStudents = () => {
               </div>
             </div>
 
-            <div className="grid grid-cols-3 gap-2">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {(() => {
                 const { boys, girls, total } = computeGenderCounts(detailsStudents);
                 const pendingProposals = detailsStudents.filter((s) => isProposalPending(s)).length;
