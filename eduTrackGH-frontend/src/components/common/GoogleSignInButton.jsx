@@ -1,8 +1,9 @@
 /**
  * Custom-styled Google sign-in button (sign-in only).
+ * Real Google button is overlaid invisibly so clicks work in production.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { initGoogleSignIn, isGoogleConfigured } from '../../utils/googleAuth';
 
 const GoogleIcon = () => (
@@ -43,7 +44,7 @@ const GoogleSignInButton = ({
 }) => {
   const [ready, setReady] = useState(false);
   const [busy, setBusy] = useState(false);
-  const hiddenHostRef = useRef(null);
+  const googleHostRef = useRef(null);
   const onCredentialRef = useRef(onCredential);
   const onErrorRef = useRef(onError);
 
@@ -73,15 +74,15 @@ const GoogleSignInButton = ({
           }
         });
 
-        if (cancelled || !hiddenHostRef.current || !window.google?.accounts?.id?.renderButton) return;
+        if (cancelled || !googleHostRef.current || !window.google?.accounts?.id?.renderButton) return;
 
-        hiddenHostRef.current.innerHTML = '';
-        window.google.accounts.id.renderButton(hiddenHostRef.current, {
+        googleHostRef.current.innerHTML = '';
+        window.google.accounts.id.renderButton(googleHostRef.current, {
           type: 'standard',
           theme: 'outline',
           size: 'large',
           text: 'signin_with',
-          width: fullWidth ? 320 : 200,
+          width: fullWidth ? 280 : 200,
         });
         setReady(true);
       } catch (err) {
@@ -94,13 +95,6 @@ const GoogleSignInButton = ({
       cancelled = true;
     };
   }, [fullWidth]);
-
-  const handleClick = useCallback(() => {
-    if (!ready || busy || disabled) return;
-    const btn = hiddenHostRef.current?.querySelector('div[role="button"]');
-    if (btn) btn.click();
-    else onErrorRef.current?.('Google sign-in is still loading. Please wait a moment.');
-  }, [ready, busy, disabled]);
 
   if (!isGoogleConfigured()) {
     return (
@@ -117,21 +111,25 @@ const GoogleSignInButton = ({
   }
 
   return (
-    <div className={`relative ${fullWidth ? 'w-full' : ''}`}>
+    <div
+      className={`relative h-12 ${fullWidth ? 'w-full' : 'w-[200px]'} ${className}`}
+      aria-busy={busy || !ready}
+    >
+      {/* Visual layer — looks like our button */}
       <div
-        ref={hiddenHostRef}
-        className="fixed left-[-9999px] top-0 h-0 w-0 overflow-hidden opacity-0 pointer-events-none"
-        aria-hidden="true"
-      />
-      <button
-        type="button"
-        onClick={handleClick}
-        disabled={disabled || busy || !ready}
-        className={`relative z-10 flex items-center justify-center gap-2 bg-slate-700/50 border border-slate-600 text-white py-3 rounded-lg hover:bg-slate-700 transition disabled:opacity-50 disabled:cursor-not-allowed no-underline ${fullWidth ? 'w-full' : ''} ${className}`}
+        className={`pointer-events-none absolute inset-0 z-0 flex items-center justify-center gap-2 rounded-lg border border-slate-600 bg-slate-700/50 text-white ${busy || !ready ? 'opacity-60' : ''}`}
       >
         <GoogleIcon />
-        <span className="text-sm font-medium no-underline decoration-0">{busy ? 'Signing in…' : 'Google'}</span>
-      </button>
+        <span className="text-sm font-medium">{busy ? 'Signing in…' : !ready ? 'Loading…' : 'Google'}</span>
+      </div>
+
+      {/* Real Google button — invisible overlay receives clicks */}
+      <div
+        ref={googleHostRef}
+        className={`absolute inset-0 z-10 overflow-hidden rounded-lg ${disabled || busy || !ready ? 'pointer-events-none opacity-0' : 'opacity-[0.01]'}`}
+        style={{ minHeight: 48 }}
+        aria-label="Sign in with Google"
+      />
     </div>
   );
 };
