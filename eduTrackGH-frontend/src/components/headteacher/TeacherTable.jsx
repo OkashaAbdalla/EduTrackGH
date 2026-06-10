@@ -102,11 +102,11 @@ export default function TeacherTable({
 
   return (
     <Card>
-      <div className="sm:hidden divide-y divide-gray-200 dark:divide-gray-700">
+      <div className="sm:hidden card-grid-2 gap-2 p-2">
         {filteredTeachers.map((teacher) => {
           const id = teacher._id || teacher.id;
           return (
-            <div key={id} className="p-4 space-y-3">
+            <div key={id} className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 space-y-2 min-w-0">
               <div className="flex items-center gap-3 min-w-0">
                 <ProfileAvatar src={teacher.avatarUrl} name={teacher.fullName} size="sm" />
                 <div className="min-w-0 flex-1">

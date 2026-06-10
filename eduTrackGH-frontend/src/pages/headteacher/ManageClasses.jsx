@@ -67,7 +67,7 @@ const ManageClasses = ({ apiService = headteacherService } = {}) => {
               {classes.reduce((sum, c) => sum + (c.students || 0), 0)}
             </p>
           </Card>
-          <Card className="stat-tile col-span-2 md:col-span-1">
+          <Card className="stat-tile">
             <p className="stat-tile-label">Average Attendance</p>
             <p className="stat-tile-value text-green-600 dark:text-green-400">—</p>
           </Card>

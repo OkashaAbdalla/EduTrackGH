@@ -235,9 +235,6 @@ const NotificationButton = () => {
                         <p className="text-sm font-medium text-[color:var(--text-primary)]">
                           {notif.child} • {notif.status || 'Update'}
                         </p>
-                        {notif.schoolName && (
-                          <p className="text-xs text-[color:var(--text-secondary)] mt-0.5">{notif.schoolName}</p>
-                        )}
                         <p className="text-[10px] text-[color:var(--text-muted)] mt-0.5">
                           {notif.date || (notif.timestamp ? new Date(notif.timestamp).toLocaleDateString() : '')}
                         </p>

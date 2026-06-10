@@ -215,8 +215,25 @@
     @apply stats-grid md:grid-cols-2 lg:grid-cols-4;
   }
 
+  .stats-grid-5 {
+    @apply stats-grid md:grid-cols-3 lg:grid-cols-5;
+  }
+
+  /* General card containers — always 2 per row on mobile */
+  .card-grid-2 {
+    @apply grid grid-cols-2 gap-2 md:gap-4;
+  }
+
+  .card-grid-2-lg-3 {
+    @apply card-grid-2 lg:grid-cols-3;
+  }
+
+  .grid-card {
+    @apply p-3 md:p-5 min-w-0;
+  }
+
   .stat-tile {
-    @apply p-3 md:p-6 text-center;
+    @apply p-3 md:p-6 text-center min-w-0;
   }
 
   .stat-tile-label {

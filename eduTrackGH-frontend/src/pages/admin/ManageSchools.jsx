@@ -157,7 +157,7 @@ const ManageSchools = () => {
             </Button>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 items-stretch">
+          <div className="card-grid-2-lg-3 items-stretch">
             {filteredSchools.map((school) => (
               <SchoolCard
                 key={school._id}

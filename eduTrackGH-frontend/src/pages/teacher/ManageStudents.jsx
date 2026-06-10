@@ -233,7 +233,7 @@ const ManageStudents = () => {
               </div>
             ) : (
               <>
-                <div className="mt-4 space-y-2 sm:hidden">
+                <div className="mt-4 card-grid-2 sm:hidden">
                   {classrooms.map((c) => {
                     const s = classSummaries[c._id] || { boys: 0, girls: 0, total: c.studentCount || 0 };
                     return (
@@ -315,7 +315,7 @@ const ManageStudents = () => {
             </p>
           </Card>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="card-grid-2-lg-3 gap-2 md:gap-6">
             {classrooms.map((classroom) => (
               <Card key={classroom._id} className="p-6">
                 <div className="flex items-center justify-between">

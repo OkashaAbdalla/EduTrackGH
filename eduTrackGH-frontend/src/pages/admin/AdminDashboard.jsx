@@ -95,7 +95,7 @@ const AdminDashboard = () => {
               </span>
             </div>
           </Card>
-          <Card className="stat-tile col-span-2 md:col-span-1 border-l-4 border-l-orange-500 text-left">
+          <Card className="stat-tile border-l-4 border-l-orange-500 text-left">
             <p className="stat-tile-label">Inactive Schools</p>
             <div className="flex items-end justify-between gap-2">
               <p className="stat-tile-value text-red-600 dark:text-red-400">{stats.inactiveSchools || 0}</p>
@@ -182,7 +182,7 @@ const AdminDashboard = () => {
         )}
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="card-grid-2">
           <Link to={ROUTES.CREATE_HEADTEACHER}>
             <Card variant="action" hover className="p-5 group cursor-pointer">
               <div className="flex items-center space-x-4">

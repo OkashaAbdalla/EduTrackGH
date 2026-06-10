@@ -203,7 +203,7 @@ const ManageStudents = () => {
               </div>
             ) : (
               <>
-                <div className="mt-4 space-y-2 sm:hidden">
+                <div className="mt-4 card-grid-2 sm:hidden">
                   {classrooms.map((c) => {
                     const s = classSummaries[c._id] || { boys: 0, girls: 0, total: c.studentCount || 0 };
                     return (

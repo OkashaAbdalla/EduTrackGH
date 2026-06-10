@@ -120,23 +120,23 @@ const TeacherCompliance = ({ apiService = headteacherService, messageRoute = ROU
             <p className="stat-tile-label">Marked Today</p>
             <p className="stat-tile-value text-green-600 dark:text-green-400">{stats.marked}</p>
           </Card>
-          <Card className="stat-tile col-span-2 md:col-span-1">
+          <Card className="stat-tile">
             <p className="stat-tile-label">Not Marked</p>
             <p className="stat-tile-value text-red-600 dark:text-red-400">{stats.unmarked}</p>
           </Card>
         </div>
 
-        <Card className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">
+        <Card className="grid-card md:p-6">
+          <h2 className="text-sm md:text-lg font-semibold text-gray-900 dark:text-white mb-3 md:mb-4">
             Teacher Status for {new Date(date + 'T12:00:00').toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
           </h2>
-          <div className="space-y-3">
+          <div className="card-grid-2">
             {teachers.map((teacher) => {
               const neutral = teacher.schoolDayExpected === false;
               return (
               <div
                 key={teacher.id}
-                className={`p-4 rounded-lg border ${
+                className={`p-2.5 md:p-4 rounded-lg border min-w-0 ${
                   neutral
                     ? 'border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900/30'
                     : teacher.marked
@@ -144,11 +144,10 @@ const TeacherCompliance = ({ apiService = headteacherService, messageRoute = ROU
                     : 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20'
                 }`}
               >
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center space-x-3">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-center gap-2 min-w-0">
                       <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                        className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center shrink-0 ${
                           neutral
                             ? 'bg-slate-100 dark:bg-slate-800'
                             : teacher.marked
@@ -168,22 +167,21 @@ const TeacherCompliance = ({ apiService = headteacherService, messageRoute = ROU
                           {(teacher.fullName || teacher.name || 'T').charAt(0)}
                         </span>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-white">{teacher.fullName || teacher.name}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                      <div className="min-w-0">
+                        <h3 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white truncate">{teacher.fullName || teacher.name}</h3>
+                        <p className="text-[10px] md:text-sm text-gray-600 dark:text-gray-400 truncate">
                           {(teacher.assignedClasses || teacher.classes || []).join(', ') || '—'}
                         </p>
                       </div>
-                    </div>
                   </div>
-                  <div className="flex flex-wrap items-center gap-2 sm:justify-end sm:text-right shrink-0">
+                  <div className="flex flex-wrap items-center gap-1.5">
                     {neutral ? (
-                      <span className="inline-block px-3 py-1 rounded text-sm font-medium bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200">
+                      <span className="inline-block px-2 py-0.5 rounded text-[10px] md:text-sm font-medium bg-slate-200 text-slate-800 dark:bg-slate-700 dark:text-slate-200">
                         No attendance expected
                       </span>
                     ) : teacher.marked ? (
                       <div>
-                        <span className="inline-block px-3 py-1 bg-green-600 text-white rounded text-sm font-medium mb-1">
+                        <span className="inline-block px-2 py-0.5 bg-green-600 text-white rounded text-[10px] md:text-sm font-medium">
                           Marked
                         </span>
                         <p className="text-xs text-gray-500 dark:text-gray-400">
@@ -192,14 +190,14 @@ const TeacherCompliance = ({ apiService = headteacherService, messageRoute = ROU
                         </p>
                       </div>
                     ) : (
-                      <span className="inline-block px-3 py-1 bg-red-600 text-white rounded text-sm font-medium">
+                      <span className="inline-block px-2 py-0.5 bg-red-600 text-white rounded text-[10px] md:text-sm font-medium">
                         Not Marked
                       </span>
                     )}
                     {!neutral && (
                     <Link
                       to={`${messageRoute}?teacher=${teacher.id}&name=${encodeURIComponent(teacher.fullName || '')}`}
-                      className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium"
+                      className="px-2 py-1 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-[10px] md:text-sm font-medium"
                     >
                       Message
                     </Link>

@@ -471,7 +471,7 @@ const GesCalendarManagement = () => {
                 </span>
               )}
             </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="card-grid-2 gap-2 md:gap-3">
               <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400">
                 Academic year
                 <input
@@ -543,7 +543,7 @@ const GesCalendarManagement = () => {
                 Active (prefer “Activate year” for all three terms)
               </label>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div className="card-grid-2 gap-2 md:gap-3">
               <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400">
                 Vacation start (after term)
                 <input
@@ -564,7 +564,7 @@ const GesCalendarManagement = () => {
               </label>
             </div>
             {editing.termKey === 'TERM_3' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="card-grid-2 gap-2 md:gap-3">
                 <label className="block text-xs font-semibold text-gray-600 dark:text-slate-400">
                   BECE start (JHS3 exam window)
                   <input

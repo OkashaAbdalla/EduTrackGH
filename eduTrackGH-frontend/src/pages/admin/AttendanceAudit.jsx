@@ -33,7 +33,7 @@ const AttendanceAudit = () => {
 
         <Card className="p-6">
           <h2 className="text-lg font-semibold text-gray-900 dark:text-white mb-4">Filters</h2>
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="card-grid-2 md:grid-cols-4 gap-2 md:gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">School</label>
               <select

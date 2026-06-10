@@ -92,7 +92,7 @@ const ChildrenAttendance = () => {
 
         {/* Filters */}
         <Card className="p-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="card-grid-2">
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Month</label>
               <input
@@ -131,7 +131,7 @@ const ChildrenAttendance = () => {
                 <p className="stat-tile-label">Absent</p>
                 <p className="stat-tile-value text-red-600 dark:text-red-400">{stats.absent}</p>
               </Card>
-              <Card className="stat-tile col-span-2 min-[360px]:col-span-1">
+              <Card className="stat-tile">
                 <p className="stat-tile-label">Late</p>
                 <p className="stat-tile-value text-orange-600 dark:text-orange-400">{stats.late}</p>
               </Card>

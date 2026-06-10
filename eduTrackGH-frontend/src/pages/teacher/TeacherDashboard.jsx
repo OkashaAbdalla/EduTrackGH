@@ -217,9 +217,9 @@ const TeacherDashboard = () => {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        <div className="card-grid-2-lg-3 gap-2 md:gap-5">
           <Link to={ROUTES.MARK_ATTENDANCE}>
-            <Card variant="action" hover className="p-6 group cursor-pointer">
+            <Card variant="action" hover className="grid-card md:p-6 group cursor-pointer h-full">
               <div className="flex items-center space-x-5">
                 <div className="w-16 h-16 bg-uds-green dark:bg-green-700 rounded-xl flex items-center justify-center group-hover:opacity-95 transition-opacity duration-300">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -241,7 +241,7 @@ const TeacherDashboard = () => {
           </Link>
 
           <Link to={ROUTES.TEACHER_MANAGE_STUDENTS}>
-            <Card variant="action" hover className="p-6 group cursor-pointer">
+            <Card variant="action" hover className="grid-card md:p-6 group cursor-pointer h-full">
               <div className="flex items-center space-x-5">
                 <div className="w-16 h-16 bg-blue-600 dark:bg-dashboard-accent rounded-xl flex items-center justify-center group-hover:opacity-95 transition-opacity duration-300">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -263,7 +263,7 @@ const TeacherDashboard = () => {
           </Link>
 
           <Link to={ROUTES.ATTENDANCE_HISTORY}>
-            <Card variant="action" hover className="p-6 group cursor-pointer">
+            <Card variant="action" hover className="grid-card md:p-6 group cursor-pointer h-full">
               <div className="flex items-center space-x-5">
                 <div className="w-16 h-16 bg-slate-600 dark:bg-slate-500 rounded-xl flex items-center justify-center group-hover:opacity-95 transition-opacity duration-300">
                   <svg className="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">

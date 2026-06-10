@@ -270,7 +270,7 @@ const ManageTeachers = () => {
               {teachers.filter(t => t.status === 'active').length}
             </p>
           </Card>
-          <Card className="stat-tile col-span-2 md:col-span-1">
+          <Card className="stat-tile">
             <p className="stat-tile-label">Classes Assigned</p>
             <p className="stat-tile-value text-blue-600 dark:text-blue-400">
               {teachers.reduce((sum, t) => sum + t.classesAssigned, 0)}
@@ -316,9 +316,9 @@ const ManageTeachers = () => {
             </div>
           ) : (
             <>
-            <div className="sm:hidden divide-y divide-gray-200 dark:divide-gray-700">
+            <div className="sm:hidden card-grid-2 gap-2 p-2">
               {filteredTeachers.map((teacher) => (
-                <div key={teacher._id} className="p-4 space-y-3">
+                <div key={teacher._id} className="p-3 rounded-lg border border-gray-200 dark:border-gray-700 space-y-2 min-w-0">
                   <div>
                     <p className="font-semibold text-gray-900 dark:text-white">{teacher.fullName}</p>
                     <p className="text-sm text-gray-600 dark:text-gray-400 break-all">{teacher.email}</p>

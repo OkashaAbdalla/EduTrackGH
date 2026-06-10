@@ -79,20 +79,21 @@ const ManageTeachers = ({ apiService = headteacherService, readOnly = false } = 
           )}
         </div>
 
-        <div className="stats-grid-3">
+        <div className="stats-grid">
           <Card className="stat-tile">
             <p className="stat-tile-label">Total Teachers</p>
             <p className="stat-tile-value text-gray-900 dark:text-white">{teachers.length}</p>
-          </Card>
-          <Card className="stat-tile col-span-2 md:col-span-1 bg-green-50 dark:bg-green-900/15 border border-green-100 dark:border-green-800 text-left">
-            <p className="text-[10px] md:text-sm font-medium text-green-800 dark:text-green-200">Secure onboarding</p>
-            <p className="hidden md:block text-xs text-green-700 dark:text-green-300/80 mt-1">Temporary passwords are generated and can be shared with teachers.</p>
           </Card>
           <Card className="stat-tile">
             <p className="stat-tile-label">Active Teachers</p>
             <p className="stat-tile-value text-green-600 dark:text-green-400">{teachers.filter((t) => t.isActive).length}</p>
           </Card>
         </div>
+        {!readOnly && (
+          <p className="text-[10px] md:text-xs text-green-700 dark:text-green-300/90 px-1">
+            Secure onboarding — temporary passwords are generated and can be shared with teachers.
+          </p>
+        )}
 
         <Card className="p-4">
           <div className="flex flex-col md:flex-row gap-4">

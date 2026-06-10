@@ -152,7 +152,7 @@ const Notifications = () => {
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>
           <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mt-1">SMS and email alerts about your children</p>
           <p className="text-xs md:text-sm text-gray-500 dark:text-gray-500 mt-1">Unread: {unreadCount}</p>
-          <div className="mt-2 md:mt-3 flex flex-col sm:flex-row gap-2">
+          <div className="mt-2 md:mt-3 grid grid-cols-2 gap-2 sm:flex sm:flex-row">
             <button
               type="button"
               onClick={handleEnableSound}
@@ -184,36 +184,34 @@ const Notifications = () => {
             </div>
           </Card>
         ) : notifications.length > 0 ? (
-          <div className="space-y-2 md:space-y-3">
+          <div className="card-grid-2">
             {notifications.map((notif) => (
               <div
                 key={notif.id}
                 onContextMenu={(e) => handleNotifContextMenu(e, notif)}
-                className="cursor-context-menu"
+                className="cursor-context-menu min-w-0"
               >
-                <Card className={`p-3 md:p-5 ${!notif.read ? 'border-l-4 border-green-600' : ''}`}>
-                  <div className="flex items-start gap-3">
-                    {getTypeIcon(notif.type)}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between">
-                        <h3 className="text-sm md:text-base font-semibold text-gray-900 dark:text-white min-w-0 break-words">
-                          {notif.child} • {notif.status}
+                <Card className={`grid-card h-full ${!notif.read ? 'border-l-4 border-green-600' : ''}`}>
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex items-start gap-2">
+                      {getTypeIcon(notif.type)}
+                      <div className="flex-1 min-w-0">
+                        <h3 className="text-xs md:text-sm font-semibold text-gray-900 dark:text-white truncate">
+                          {notif.child}
                         </h3>
-                        <span className="text-xs text-gray-500 dark:text-gray-500 shrink-0">{notif.date}</span>
+                        <p className="text-[10px] md:text-xs text-gray-600 dark:text-gray-400">{notif.status}</p>
                       </div>
-                      {notif.schoolName && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{notif.schoolName}</p>
-                      )}
-                      {!notif.read && (
-                        <button
-                          type="button"
-                          onClick={() => handleMarkAsRead(notif.id)}
-                          className="mt-2 text-xs font-semibold text-green-600 dark:text-green-400 hover:underline"
-                        >
-                          Mark as read
-                        </button>
-                      )}
                     </div>
+                    <p className="text-[10px] text-gray-500 dark:text-gray-500">{notif.date}</p>
+                    {!notif.read && (
+                      <button
+                        type="button"
+                        onClick={() => handleMarkAsRead(notif.id)}
+                        className="text-[10px] md:text-xs font-semibold text-green-600 dark:text-green-400 hover:underline text-left"
+                      >
+                        Mark as read
+                      </button>
+                    )}
                   </div>
                 </Card>
               </div>
