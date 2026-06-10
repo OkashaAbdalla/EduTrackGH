@@ -26,7 +26,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <div className="fixed inset-0 z-[100] overflow-y-auto">
       <div className="ui-modal-backdrop fixed inset-0" onClick={onClose} aria-hidden="true" />
 
       <div className="flex min-h-full items-center justify-center p-3 sm:p-4">

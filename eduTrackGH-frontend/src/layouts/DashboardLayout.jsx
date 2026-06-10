@@ -31,6 +31,7 @@ const DashboardLayout = ({ children }) => {
   const { isActing: assistantIsActing, loading: delegationLoading, status: delegationStatus } = useDelegationStatus();
 
   const handleLogout = async () => {
+    setSidebarOpen(false);
     const confirmed = await requestConfirmation({
       title: 'Logout',
       message: 'Are you sure to logout?',
