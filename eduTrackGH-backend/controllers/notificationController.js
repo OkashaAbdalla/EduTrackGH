@@ -11,7 +11,11 @@ const getMyNotifications = async (req, res) => {
     const parentId = req.user._id;
     const [notifications, unreadCount] = await Promise.all([
       Notification.find({ parentId })
-      .populate("studentId", "fullName studentIdNumber")
+      .populate({
+        path: "studentId",
+        select: "fullName studentIdNumber schoolId",
+        populate: { path: "schoolId", select: "name" },
+      })
       .sort({ createdAt: -1 })
       .limit(100),
       Notification.countDocuments({ parentId, read: false }),
@@ -21,6 +25,7 @@ const getMyNotifications = async (req, res) => {
       id: n._id,
       type: n.type,
       child: n.studentId?.fullName || "Child",
+      schoolName: n.studentId?.schoolId?.name || "",
       message: n.message,
       date: n.date.toISOString().split("T")[0],
       read: n.read,

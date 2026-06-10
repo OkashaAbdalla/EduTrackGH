@@ -29,7 +29,7 @@ const Modal = ({ isOpen, onClose, title, children, size = 'md' }) => {
     <div className="fixed inset-0 z-50 overflow-y-auto">
       <div className="ui-modal-backdrop fixed inset-0" onClick={onClose} aria-hidden="true" />
 
-      <div className="flex min-h-full items-end sm:items-center justify-center p-2 sm:p-4">
+      <div className="flex min-h-full items-center justify-center p-3 sm:p-4">
         <div
           className={`ui-modal w-full ${sizeClasses[size]} max-h-[92dvh] flex flex-col transform transition-all`}
           onClick={(e) => e.stopPropagation()}

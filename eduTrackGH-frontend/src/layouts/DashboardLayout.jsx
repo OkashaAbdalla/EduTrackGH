@@ -121,9 +121,13 @@ const DashboardLayout = ({ children }) => {
   return (
     <div className="dashboard-shell h-screen overflow-hidden">
       <aside
-        className={`glass-sidebar fixed md:static inset-y-0 left-0 z-50 w-60 transition-transform duration-200 ease-out ${
-          sidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'
-        }`}
+        className={`glass-sidebar z-50 transition-all duration-200 ease-out
+          md:static md:inset-y-0 md:left-0 md:w-60 md:translate-x-0
+          fixed max-md:top-14 max-md:left-3 max-md:right-3 max-md:w-auto max-md:translate-x-0 max-md:rounded-xl max-md:shadow-2xl max-md:max-h-[min(70dvh,calc(100dvh-4rem))] max-md:overflow-hidden max-md:z-[60]
+          ${sidebarOpen
+            ? 'translate-x-0 max-md:opacity-100 max-md:translate-y-0 max-md:visible max-md:pointer-events-auto'
+            : '-translate-x-full max-md:opacity-0 max-md:-translate-y-2 max-md:invisible max-md:pointer-events-none md:translate-x-0'
+          }`}
       >
         <div className="h-14 flex items-center px-4 border-b border-[color:var(--glass-border)] shrink-0">
           <Link to={menuItems[0].path} className="flex items-center gap-2.5 min-w-0">

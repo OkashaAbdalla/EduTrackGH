@@ -240,7 +240,7 @@ const ManageTeachers = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="page-stack">
         {/* Header */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -259,33 +259,22 @@ const ManageTeachers = () => {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Teachers</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{teachers.length}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">All roles</p>
-            </div>
+        <div className="stats-grid-3">
+          <Card className="stat-tile">
+            <p className="stat-tile-label">Total Teachers</p>
+            <p className="stat-tile-value text-gray-900 dark:text-white">{teachers.length}</p>
           </Card>
-
-          <Card className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Active Teachers</p>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400">
-                {teachers.filter(t => t.status === 'active').length}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Currently active</p>
-            </div>
+          <Card className="stat-tile">
+            <p className="stat-tile-label">Active Teachers</p>
+            <p className="stat-tile-value text-green-600 dark:text-green-400">
+              {teachers.filter(t => t.status === 'active').length}
+            </p>
           </Card>
-
-          <Card className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Classes Assigned</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {teachers.reduce((sum, t) => sum + t.classesAssigned, 0)}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Total assignments</p>
-            </div>
+          <Card className="stat-tile col-span-2 md:col-span-1">
+            <p className="stat-tile-label">Classes Assigned</p>
+            <p className="stat-tile-value text-blue-600 dark:text-blue-400">
+              {teachers.reduce((sum, t) => sum + t.classesAssigned, 0)}
+            </p>
           </Card>
         </div>
 
@@ -451,7 +440,7 @@ const ManageTeachers = () => {
 
       {/* Create/Edit Teacher Modal */}
       {showCreateModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-end sm:items-center justify-center z-50 p-2 sm:p-4">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-2 sm:p-4">
           <Card className="w-full max-w-lg max-h-[90vh] overflow-y-auto p-6 animate-scale-in">
             <div className="space-y-4">
               {/* Header */}

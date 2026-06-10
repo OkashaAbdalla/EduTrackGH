@@ -58,7 +58,7 @@ const Notifications = () => {
         setUnreadCount(0);
         if (!response.success) setError(response.message || 'Failed to load notifications');
       }
-    } catch (err) {
+    } catch {
       setNotifications([]);
       setUnreadCount(0);
       setError('Failed to load notifications');
@@ -111,8 +111,8 @@ const Notifications = () => {
   const getTypeIcon = (type) => {
     if (type === 'present') {
       return (
-        <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-          <svg className="w-5 h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-8 h-8 md:w-10 md:h-10 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center shrink-0">
+          <svg className="w-4 h-4 md:w-5 md:h-5 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
         </div>
@@ -120,8 +120,8 @@ const Notifications = () => {
     }
     if (type === 'absence') {
       return (
-        <div className="w-10 h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-          <svg className="w-5 h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-8 h-8 md:w-10 md:h-10 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center shrink-0">
+          <svg className="w-4 h-4 md:w-5 md:h-5 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
           </svg>
         </div>
@@ -129,16 +129,16 @@ const Notifications = () => {
     }
     if (type === 'late') {
       return (
-        <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
-          <svg className="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div className="w-8 h-8 md:w-10 md:h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center shrink-0">
+          <svg className="w-4 h-4 md:w-5 md:h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
           </svg>
         </div>
       );
     }
     return (
-      <div className="w-10 h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center">
-        <svg className="w-5 h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <div className="w-8 h-8 md:w-10 md:h-10 bg-orange-100 dark:bg-orange-900/30 rounded-full flex items-center justify-center shrink-0">
+        <svg className="w-4 h-4 md:w-5 md:h-5 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
         </svg>
       </div>
@@ -147,83 +147,85 @@ const Notifications = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-4xl mx-auto">
+      <div className="page-stack max-w-4xl mx-auto">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Notifications</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">SMS and email alerts about your children</p>
-          <p className="text-sm text-gray-500 dark:text-gray-500 mt-1">Unread: {unreadCount}</p>
-          <div className="mt-3">
+          <p className="text-sm md:text-base text-gray-600 dark:text-gray-400 mt-1">SMS and email alerts about your children</p>
+          <p className="text-xs md:text-sm text-gray-500 dark:text-gray-500 mt-1">Unread: {unreadCount}</p>
+          <div className="mt-2 md:mt-3 flex flex-col sm:flex-row gap-2">
             <button
               type="button"
               onClick={handleEnableSound}
-              className="px-4 py-2 rounded-lg text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700"
+              className="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold bg-indigo-600 text-white hover:bg-indigo-700"
             >
               {soundEnabled ? 'Notification Sound Enabled' : 'Enable Notification Sound'}
             </button>
+            {notifications.length > 0 && (
+              <button
+                type="button"
+                onClick={handleMarkAllRead}
+                className="px-3 py-2 rounded-lg text-xs md:text-sm font-semibold bg-green-600 text-white hover:bg-green-700"
+              >
+                Mark all as read
+              </button>
+            )}
           </div>
         </div>
-        {notifications.length > 0 && (
-          <button
-            type="button"
-            onClick={handleMarkAllRead}
-            className="px-3 py-2 rounded-lg text-sm font-semibold bg-green-600 text-white hover:bg-green-700"
-          >
-            Mark all as read
-          </button>
-        )}
 
         {error && (
-          <Card className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
-            <p className="text-red-700 dark:text-red-400">{error}</p>
+          <Card className="p-3 md:p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800">
+            <p className="text-red-700 dark:text-red-400 text-sm">{error}</p>
           </Card>
         )}
         {loading ? (
-          <Card className="p-12">
+          <Card className="p-8 md:p-12">
             <div className="flex items-center justify-center">
               <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-green-600"></div>
             </div>
           </Card>
         ) : notifications.length > 0 ? (
-          <div className="space-y-3">
+          <div className="space-y-2 md:space-y-3">
             {notifications.map((notif) => (
               <div
                 key={notif.id}
                 onContextMenu={(e) => handleNotifContextMenu(e, notif)}
                 className="cursor-context-menu"
               >
-              <Card className={`p-5 ${!notif.read ? 'border-l-4 border-green-600' : ''}`}>
-                <div className="flex items-start space-x-4">
-                  {getTypeIcon(notif.type)}
-                  <div className="flex-1">
-                    <div className="flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between">
-                      <h3 className="font-semibold text-gray-900 dark:text-white min-w-0 break-words">
-                        {notif.child} • {notif.status}
-                      </h3>
-                      <span className="text-xs text-gray-500 dark:text-gray-500 shrink-0">{notif.date}</span>
+                <Card className={`p-3 md:p-5 ${!notif.read ? 'border-l-4 border-green-600' : ''}`}>
+                  <div className="flex items-start gap-3">
+                    {getTypeIcon(notif.type)}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex flex-col gap-0.5 sm:flex-row sm:items-start sm:justify-between">
+                        <h3 className="text-sm md:text-base font-semibold text-gray-900 dark:text-white min-w-0 break-words">
+                          {notif.child} • {notif.status}
+                        </h3>
+                        <span className="text-xs text-gray-500 dark:text-gray-500 shrink-0">{notif.date}</span>
+                      </div>
+                      {notif.schoolName && (
+                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{notif.schoolName}</p>
+                      )}
+                      {!notif.read && (
+                        <button
+                          type="button"
+                          onClick={() => handleMarkAsRead(notif.id)}
+                          className="mt-2 text-xs font-semibold text-green-600 dark:text-green-400 hover:underline"
+                        >
+                          Mark as read
+                        </button>
+                      )}
                     </div>
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{notif.message}</p>
-                    {!notif.read && (
-                      <button
-                        type="button"
-                        onClick={() => handleMarkAsRead(notif.id)}
-                        className="mt-2 text-xs font-semibold text-green-600 dark:text-green-400 hover:underline"
-                      >
-                        Mark as read
-                      </button>
-                    )}
                   </div>
-                </div>
-              </Card>
+                </Card>
               </div>
             ))}
           </div>
         ) : (
-          <Card className="p-12">
+          <Card className="p-8 md:p-12">
             <div className="text-center text-gray-500 dark:text-gray-400">
-              <svg className="w-16 h-16 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-12 h-12 mx-auto mb-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
               </svg>
-              <p className="text-lg font-medium">No notifications yet</p>
+              <p className="text-base md:text-lg font-medium">No notifications yet</p>
             </div>
           </Card>
         )}

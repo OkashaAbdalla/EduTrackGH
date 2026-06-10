@@ -595,26 +595,26 @@ const AttendanceRegisterView = ({
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 px-4 pb-4 sm:grid-cols-5">
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-center dark:border-slate-800 dark:bg-slate-900">
-            <div className="font-mono text-2xl font-bold text-gray-900 dark:text-slate-100">{summary.onRoll}</div>
-            <div className="mt-1 text-[10px] uppercase tracking-wider text-gray-500 dark:text-slate-500">On Roll</div>
+        <div className="stats-grid-4 gap-2 px-3 pb-3 md:px-4 md:pb-4 sm:grid-cols-5">
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-2 md:p-3 text-center dark:border-slate-800 dark:bg-slate-900">
+            <div className="font-mono text-lg md:text-2xl font-bold text-gray-900 dark:text-slate-100">{summary.onRoll}</div>
+            <div className="mt-0.5 text-[9px] md:text-[10px] uppercase tracking-wider text-gray-500 dark:text-slate-500 leading-tight">On Roll</div>
           </div>
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-center dark:border-slate-800 dark:bg-slate-900">
-            <div className="font-mono text-2xl font-bold text-green-600 dark:text-green-400">{summary.presentEquivalent}</div>
-            <div className="mt-1 text-[10px] uppercase tracking-wider text-gray-500 dark:text-slate-500">Present (incl. late)</div>
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-2 md:p-3 text-center dark:border-slate-800 dark:bg-slate-900">
+            <div className="font-mono text-lg md:text-2xl font-bold text-green-600 dark:text-green-400">{summary.presentEquivalent}</div>
+            <div className="mt-0.5 text-[9px] md:text-[10px] uppercase tracking-wider text-gray-500 dark:text-slate-500 leading-tight">Present (incl. late)</div>
           </div>
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-center dark:border-slate-800 dark:bg-slate-900">
-            <div className="font-mono text-2xl font-bold text-red-600 dark:text-red-400">{summary.absent}</div>
-            <div className="mt-1 text-[10px] uppercase tracking-wider text-gray-500 dark:text-slate-500">Total Absent</div>
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-2 md:p-3 text-center dark:border-slate-800 dark:bg-slate-900">
+            <div className="font-mono text-lg md:text-2xl font-bold text-red-600 dark:text-red-400">{summary.absent}</div>
+            <div className="mt-0.5 text-[9px] md:text-[10px] uppercase tracking-wider text-gray-500 dark:text-slate-500 leading-tight">Total Absent</div>
           </div>
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-center dark:border-slate-800 dark:bg-slate-900">
-            <div className="font-mono text-2xl font-bold text-amber-600 dark:text-amber-400">{summary.late}</div>
-            <div className="mt-1 text-[10px] uppercase tracking-wider text-gray-500 dark:text-slate-500">Late Arrivals</div>
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-2 md:p-3 text-center dark:border-slate-800 dark:bg-slate-900">
+            <div className="font-mono text-lg md:text-2xl font-bold text-amber-600 dark:text-amber-400">{summary.late}</div>
+            <div className="mt-0.5 text-[9px] md:text-[10px] uppercase tracking-wider text-gray-500 dark:text-slate-500 leading-tight">Late Arrivals</div>
           </div>
-          <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-center dark:border-slate-800 dark:bg-slate-900">
-            <div className="font-mono text-2xl font-bold text-indigo-700 dark:text-indigo-300">{summary.rate}%</div>
-            <div className="mt-1 text-[10px] uppercase tracking-wider text-gray-500 dark:text-slate-500">Overall Rate</div>
+          <div className="rounded-lg border border-gray-200 bg-gray-50 p-2 md:p-3 text-center dark:border-slate-800 dark:bg-slate-900 col-span-2 sm:col-span-1">
+            <div className="font-mono text-lg md:text-2xl font-bold text-indigo-700 dark:text-indigo-300">{summary.rate}%</div>
+            <div className="mt-0.5 text-[9px] md:text-[10px] uppercase tracking-wider text-gray-500 dark:text-slate-500 leading-tight">Overall Rate</div>
           </div>
         </div>
       </div>

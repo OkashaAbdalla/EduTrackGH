@@ -67,16 +67,16 @@ const AdminAnalytics = () => {
         </div>
 
         {/* Summary Stats - Top Row */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <div className="stats-grid-4">
           {/* Best School Performance */}
-          <Card className="p-4 border-l-4 border-l-green-500">
-            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">
+          <Card className="stat-tile border-l-4 border-l-green-500 text-left">
+            <p className="stat-tile-label uppercase tracking-wide">
               Best School Performance
             </p>
-            <p className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
+            <p className="stat-tile-value text-slate-900 dark:text-white">
               {bestPerformance}%
             </p>
-            <div className="flex items-center text-xs text-green-600 dark:text-green-400">
+            <div className="hidden md:flex items-center text-xs text-green-600 dark:text-green-400">
               <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
@@ -85,14 +85,14 @@ const AdminAnalytics = () => {
           </Card>
 
           {/* Average Performance */}
-          <Card className="p-4 border-l-4 border-l-blue-500">
-            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">
+          <Card className="stat-tile border-l-4 border-l-blue-500 text-left">
+            <p className="stat-tile-label uppercase tracking-wide">
               Average Performance
             </p>
-            <p className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
+            <p className="stat-tile-value text-slate-900 dark:text-white">
               {avgPerformance}%
             </p>
-            <div className="flex items-center text-xs text-blue-600 dark:text-blue-400">
+            <div className="hidden md:flex items-center text-xs text-blue-600 dark:text-blue-400">
               <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
               </svg>
@@ -101,14 +101,14 @@ const AdminAnalytics = () => {
           </Card>
 
           {/* Lowest Performance */}
-          <Card className="p-4 border-l-4 border-l-orange-500">
-            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">
+          <Card className="stat-tile border-l-4 border-l-orange-500 text-left">
+            <p className="stat-tile-label uppercase tracking-wide">
               Needs Attention
             </p>
-            <p className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
+            <p className="stat-tile-value text-slate-900 dark:text-white">
               {worstPerformance}%
             </p>
-            <div className="flex items-center text-xs text-orange-600 dark:text-orange-400">
+            <div className="hidden md:flex items-center text-xs text-orange-600 dark:text-orange-400">
               <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 17h8m0 0V9m0 8l-8-8-4 4-6-6" />
               </svg>
@@ -117,14 +117,14 @@ const AdminAnalytics = () => {
           </Card>
 
           {/* Total Records */}
-          <Card className="p-4 border-l-4 border-l-purple-500">
-            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 uppercase tracking-wide mb-1">
+          <Card className="stat-tile border-l-4 border-l-purple-500 text-left">
+            <p className="stat-tile-label uppercase tracking-wide">
               Total Records
             </p>
-            <p className="text-3xl font-bold text-slate-900 dark:text-white mb-1">
+            <p className="stat-tile-value text-slate-900 dark:text-white">
               {totalRecords}
             </p>
-            <div className="flex items-center text-xs text-purple-600 dark:text-purple-400">
+            <div className="hidden md:flex items-center text-xs text-purple-600 dark:text-purple-400">
               <span>Attendance records</span>
             </div>
           </Card>

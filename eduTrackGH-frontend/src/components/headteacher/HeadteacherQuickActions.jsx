@@ -44,22 +44,22 @@ const actions = [
 
 export default function HeadteacherQuickActions() {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="stats-grid-3">
       {actions.map((a) => (
         <Link key={a.to} to={a.to}>
-          <Card variant="action" hover className="p-5 group cursor-pointer h-full">
-            <div className="flex items-center gap-4">
+          <Card variant="action" hover className="p-3 md:p-5 group cursor-pointer h-full">
+            <div className="flex items-center gap-2 md:gap-4">
               <div
-                className={`w-14 h-14 shrink-0 rounded-lg bg-gradient-to-br ${a.gradient} flex items-center justify-center shadow-lg ${a.shadow} group-hover:scale-105 transition-transform duration-300`}
+                className={`w-10 h-10 md:w-14 md:h-14 shrink-0 rounded-lg bg-gradient-to-br ${a.gradient} flex items-center justify-center shadow-lg ${a.shadow} group-hover:scale-105 transition-transform duration-300`}
               >
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-5 h-5 md:w-7 md:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={a.iconPath} />
                 </svg>
               </div>
               <div className="min-w-0 flex-1">
-                <h3 className="text-base font-bold text-slate-900 dark:text-white mb-0.5">{a.title}</h3>
-                <p className="text-sm text-slate-600 dark:text-slate-400">{a.description}</p>
-                <div className={`mt-2 flex items-center ${a.ctaClass} text-sm font-medium`}>
+                <h3 className="text-sm md:text-base font-bold text-slate-900 dark:text-white mb-0.5">{a.title}</h3>
+                <p className="hidden md:block text-sm text-slate-600 dark:text-slate-400">{a.description}</p>
+                <div className={`mt-1 md:mt-2 flex items-center ${a.ctaClass} text-xs md:text-sm font-medium`}>
                   <span>{a.cta}</span>
                   <svg
                     className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform shrink-0"

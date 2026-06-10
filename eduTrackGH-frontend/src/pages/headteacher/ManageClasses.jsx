@@ -50,32 +50,26 @@ const ManageClasses = ({ apiService = headteacherService } = {}) => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="page-stack">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Manage Classes</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Manage your school&apos;s classes and assign teachers</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Classes</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{classes.length}</p>
-            </div>
+        <div className="stats-grid-3">
+          <Card className="stat-tile">
+            <p className="stat-tile-label">Total Classes</p>
+            <p className="stat-tile-value text-gray-900 dark:text-white">{classes.length}</p>
           </Card>
-          <Card className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Students</p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-400">
-                {classes.reduce((sum, c) => sum + (c.students || 0), 0)}
-              </p>
-            </div>
+          <Card className="stat-tile">
+            <p className="stat-tile-label">Total Students</p>
+            <p className="stat-tile-value text-blue-600 dark:text-blue-400">
+              {classes.reduce((sum, c) => sum + (c.students || 0), 0)}
+            </p>
           </Card>
-          <Card className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Average Attendance</p>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400">—</p>
-            </div>
+          <Card className="stat-tile col-span-2 md:col-span-1">
+            <p className="stat-tile-label">Average Attendance</p>
+            <p className="stat-tile-value text-green-600 dark:text-green-400">—</p>
           </Card>
         </div>
 

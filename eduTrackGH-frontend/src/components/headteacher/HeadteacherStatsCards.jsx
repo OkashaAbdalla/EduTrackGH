@@ -81,23 +81,23 @@ const tiles = [
 
 export default function HeadteacherStatsCards({ stats }) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="stats-grid-4">
       {tiles.map((t) => (
-        <Card key={t.key} variant="stats" className={`!p-4 border-l-4 ${t.border}`}>
-          <div className="flex items-center justify-between gap-3">
+        <Card key={t.key} variant="stats" className={`!p-3 md:!p-4 border-l-4 ${t.border}`}>
+          <div className="flex items-center justify-between gap-2 md:gap-3">
             <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-1">
+              <p className="text-[10px] md:text-xs font-semibold uppercase tracking-wider text-slate-600 dark:text-slate-400 mb-0.5 md:mb-1 leading-tight">
                 {t.label}
               </p>
-              <p className="text-2xl sm:text-3xl font-bold text-slate-900 dark:text-white mb-0.5">
+              <p className="text-lg md:text-2xl lg:text-3xl font-bold text-slate-900 dark:text-white mb-0">
                 {t.format(stats[t.valueKey], stats)}
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-500">{t.hint}</p>
+              <p className="hidden md:block text-xs text-slate-500 dark:text-slate-500">{t.hint}</p>
             </div>
             <div
-              className={`w-12 h-12 shrink-0 rounded-lg bg-gradient-to-br ${t.gradient} flex items-center justify-center shadow-lg ${t.shadow}`}
+              className={`w-8 h-8 md:w-12 md:h-12 shrink-0 rounded-lg bg-gradient-to-br ${t.gradient} flex items-center justify-center shadow-lg ${t.shadow}`}
             >
-              <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-4 h-4 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 {t.icon}
               </svg>
             </div>

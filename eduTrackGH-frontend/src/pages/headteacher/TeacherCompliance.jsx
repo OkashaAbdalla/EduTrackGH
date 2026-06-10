@@ -77,7 +77,7 @@ const TeacherCompliance = ({ apiService = headteacherService, messageRoute = ROU
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="page-stack">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Teacher Compliance</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -111,24 +111,18 @@ const TeacherCompliance = ({ apiService = headteacherService, messageRoute = ROU
           </div>
         )}
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Total Teachers</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.total}</p>
-            </div>
+        <div className="stats-grid-3">
+          <Card className="stat-tile">
+            <p className="stat-tile-label">Total Teachers</p>
+            <p className="stat-tile-value text-gray-900 dark:text-white">{stats.total}</p>
           </Card>
-          <Card className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Marked Today</p>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400">{stats.marked}</p>
-            </div>
+          <Card className="stat-tile">
+            <p className="stat-tile-label">Marked Today</p>
+            <p className="stat-tile-value text-green-600 dark:text-green-400">{stats.marked}</p>
           </Card>
-          <Card className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">Not Marked</p>
-              <p className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.unmarked}</p>
-            </div>
+          <Card className="stat-tile col-span-2 md:col-span-1">
+            <p className="stat-tile-label">Not Marked</p>
+            <p className="stat-tile-value text-red-600 dark:text-red-400">{stats.unmarked}</p>
           </Card>
         </div>
 

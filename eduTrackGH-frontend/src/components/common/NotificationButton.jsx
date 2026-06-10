@@ -155,7 +155,7 @@ const NotificationButton = () => {
 
       {/* Dropdown Panel */}
       {isOpen && (
-        <div className="absolute right-0 mt-2 w-[calc(100vw-1rem)] max-w-80 sm:w-80 md:w-96 ui-modal shadow-2xl z-50 max-h-[min(500px,80dvh)] overflow-hidden flex flex-col">
+        <div className="notif-dropdown-panel">
           {/* Header */}
           <div className="px-4 py-3 border-b border-[color:var(--glass-border)] flex items-center justify-between">
             <div>
@@ -232,17 +232,15 @@ const NotificationButton = () => {
                     <div className="flex items-start gap-3">
                       <div className="w-2 h-2 rounded-full mt-1.5 shrink-0 bg-[color:var(--accent)]" />
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-[color:var(--text-primary)] mb-0.5">
+                        <p className="text-sm font-medium text-[color:var(--text-primary)]">
                           {notif.child} • {notif.status || 'Update'}
                         </p>
-                        <p className="text-xs text-[color:var(--text-secondary)] line-clamp-2">
-                          {notif.message}
-                        </p>
-                        {notif.timestamp && (
-                          <p className="text-[10px] text-[color:var(--text-muted)] mt-1">
-                            {new Date(notif.timestamp).toLocaleString()}
-                          </p>
+                        {notif.schoolName && (
+                          <p className="text-xs text-[color:var(--text-secondary)] mt-0.5">{notif.schoolName}</p>
                         )}
+                        <p className="text-[10px] text-[color:var(--text-muted)] mt-0.5">
+                          {notif.date || (notif.timestamp ? new Date(notif.timestamp).toLocaleDateString() : '')}
+                        </p>
                       </div>
                     </div>
                   </div>

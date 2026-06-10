@@ -56,7 +56,7 @@ const ParentDashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-4xl">
+      <div className="page-stack max-w-4xl">
         {/* Header */}
         <div>
           <h1 className="ui-page-title">Parent Dashboard</h1>
@@ -81,10 +81,13 @@ const ParentDashboard = () => {
                   
                   {/* Info Section */}
                   <div className="flex-1 min-w-0">
-                    <div className="flex items-baseline gap-2 mb-1">
+                    <div className="flex items-baseline gap-2 mb-0.5">
                       <h3 className="text-sm font-semibold text-gray-900 dark:text-white truncate">{child.studentName}</h3>
                       <span className="text-xs text-gray-500 dark:text-gray-400 shrink-0">{child.className}</span>
                     </div>
+                    {child.schoolName && (
+                      <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">{child.schoolName}</p>
+                    )}
                     
                     {/* Stats Row */}
                     <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs">
@@ -144,7 +147,10 @@ const ParentDashboard = () => {
                 <p className="text-xs font-semibold text-gray-900 dark:text-white">
                   {notif.child} • {notif.status || 'Update'}
                 </p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">{notif.message}</p>
+                {notif.schoolName && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{notif.schoolName}</p>
+                )}
+                <p className="text-[10px] text-gray-500 dark:text-gray-500">{notif.date}</p>
               </div>
             ))}
             {notifications.length === 0 && (

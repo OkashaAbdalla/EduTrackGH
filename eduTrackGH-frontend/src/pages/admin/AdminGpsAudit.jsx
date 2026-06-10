@@ -73,7 +73,7 @@ const AdminGpsAudit = () => {
         {loading && <p className="text-sm text-gray-500 dark:text-slate-400">Loading…</p>}
 
         {settings && !loading && (
-          <Card className="p-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <Card className="p-4 stats-grid-4">
             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
               Default radius (m)
               <input

@@ -199,7 +199,40 @@
   }
 
   .ui-card-stats {
-    @apply ui-card p-5 md:p-6;
+    @apply ui-card p-3 md:p-6;
+  }
+
+  /* Mobile: compact 2-column stat grids (desktop unchanged via md: breakpoints in markup) */
+  .stats-grid {
+    @apply grid grid-cols-2 gap-2 md:gap-4;
+  }
+
+  .stats-grid-3 {
+    @apply stats-grid md:grid-cols-3;
+  }
+
+  .stats-grid-4 {
+    @apply stats-grid md:grid-cols-2 lg:grid-cols-4;
+  }
+
+  .stat-tile {
+    @apply p-3 md:p-6 text-center;
+  }
+
+  .stat-tile-label {
+    @apply text-[10px] md:text-sm text-gray-600 dark:text-gray-400 mb-0.5 md:mb-2;
+  }
+
+  .stat-tile-value {
+    @apply text-xl md:text-3xl font-bold;
+  }
+
+  .page-stack {
+    @apply space-y-3 md:space-y-6;
+  }
+
+  .notif-dropdown-panel {
+    @apply fixed left-2 right-2 top-14 z-[70] sm:absolute sm:left-auto sm:right-0 sm:top-auto sm:mt-2 sm:w-80 md:w-96 max-h-[min(420px,70dvh)] overflow-hidden flex flex-col ui-modal shadow-2xl;
   }
 
   .ui-card-solid {

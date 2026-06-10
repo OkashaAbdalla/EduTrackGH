@@ -58,7 +58,7 @@ const AdminDashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="page-stack">
         {/* Welcome Section */}
         <div className="mb-6">
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-1">
@@ -73,11 +73,11 @@ const AdminDashboard = () => {
         </div>
 
         {/* Summary Stats - Moved to Top */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <Card className="p-4 border-l-4 border-l-green-500">
-            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Overall Attendance Rate</p>
-            <div className="flex items-end justify-between">
-              <p className="text-2xl font-bold text-slate-900 dark:text-white">{stats.attendanceRate || 0}%</p>
+        <div className="stats-grid-3">
+          <Card className="stat-tile border-l-4 border-l-green-500 text-left">
+            <p className="stat-tile-label">Overall Attendance Rate</p>
+            <div className="flex items-end justify-between gap-2">
+              <p className="stat-tile-value text-slate-900 dark:text-white">{stats.attendanceRate || 0}%</p>
               <div className="flex items-center text-xs text-green-600 dark:text-green-400">
                 <svg className="w-3 h-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
@@ -86,19 +86,19 @@ const AdminDashboard = () => {
               </div>
             </div>
           </Card>
-          <Card className="p-4 border-l-4 border-l-blue-500">
-            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Active Schools</p>
-            <div className="flex items-end justify-between">
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.activeSchools || 0}</p>
+          <Card className="stat-tile border-l-4 border-l-blue-500 text-left">
+            <p className="stat-tile-label">Active Schools</p>
+            <div className="flex items-end justify-between gap-2">
+              <p className="stat-tile-value text-green-600 dark:text-green-400">{stats.activeSchools || 0}</p>
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300">
                 Active
               </span>
             </div>
           </Card>
-          <Card className="p-4 border-l-4 border-l-orange-500">
-            <p className="text-xs font-medium text-slate-600 dark:text-slate-400 mb-1">Inactive Schools</p>
-            <div className="flex items-end justify-between">
-              <p className="text-2xl font-bold text-red-600 dark:text-red-400">{stats.inactiveSchools || 0}</p>
+          <Card className="stat-tile col-span-2 md:col-span-1 border-l-4 border-l-orange-500 text-left">
+            <p className="stat-tile-label">Inactive Schools</p>
+            <div className="flex items-end justify-between gap-2">
+              <p className="stat-tile-value text-red-600 dark:text-red-400">{stats.inactiveSchools || 0}</p>
               <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300">
                 Inactive
               </span>
@@ -108,23 +108,23 @@ const AdminDashboard = () => {
 
         {/* Stats Grid - Resized Smaller */}
         {loading && stats.totalSchools === 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="stats-grid-4">
             {[...Array(4)].map((_, i) => (
               <Skeleton key={i} variant="stats" />
             ))}
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="stats-grid-4">
             {/* Total Schools Card */}
-            <Card variant="stats" className="!p-4 border-l-4 border-l-blue-500 dark:border-l-blue-400">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Total Schools</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white mb-0.5">{stats.totalSchools}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-500">Registered schools</p>
+            <Card variant="stats" className="!p-3 md:!p-4 border-l-4 border-l-blue-500 dark:border-l-blue-400">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] md:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Total Schools</p>
+                  <p className="text-lg md:text-3xl font-bold text-slate-900 dark:text-white">{stats.totalSchools}</p>
+                  <p className="hidden md:block text-xs text-slate-500 dark:text-slate-500">Registered schools</p>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/20">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 md:w-12 md:h-12 shrink-0 rounded-lg bg-gradient-to-br from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/20">
+                  <svg className="w-4 h-4 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                   </svg>
                 </div>
@@ -132,15 +132,15 @@ const AdminDashboard = () => {
             </Card>
 
             {/* Headteachers Card */}
-            <Card variant="stats" className="!p-4 border-l-4 border-l-green-500 dark:border-l-green-400">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Headteachers</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white mb-0.5">{stats.totalHeadteachers}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-500">Primary & JHS</p>
+            <Card variant="stats" className="!p-3 md:!p-4 border-l-4 border-l-green-500 dark:border-l-green-400">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] md:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Headteachers</p>
+                  <p className="text-lg md:text-3xl font-bold text-slate-900 dark:text-white">{stats.totalHeadteachers}</p>
+                  <p className="hidden md:block text-xs text-slate-500 dark:text-slate-500">Primary & JHS</p>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 flex items-center justify-center shadow-lg shadow-green-500/20">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 md:w-12 md:h-12 shrink-0 rounded-lg bg-gradient-to-br from-green-500 to-green-600 dark:from-green-600 dark:to-green-700 flex items-center justify-center shadow-lg shadow-green-500/20">
+                  <svg className="w-4 h-4 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>
@@ -148,15 +148,15 @@ const AdminDashboard = () => {
             </Card>
 
             {/* Total Teachers Card */}
-            <Card variant="stats" className="!p-4 border-l-4 border-l-orange-500 dark:border-l-orange-400">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Total Teachers</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white mb-0.5">{stats.totalTeachers}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-500">Active teachers</p>
+            <Card variant="stats" className="!p-3 md:!p-4 border-l-4 border-l-orange-500 dark:border-l-orange-400">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] md:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Total Teachers</p>
+                  <p className="text-lg md:text-3xl font-bold text-slate-900 dark:text-white">{stats.totalTeachers}</p>
+                  <p className="hidden md:block text-xs text-slate-500 dark:text-slate-500">Active teachers</p>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 flex items-center justify-center shadow-lg shadow-orange-500/20">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 md:w-12 md:h-12 shrink-0 rounded-lg bg-gradient-to-br from-orange-500 to-orange-600 dark:from-orange-600 dark:to-orange-700 flex items-center justify-center shadow-lg shadow-orange-500/20">
+                  <svg className="w-4 h-4 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
                 </div>
@@ -164,15 +164,15 @@ const AdminDashboard = () => {
             </Card>
 
             {/* Total Students Card */}
-            <Card variant="stats" className="!p-4 border-l-4 border-l-purple-500 dark:border-l-purple-400">
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-1">Total Students</p>
-                  <p className="text-3xl font-bold text-slate-900 dark:text-white mb-0.5">{stats.totalStudents}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-500">All students</p>
+            <Card variant="stats" className="!p-3 md:!p-4 border-l-4 border-l-purple-500 dark:border-l-purple-400">
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex-1 min-w-0">
+                  <p className="text-[10px] md:text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wider mb-0.5 md:mb-1">Total Students</p>
+                  <p className="text-lg md:text-3xl font-bold text-slate-900 dark:text-white">{stats.totalStudents}</p>
+                  <p className="hidden md:block text-xs text-slate-500 dark:text-slate-500">All students</p>
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 flex items-center justify-center shadow-lg shadow-purple-500/20">
-                  <svg className="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <div className="w-8 h-8 md:w-12 md:h-12 shrink-0 rounded-lg bg-gradient-to-br from-purple-500 to-purple-600 dark:from-purple-600 dark:to-purple-700 flex items-center justify-center shadow-lg shadow-purple-500/20">
+                  <svg className="w-4 h-4 md:w-6 md:h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
                 </div>

@@ -213,7 +213,7 @@ const HeadteacherDashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-6xl">
+      <div className="page-stack max-w-6xl">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mb-1">

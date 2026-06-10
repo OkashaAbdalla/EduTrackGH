@@ -61,7 +61,7 @@ const ManageTeachers = ({ apiService = headteacherService, readOnly = false } = 
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="page-stack">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
           <div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
@@ -79,31 +79,18 @@ const ManageTeachers = ({ apiService = headteacherService, readOnly = false } = 
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Teachers</p>
-              <p className="text-3xl font-bold text-gray-900 dark:text-white">{teachers.length}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">In your school</p>
-            </div>
+        <div className="stats-grid-3">
+          <Card className="stat-tile">
+            <p className="stat-tile-label">Total Teachers</p>
+            <p className="stat-tile-value text-gray-900 dark:text-white">{teachers.length}</p>
           </Card>
-          <Card className="p-6 bg-green-50 dark:bg-green-900/15 border border-green-100 dark:border-green-800">
-            <div className="flex items-center space-x-3">
-              <div className="w-10 h-10 rounded-full bg-green-100 dark:bg-green-800/60 flex items-center justify-center">
-                <svg className="w-6 h-6 text-green-600 dark:text-green-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-green-800 dark:text-green-200">Secure onboarding</p>
-                <p className="text-xs text-green-700 dark:text-green-300/80">Temporary passwords are generated and can be shared with teachers.</p>
-              </div>
-            </div>
+          <Card className="stat-tile col-span-2 md:col-span-1 bg-green-50 dark:bg-green-900/15 border border-green-100 dark:border-green-800 text-left">
+            <p className="text-[10px] md:text-sm font-medium text-green-800 dark:text-green-200">Secure onboarding</p>
+            <p className="hidden md:block text-xs text-green-700 dark:text-green-300/80 mt-1">Temporary passwords are generated and can be shared with teachers.</p>
           </Card>
-          <Card className="p-6">
-            <div className="text-center">
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Active Teachers</p>
-              <p className="text-3xl font-bold text-green-600 dark:text-green-400">{teachers.filter((t) => t.isActive).length}</p>
-              <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Currently active in your school</p>
-            </div>
+          <Card className="stat-tile">
+            <p className="stat-tile-label">Active Teachers</p>
+            <p className="stat-tile-value text-green-600 dark:text-green-400">{teachers.filter((t) => t.isActive).length}</p>
           </Card>
         </div>
 

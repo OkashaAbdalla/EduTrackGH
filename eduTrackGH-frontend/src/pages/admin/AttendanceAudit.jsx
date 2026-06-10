@@ -25,7 +25,7 @@ const AttendanceAudit = () => {
 
   return (
     <DashboardLayout>
-      <div className="max-w-7xl mx-auto space-y-6">
+      <div className="max-w-7xl mx-auto page-stack">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Attendance Audit</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">Verify attendance integrity and review suspicious patterns</p>
@@ -93,22 +93,22 @@ const AttendanceAudit = () => {
         </Card>
 
         {summary && (
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card className="p-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">Total Records</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">{summary.totalRecords}</p>
+          <div className="stats-grid-4">
+            <Card className="stat-tile">
+              <p className="stat-tile-label">Total Records</p>
+              <p className="stat-tile-value text-gray-900 dark:text-white">{summary.totalRecords}</p>
             </Card>
-            <Card className="p-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">% Photo Verified</p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">{summary.photoVerifiedPct}%</p>
+            <Card className="stat-tile">
+              <p className="stat-tile-label">% Photo Verified</p>
+              <p className="stat-tile-value text-green-600 dark:text-green-400">{summary.photoVerifiedPct}%</p>
             </Card>
-            <Card className="p-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">% Manual Verified</p>
-              <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{summary.manualVerifiedPct}%</p>
+            <Card className="stat-tile">
+              <p className="stat-tile-label">% Manual Verified</p>
+              <p className="stat-tile-value text-amber-600 dark:text-amber-400">{summary.manualVerifiedPct}%</p>
             </Card>
-            <Card className="p-4">
-              <p className="text-sm text-gray-500 dark:text-gray-400">100% Present Days</p>
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">{summary.hundredPercentPresentDays}</p>
+            <Card className="stat-tile">
+              <p className="stat-tile-label">100% Present Days</p>
+              <p className="stat-tile-value text-blue-600 dark:text-blue-400">{summary.hundredPercentPresentDays}</p>
             </Card>
           </div>
         )}

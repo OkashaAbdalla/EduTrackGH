@@ -127,7 +127,7 @@ const TeacherDashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="page-stack">
         {/* Header – teacher name, school, assigned class */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
@@ -154,61 +154,61 @@ const TeacherDashboard = () => {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-          <Card variant="stats" className="p-6 border-l-4 border-l-blue-500 dark:border-l-blue-400">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Classes Today</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.classesToday}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Active classes</p>
+        <div className="stats-grid-4">
+          <Card variant="stats" className="!p-3 md:!p-6 border-l-4 border-l-blue-500 dark:border-l-blue-400">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 md:mb-2">Classes Today</p>
+                <p className="text-lg md:text-3xl font-bold text-gray-900 dark:text-white">{stats.classesToday}</p>
+                <p className="hidden md:block text-xs text-gray-500 dark:text-gray-500 mt-2">Active classes</p>
               </div>
-              <div className="w-14 h-14 bg-blue-600 dark:bg-dashboard-accent rounded-xl flex items-center justify-center">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-8 h-8 md:w-14 md:h-14 shrink-0 bg-blue-600 dark:bg-dashboard-accent rounded-lg md:rounded-xl flex items-center justify-center">
+                <svg className="w-4 h-4 md:w-7 md:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                 </svg>
               </div>
             </div>
           </Card>
 
-          <Card variant="stats" className="p-6 border-l-4 border-l-red-500 dark:border-l-red-400">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Unmarked Classes</p>
-                <p className="text-3xl font-bold text-red-600 dark:text-red-400">{stats.unmarkedClasses}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Requires attention</p>
+          <Card variant="stats" className="!p-3 md:!p-6 border-l-4 border-l-red-500 dark:border-l-red-400">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 md:mb-2">Unmarked</p>
+                <p className="text-lg md:text-3xl font-bold text-red-600 dark:text-red-400">{stats.unmarkedClasses}</p>
+                <p className="hidden md:block text-xs text-gray-500 dark:text-gray-500 mt-2">Requires attention</p>
               </div>
-              <div className="w-14 h-14 bg-red-600 dark:bg-red-600 rounded-xl flex items-center justify-center">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-8 h-8 md:w-14 md:h-14 shrink-0 bg-red-600 dark:bg-red-600 rounded-lg md:rounded-xl flex items-center justify-center">
+                <svg className="w-4 h-4 md:w-7 md:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
             </div>
           </Card>
 
-          <Card variant="stats" className="p-6 border-l-4 border-l-orange-500 dark:border-l-orange-400">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Flagged Students</p>
-                <p className="text-3xl font-bold text-orange-600 dark:text-orange-400">{stats.flaggedStudents}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">Chronic absenteeism</p>
+          <Card variant="stats" className="!p-3 md:!p-6 border-l-4 border-l-orange-500 dark:border-l-orange-400">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 md:mb-2">Flagged</p>
+                <p className="text-lg md:text-3xl font-bold text-orange-600 dark:text-orange-400">{stats.flaggedStudents}</p>
+                <p className="hidden md:block text-xs text-gray-500 dark:text-gray-500 mt-2">Chronic absenteeism</p>
               </div>
-              <div className="w-14 h-14 bg-orange-600 dark:bg-orange-600 rounded-xl flex items-center justify-center">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-8 h-8 md:w-14 md:h-14 shrink-0 bg-orange-600 dark:bg-orange-600 rounded-lg md:rounded-xl flex items-center justify-center">
+                <svg className="w-4 h-4 md:w-7 md:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                 </svg>
               </div>
             </div>
           </Card>
 
-          <Card variant="stats" className="p-6 border-l-4 border-l-green-500 dark:border-l-green-400">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-2">Total Students</p>
-                <p className="text-3xl font-bold text-gray-900 dark:text-white">{stats.totalStudents}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">In your classes</p>
+          <Card variant="stats" className="!p-3 md:!p-6 border-l-4 border-l-green-500 dark:border-l-green-400">
+            <div className="flex items-center justify-between gap-2">
+              <div className="flex-1 min-w-0">
+                <p className="text-[10px] md:text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-0.5 md:mb-2">Students</p>
+                <p className="text-lg md:text-3xl font-bold text-gray-900 dark:text-white">{stats.totalStudents}</p>
+                <p className="hidden md:block text-xs text-gray-500 dark:text-gray-500 mt-2">In your classes</p>
               </div>
-              <div className="w-14 h-14 bg-uds-green dark:bg-green-700 rounded-xl flex items-center justify-center">
-                <svg className="w-7 h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <div className="w-8 h-8 md:w-14 md:h-14 shrink-0 bg-uds-green dark:bg-green-700 rounded-lg md:rounded-xl flex items-center justify-center">
+                <svg className="w-4 h-4 md:w-7 md:h-7 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
               </div>

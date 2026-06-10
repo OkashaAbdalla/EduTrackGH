@@ -82,7 +82,7 @@ const ChildrenAttendance = () => {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 max-w-5xl mx-auto">
+      <div className="page-stack max-w-5xl mx-auto">
         <div>
           <h1 className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">Children Attendance</h1>
           <p className="text-gray-600 dark:text-gray-400 mt-1">
@@ -122,18 +122,18 @@ const ChildrenAttendance = () => {
 
         {selectedChild && records.length > 0 && (
           <>
-            <div className="grid grid-cols-1 min-[360px]:grid-cols-3 gap-3 sm:gap-4">
-              <Card className="p-4 text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Present</p>
-                <p className="text-3xl font-bold text-green-600 dark:text-green-400 mt-1">{stats.present}</p>
+            <div className="stats-grid-3">
+              <Card className="stat-tile">
+                <p className="stat-tile-label">Present</p>
+                <p className="stat-tile-value text-green-600 dark:text-green-400">{stats.present}</p>
               </Card>
-              <Card className="p-4 text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Absent</p>
-                <p className="text-3xl font-bold text-red-600 dark:text-red-400 mt-1">{stats.absent}</p>
+              <Card className="stat-tile">
+                <p className="stat-tile-label">Absent</p>
+                <p className="stat-tile-value text-red-600 dark:text-red-400">{stats.absent}</p>
               </Card>
-              <Card className="p-4 text-center">
-                <p className="text-sm text-gray-600 dark:text-gray-400">Late</p>
-                <p className="text-3xl font-bold text-orange-600 dark:text-orange-400 mt-1">{stats.late}</p>
+              <Card className="stat-tile col-span-2 min-[360px]:col-span-1">
+                <p className="stat-tile-label">Late</p>
+                <p className="stat-tile-value text-orange-600 dark:text-orange-400">{stats.late}</p>
               </Card>
             </div>
 

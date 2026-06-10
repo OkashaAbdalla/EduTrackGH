@@ -74,7 +74,8 @@ const getAttendanceOverview = async (req, res) => {
 
     const [students, engine] = await Promise.all([
       Student.find({ _id: { $in: childIds } })
-        .select("_id fullName classroom classroomId grade")
+        .select("_id fullName classroom classroomId grade schoolId")
+        .populate("schoolId", "name")
         .lean(),
       getEngine(),
     ]);
@@ -119,6 +120,7 @@ const getAttendanceOverview = async (req, res) => {
       return {
         studentId: sid,
         studentName: s.fullName,
+        schoolName: s.schoolId?.name || "",
         className: classroomMap.get(String(s.classroom || s.classroomId))?.name || "Class",
         level,
         present,
