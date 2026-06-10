@@ -1,6 +1,6 @@
 /**
  * Google Sign-In — sign-in only (no account creation).
- * Allowed roles: parent, teacher, headteacher.
+ * Allowed roles: parent, teacher, headteacher, assistant_headteacher.
  */
 
 const { OAuth2Client } = require('google-auth-library');
@@ -8,7 +8,7 @@ const User = require('../models/User');
 const generateToken = require('../utils/generateToken');
 const { getSystemSettings } = require('../services/adminConfigService');
 
-const ALLOWED_ROLES = ['parent', 'teacher', 'headteacher'];
+const ALLOWED_ROLES = ['parent', 'teacher', 'headteacher', 'assistant_headteacher'];
 
 let oauthClient = null;
 
@@ -86,7 +86,7 @@ const googleAuth = async (req, res) => {
         success: false,
         code: 'ACCOUNT_NOT_FOUND',
         message:
-          'No EduTrack GH account exists for this Google email. Parents can use Create Account first; teachers and headteachers must be added by their school.',
+          'No EduTrack GH account exists for this Google email. Parents can use Create Account first; teachers, headteachers, and assistant headteachers must be added by their school.',
       });
     }
 

@@ -217,7 +217,7 @@ export const STORAGE_KEYS = {
 // GOOGLE AUTHENTICATION
 // ========================================
 // Google Sign-In — SIGN IN ONLY (no account creation).
-// Allowed roles: parent, teacher, headteacher (redirect via getRoleRedirectPath).
+// Allowed roles: parent, teacher, headteacher, assistant_headteacher (redirect via getRoleRedirectPath).
 // Flow: GIS popup → ID token → POST /auth/google → JWT if email matches existing user.
 export const GOOGLE_AUTH = {
   CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID',
