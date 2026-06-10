@@ -132,4 +132,9 @@ server.listen(PORT, HOST, () => {
       "☁️  Cloudinary: not configured — profile photos save to uploads/ (add CLOUDINARY_* to .env for cloud storage)",
     );
   }
+  if (process.env.GOOGLE_CLIENT_ID) {
+    console.log("🔑 Google OAuth: configured");
+  } else {
+    console.log("🔑 Google OAuth: not configured — add GOOGLE_CLIENT_ID to .env and restart");
+  }
 });

@@ -31,6 +31,11 @@ const userSchema = new mongoose.Schema({
     minlength: 8,
     select: false, // Don't return password by default
   },
+  googleId: {
+    type: String,
+    sparse: true,
+    default: '',
+  },
   role: {
     type: String,
     enum: ['teacher', 'headteacher', 'parent', 'admin', 'super_admin'],

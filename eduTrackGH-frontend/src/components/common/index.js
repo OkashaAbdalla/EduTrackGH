@@ -7,6 +7,7 @@ export { default as MaintenanceBanner } from './MaintenanceBanner';
 export { default as Navbar } from './Navbar';
 export { default as HeroSection } from './HeroSection';
 export { default as AuthCard } from './AuthCard';
+export { default as GoogleSignInButton } from './GoogleSignInButton';
 export { default as Footer } from './Footer';
 export { default as FormInput } from './FormInput';
 export { default as FormSelect } from './FormSelect';

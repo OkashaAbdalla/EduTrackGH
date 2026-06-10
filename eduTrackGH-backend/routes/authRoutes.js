@@ -5,6 +5,7 @@
 
 const express = require('express');
 const router = express.Router();
+const { googleAuth } = require('../controllers/googleAuthController');
 const {
   register,
   login,
@@ -30,6 +31,7 @@ router.post(`/${getAdminLoginPath()}`, adminLoginLimiter, validationRules.login,
 // Public routes - login has rate limiting
 router.post('/register', validationRules.register, validate, register);
 router.post('/login', loginLimiter, validationRules.login, validate, login);
+router.post('/google', loginLimiter, googleAuth);
 router.post('/verify-email', verifyEmail);
 router.post('/resend-verification', resendVerification);
 router.post('/verification-status', checkVerificationStatus);

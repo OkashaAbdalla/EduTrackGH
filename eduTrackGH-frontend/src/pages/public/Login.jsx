@@ -4,15 +4,17 @@
 
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { AuthLayout, FormInput, MaintenanceBanner } from '../../components/common';
+import { AuthLayout, FormInput, MaintenanceBanner, GoogleSignInButton } from '../../components/common';
 import { useToast, useAuthContext } from '../../context';
 import { ROUTES } from '../../utils/constants';
 import { validateLoginForm, getRoleRedirectPath } from '../../utils/loginHelpers';
+import { useGoogleLoginHandler } from '../../hooks/useGoogleLoginHandler';
 
 const Login = () => {
   const navigate = useNavigate();
   const { showToast } = useToast();
   const { login } = useAuthContext();
+  const { handleGoogleCredential, handleGoogleError } = useGoogleLoginHandler();
   const [formData, setFormData] = useState({ email: '', password: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
@@ -158,6 +160,24 @@ const Login = () => {
           </Link>
         </div>
       </form>
+
+      <div className="mt-4">
+        <div className="relative my-4 h-5">
+          <div className="absolute inset-0 flex items-center pointer-events-none">
+            <div className="w-full border-t border-gray-200 dark:border-gray-700" />
+          </div>
+          <div className="relative flex h-full items-center justify-center text-xs">
+            <span className="bg-[#f6f8fc] px-3 text-gray-500 dark:bg-slate-950 dark:text-gray-400 uppercase tracking-wide">
+              Or continue with
+            </span>
+          </div>
+        </div>
+        <GoogleSignInButton
+          fullWidth
+          onCredential={handleGoogleCredential}
+          onError={handleGoogleError}
+        />
+      </div>
 
       <div className="mt-3 pt-3 border-t border-gray-200 dark:border-gray-700">
         <p className="text-center text-gray-600 dark:text-gray-400 text-sm">

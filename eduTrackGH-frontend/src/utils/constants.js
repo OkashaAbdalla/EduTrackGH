@@ -203,15 +203,9 @@ export const STORAGE_KEYS = {
 // ========================================
 // GOOGLE AUTHENTICATION
 // ========================================
-// Google Sign-In is for SIGN IN only, NOT sign up
-// Flow:
-// 1. User clicks "Sign in with Google"
-// 2. Google OAuth popup
-// 3. Backend receives Google token
-// 4. Backend checks if user exists:
-//    - If exists: Return JWT token
-//    - If new: Create account, assign role, return JWT
-// 5. Frontend only consumes the JWT token
+// Google Sign-In — SIGN IN ONLY (no account creation).
+// Allowed roles: parent, teacher, headteacher (redirect via getRoleRedirectPath).
+// Flow: GIS popup → ID token → POST /auth/google → JWT if email matches existing user.
 export const GOOGLE_AUTH = {
   CLIENT_ID: import.meta.env.VITE_GOOGLE_CLIENT_ID || 'YOUR_GOOGLE_CLIENT_ID',
   SCOPES: 'profile email',

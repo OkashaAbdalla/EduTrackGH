@@ -92,6 +92,26 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
+  const persistSession = (token, userData) => {
+    const role = (userData.role && String(userData.role).toLowerCase().trim()) || 'parent';
+    clearAuthStorage();
+    localStorage.setItem('auth_token', token);
+    localStorage.setItem('user_role', role);
+    localStorage.setItem('user_email', userData.email || '');
+    localStorage.setItem('user_name', userData.fullName || '');
+    if (userData.schoolLevel) {
+      localStorage.setItem('user_schoolLevel', userData.schoolLevel);
+    }
+    setUser({
+      email: userData.email,
+      role,
+      name: userData.fullName,
+      schoolLevel: userData.schoolLevel,
+    });
+    setIsAuthenticated(true);
+    return { success: true, user: { ...userData, role } };
+  };
+
   const login = async (email, password) => {
     try {
       const response = await authService.login({ email, password });
@@ -103,24 +123,7 @@ export const AuthProvider = ({ children }) => {
           return { success: false, message: 'Invalid response from server' };
         }
 
-        const role = (userData.role && String(userData.role).toLowerCase().trim()) || 'parent';
-        clearAuthStorage();
-        localStorage.setItem('auth_token', token);
-        localStorage.setItem('user_role', role);
-        localStorage.setItem('user_email', userData.email || '');
-        localStorage.setItem('user_name', userData.fullName || '');
-        if (userData.schoolLevel) {
-          localStorage.setItem('user_schoolLevel', userData.schoolLevel);
-        }
-        setUser({
-          email: userData.email,
-          role,
-          name: userData.fullName,
-          schoolLevel: userData.schoolLevel,
-        });
-        setIsAuthenticated(true);
-
-        return { success: true, user: { ...userData, role } };
+        return persistSession(token, userData);
       }
       return {
         success: false,
@@ -134,6 +137,31 @@ export const AuthProvider = ({ children }) => {
         message: data?.message || 'Login failed',
         code: data?.code,
         email: data?.email,
+      };
+    }
+  };
+
+  const loginWithGoogle = async (googleToken) => {
+    try {
+      const response = await authService.googleAuth(googleToken);
+      if (response.success) {
+        const { token, user: userData } = response;
+        if (!token || !userData) {
+          return { success: false, message: 'Invalid response from server' };
+        }
+        return persistSession(token, userData);
+      }
+      return {
+        success: false,
+        message: response.message,
+        code: response.code,
+      };
+    } catch (error) {
+      const data = error.response?.data;
+      return {
+        success: false,
+        message: data?.message || 'Google sign-in failed',
+        code: data?.code,
       };
     }
   };
@@ -199,6 +227,7 @@ export const AuthProvider = ({ children }) => {
     isAuthenticated,
     loading,
     login,
+    loginWithGoogle,
     adminLogin,
     logout,
     register,
