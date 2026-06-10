@@ -9,8 +9,10 @@ const DailyAttendance = require('../models/DailyAttendance');
 const { getClassroomLevelFilter } = require('../services/headteacherService');
 const { getEngine } = require('../services/calendarRuntime');
 
+const { getSchoolIdFromReq, getSchoolLevelFromReq } = require('../utils/headteacherActingContext');
+
 function getSchoolId(req) {
-  return req.user?.school || null;
+  return getSchoolIdFromReq(req);
 }
 
 const getTeachersCompliance = async (req, res) => {
@@ -28,7 +30,7 @@ const getTeachersCompliance = async (req, res) => {
     const [y, m, d] = dateStr.split('-').map((v) => parseInt(v, 10));
     const dateOnly = new Date(Date.UTC(y, m - 1, d));
 
-    const levelFilter = getClassroomLevelFilter(req.user.schoolLevel);
+    const levelFilter = getClassroomLevelFilter(getSchoolLevelFromReq(req));
     const classrooms = await Classroom.find({ schoolId, teacherId: { $ne: null }, ...levelFilter })
       .populate('teacherId', 'fullName email')
       .select('name teacherId');

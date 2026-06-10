@@ -15,6 +15,7 @@ export const ROLES = {
   // School-level roles for EduTrack GH
   TEACHER: 'teacher',           // Class teacher subject teacher
   HEADTEACHER: 'headteacher',   // School-level admin (one school)
+  ASSISTANT_HEADTEACHER: 'assistant_headteacher', // Acting cover when HT is away
   PARENT: 'parent',             // Linked primarily by phone number
   ADMIN: 'admin',               // System-level super admin (all schools)
   SUPER_ADMIN: 'super_admin',   // Control-center admin (highest privileges)
@@ -50,6 +51,16 @@ export const ROUTES = {
   HEADTEACHER_MANAGE_TEACHERS: '/headteacher/teachers',
   HEADTEACHER_CHAT: '/headteacher/messages',
   HEADTEACHER_REGISTERS: '/headteacher/registers',
+  HEADTEACHER_ASSISTANT_CHAT: '/headteacher/assistant',
+
+  // Assistant headteacher routes
+  ASSISTANT_DASHBOARD: '/assistant/dashboard',
+  ASSISTANT_CHAT: '/assistant/messages',
+  ASSISTANT_TEACHER_CHAT: '/assistant/teacher-messages',
+  ASSISTANT_COMPLIANCE: '/assistant/compliance',
+  ASSISTANT_MANAGE_CLASSES: '/assistant/classes',
+  ASSISTANT_VIEW_TEACHERS: '/assistant/teachers',
+  ASSISTANT_REGISTERS: '/assistant/registers',
 
   // Parent routes
   PARENT_DASHBOARD: '/parent/dashboard',
@@ -60,7 +71,9 @@ export const ROUTES = {
   ADMIN_DASHBOARD: '/admin/dashboard',
   MANAGE_SCHOOLS: '/admin/schools',
   CREATE_HEADTEACHER: '/admin/create-headteacher',
+  CREATE_ASSISTANT_HEADTEACHER: '/admin/create-assistant-headteacher',
   MANAGE_HEADTEACHERS: '/admin/headteachers',
+  MANAGE_ASSISTANT_HEADTEACHERS: '/admin/assistant-headteachers',
   MANAGE_TEACHERS: '/admin/teachers',
   ATTENDANCE_AUDIT: '/admin/attendance-audit',
   SYSTEM_SETTINGS: '/admin/settings',

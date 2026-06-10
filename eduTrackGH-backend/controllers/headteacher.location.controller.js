@@ -37,6 +37,9 @@ const getSchoolLocation = async (req, res) => {
 
 const setSchoolLocation = async (req, res) => {
   try {
+    if (req.user.role === 'assistant_headteacher') {
+      return res.status(403).json({ success: false, message: 'Assistant headteachers cannot change school location' });
+    }
     const schoolId = getSchoolId(req);
     if (!schoolId) {
       return res.status(400).json({ success: false, message: 'No school assigned to your account' });

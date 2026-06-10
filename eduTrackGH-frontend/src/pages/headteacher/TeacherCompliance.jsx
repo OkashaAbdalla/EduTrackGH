@@ -19,7 +19,7 @@ const getLocalDateIso = () => {
   return `${year}-${month}-${day}`;
 };
 
-const TeacherCompliance = () => {
+const TeacherCompliance = ({ apiService = headteacherService, messageRoute = ROUTES.HEADTEACHER_CHAT } = {}) => {
   const { showToast } = useToast();
   const { user } = useAuthContext();
   const { socket } = useSocket();
@@ -31,7 +31,7 @@ const TeacherCompliance = () => {
   const fetchCompliance = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await headteacherService.getCompliance(date);
+      const res = await apiService.getCompliance(date);
       setTeachers(res.teachers || []);
     } catch (error) {
       showToast('Failed to load compliance data', 'error');
@@ -39,7 +39,7 @@ const TeacherCompliance = () => {
     } finally {
       setLoading(false);
     }
-  }, [date, showToast]);
+  }, [date, showToast, apiService]);
 
   useEffect(() => {
     fetchCompliance();
@@ -204,7 +204,7 @@ const TeacherCompliance = () => {
                     )}
                     {!neutral && (
                     <Link
-                      to={`${ROUTES.HEADTEACHER_CHAT}?teacher=${teacher.id}&name=${encodeURIComponent(teacher.fullName || '')}`}
+                      to={`${messageRoute}?teacher=${teacher.id}&name=${encodeURIComponent(teacher.fullName || '')}`}
                       className="px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium"
                     >
                       Message

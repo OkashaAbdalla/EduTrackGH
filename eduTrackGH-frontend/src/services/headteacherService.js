@@ -119,6 +119,41 @@ const headteacherService = {
     }
   },
 
+  getDelegationStatus: async () => {
+    const response = await apiClient.get('/headteacher/delegation/status');
+    return response.data;
+  },
+
+  requestDelegation: async (note) => {
+    const response = await apiClient.post('/headteacher/delegation/request', { note });
+    return response.data;
+  },
+
+  endDelegation: async () => {
+    const response = await apiClient.post('/headteacher/delegation/end');
+    return response.data;
+  },
+
+  getAssistantChat: async () => {
+    const response = await apiClient.get('/headteacher/assistant-chat');
+    return response.data;
+  },
+
+  sendAssistantChat: async (message) => {
+    const response = await apiClient.post('/headteacher/assistant-chat', { message });
+    return response.data;
+  },
+
+  updateAssistantChatMessage: async (id, message) => {
+    const response = await apiClient.patch(`/headteacher/assistant-chat/${id}`, { message });
+    return response.data;
+  },
+
+  deleteAssistantChatMessage: async (id) => {
+    const response = await apiClient.delete(`/headteacher/assistant-chat/${id}`);
+    return response.data;
+  },
+
   deleteNotification: async (id, source) => {
     try {
       const params = source ? { source } : {};

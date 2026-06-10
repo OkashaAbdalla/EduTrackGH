@@ -38,7 +38,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['teacher', 'headteacher', 'parent', 'admin', 'super_admin'],
+    enum: ['teacher', 'headteacher', 'assistant_headteacher', 'parent', 'admin', 'super_admin'],
     default: 'parent', // Default to parent for public registration
   },
   // Headteacher-specific: Primary or JHS level
@@ -69,6 +69,13 @@ const userSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: 'School',
     sparse: true,
+  },
+  // Assistant headteacher reports to this headteacher
+  linkedHeadteacher: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    sparse: true,
+    index: true,
   },
   // Verification
   isVerified: {
@@ -137,6 +144,7 @@ userSchema.methods.getPublicProfile = function() {
     schoolLevel: this.schoolLevel, // PRIMARY or JHS for headteachers
     schoolId: this.schoolId,
     school: this.school,
+    linkedHeadteacher: this.linkedHeadteacher,
     isVerified: this.isVerified,
     isActive: this.isActive,
     avatarUrl: this.avatarUrl,

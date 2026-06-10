@@ -10,6 +10,7 @@ import { useAuthContext, useSocket, useConfirm } from '../../context';
 import ContextMenu from './ContextMenu';
 import headteacherService from '../../services/headteacherService';
 import teacherNotificationService from '../../services/teacherNotificationService';
+import assistantHeadteacherService from '../../services/assistantHeadteacherService';
 import {
   isNotificationSoundEnabled,
   setNotificationSoundEnabled,
@@ -17,18 +18,23 @@ import {
   playParentNotificationSound,
 } from '../../utils/notificationSound';
 
-const formatNotifTitle = (notif, isHeadteacher) => {
+const formatNotifTitle = (notif, { isHeadteacher, isAssistant } = {}) => {
   if (notif.type === 'unmarked_attendance') {
     return `${notif.teacherName || 'Teacher'}: Unmarked attendance`;
   }
   if (notif.type === 'chat_message') {
-    return isHeadteacher ? 'New message from teacher' : 'New message from headteacher';
+    if (isAssistant) return 'New message from teacher';
+    if (isHeadteacher) return 'New message from teacher';
+    return 'New message from headteacher';
   }
   if (notif.type === 'unlock_request') {
     return 'Attendance unlock request';
   }
   if (notif.type === 'attendance_unlocked') {
     return 'Attendance unlocked';
+  }
+  if (notif.type === 'delegation_request') {
+    return 'Delegation request from headteacher';
   }
   return notif.senderName || 'Notification';
 };
@@ -38,6 +44,7 @@ const notifDotClass = (type) => {
   if (type === 'unlock_request') return 'bg-amber-500';
   if (type === 'attendance_unlocked') return 'bg-emerald-500';
   if (type === 'unmarked_attendance') return 'bg-red-500';
+  if (type === 'delegation_request') return 'bg-violet-500';
   return 'bg-[color:var(--accent)]';
 };
 
@@ -58,6 +65,7 @@ const StaffNotificationBell = () => {
   const { user } = useAuthContext();
   const { socket } = useSocket();
   const isHeadteacher = user?.role === ROLES.HEADTEACHER;
+  const isAssistant = user?.role === ROLES.ASSISTANT_HEADTEACHER;
 
   const [isOpen, setIsOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -91,7 +99,9 @@ const StaffNotificationBell = () => {
       try {
         const response = isHeadteacher
           ? await headteacherService.getNotifications()
-          : await teacherNotificationService.getNotifications();
+          : isAssistant
+            ? await assistantHeadteacherService.getNotifications()
+            : await teacherNotificationService.getNotifications();
 
         if (response?.success === false) {
           setFetchError(response?.message || 'Could not load notifications');
@@ -116,7 +126,7 @@ const StaffNotificationBell = () => {
         if (showSpinner) setLoading(false);
       }
     },
-    [isHeadteacher, soundEnabled]
+    [isHeadteacher, isAssistant, soundEnabled]
   );
 
   useEffect(() => {
@@ -147,6 +157,12 @@ const StaffNotificationBell = () => {
       socket.on('headteacher_notification', onRefresh);
       socket.on('unlock_request', onRefresh);
       socket.on('compliance_updated', onRefresh);
+      socket.on('delegation_update', onRefresh);
+    } else if (isAssistant) {
+      socket.on('delegation_update', onRefresh);
+      socket.on('unlock_request', onRefresh);
+      socket.on('compliance_updated', onRefresh);
+      socket.on('assistant_chat_message', onRefresh);
     } else {
       socket.on('attendance_unlocked', onRefresh);
     }
@@ -157,11 +173,17 @@ const StaffNotificationBell = () => {
         socket.off('headteacher_notification', onRefresh);
         socket.off('unlock_request', onRefresh);
         socket.off('compliance_updated', onRefresh);
+        socket.off('delegation_update', onRefresh);
+      } else if (isAssistant) {
+        socket.off('delegation_update', onRefresh);
+        socket.off('unlock_request', onRefresh);
+        socket.off('compliance_updated', onRefresh);
+        socket.off('assistant_chat_message', onRefresh);
       } else {
         socket.off('attendance_unlocked', onRefresh);
       }
     };
-  }, [socket, fetchNotifications, isHeadteacher, soundEnabled]);
+  }, [socket, fetchNotifications, isHeadteacher, isAssistant, soundEnabled]);
 
   const handleToggleSound = async () => {
     if (!soundEnabled) {
@@ -186,6 +208,8 @@ const StaffNotificationBell = () => {
     try {
       if (isHeadteacher) {
         await headteacherService.markNotificationRead(notif.id, source);
+      } else if (isAssistant) {
+        await assistantHeadteacherService.markNotificationRead(notif.id, source);
       } else {
         await teacherNotificationService.markAsRead(notif.id);
       }
@@ -197,15 +221,21 @@ const StaffNotificationBell = () => {
     }
 
     if (notif.type === 'chat_message') {
-      if (isHeadteacher && notif.otherUserId) {
+      if (isAssistant && notif.otherUserId) {
+        navigate(`${ROUTES.ASSISTANT_TEACHER_CHAT}?teacher=${notif.otherUserId}`);
+      } else if (isHeadteacher && notif.otherUserId) {
         navigate(`${ROUTES.HEADTEACHER_CHAT}?teacher=${notif.otherUserId}`);
       } else {
         navigate(ROUTES.TEACHER_CHAT, { state: { openUserId: notif.otherUserId } });
       }
       return;
     }
+    if (notif.type === 'delegation_request') {
+      navigate(isAssistant ? ROUTES.ASSISTANT_CHAT : ROUTES.HEADTEACHER_ASSISTANT_CHAT);
+      return;
+    }
     if (notif.type === 'unlock_request') {
-      navigate(ROUTES.HEADTEACHER_DASHBOARD);
+      navigate(isAssistant ? ROUTES.ASSISTANT_DASHBOARD : ROUTES.HEADTEACHER_DASHBOARD);
       return;
     }
     if (notif.type === 'attendance_unlocked') {
@@ -216,7 +246,7 @@ const StaffNotificationBell = () => {
       return;
     }
     if (notif.type === 'unmarked_attendance') {
-      navigate(ROUTES.TEACHER_COMPLIANCE);
+      navigate(isAssistant ? ROUTES.ASSISTANT_COMPLIANCE : ROUTES.TEACHER_COMPLIANCE);
     }
   };
 
@@ -234,7 +264,9 @@ const StaffNotificationBell = () => {
     try {
       const res = isHeadteacher
         ? await headteacherService.deleteNotification(notif.id, source)
-        : await teacherNotificationService.deleteNotification(notif.id);
+        : isAssistant
+          ? await assistantHeadteacherService.deleteNotification(notif.id, source)
+          : await teacherNotificationService.deleteNotification(notif.id);
       if (res?.success === false) return;
       setNotifications((prev) => prev.filter((n) => String(n.id) !== String(notif.id)));
       if (!notif.read) {
@@ -252,8 +284,12 @@ const StaffNotificationBell = () => {
     setContextMenu({ x: e.clientX, y: e.clientY, notif });
   };
 
-  const quickLink = isHeadteacher ? ROUTES.HEADTEACHER_DASHBOARD : ROUTES.TEACHER_CHAT;
-  const quickLinkLabel = isHeadteacher ? 'Dashboard' : 'Messages';
+  const quickLink = isHeadteacher
+    ? ROUTES.HEADTEACHER_DASHBOARD
+    : isAssistant
+      ? ROUTES.ASSISTANT_DASHBOARD
+      : ROUTES.TEACHER_CHAT;
+  const quickLinkLabel = isHeadteacher || isAssistant ? 'Dashboard' : 'Messages';
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -349,7 +385,7 @@ const StaffNotificationBell = () => {
                       <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${notifDotClass(notif.type)}`} />
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium text-[color:var(--text-primary)]">
-                          {formatNotifTitle(notif, isHeadteacher)}
+                          {formatNotifTitle(notif, { isHeadteacher, isAssistant })}
                         </p>
                         <p className="text-xs text-[color:var(--text-secondary)] line-clamp-2 mt-0.5">
                           {notif.message}

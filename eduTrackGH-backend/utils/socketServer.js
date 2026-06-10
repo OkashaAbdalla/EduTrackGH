@@ -93,6 +93,30 @@ function emitStaffNotification(data) {
   }
 }
 
+function emitAssistantChatMessage(data) {
+  const { headteacherId, assistantId } = data;
+  if (io) {
+    io.to(`user:${headteacherId}`).emit('assistant_chat_message', data);
+    io.to(`user:${assistantId}`).emit('assistant_chat_message', data);
+  }
+}
+
+function emitAssistantChatMessageDeleted(data) {
+  const { headteacherId, assistantId } = data;
+  if (io) {
+    io.to(`user:${headteacherId}`).emit('assistant_chat_message_deleted', data);
+    io.to(`user:${assistantId}`).emit('assistant_chat_message_deleted', data);
+  }
+}
+
+function emitDelegationUpdate(data) {
+  const { headteacherId, assistantId } = data;
+  if (io) {
+    io.to(`user:${headteacherId}`).emit('delegation_update', data);
+    io.to(`user:${assistantId}`).emit('delegation_update', data);
+  }
+}
+
 module.exports = {
   setupSocketServer,
   getIO,
@@ -104,4 +128,7 @@ module.exports = {
   emitChatMessageDeleted,
   emitHeadteacherNotification,
   emitStaffNotification,
+  emitAssistantChatMessage,
+  emitAssistantChatMessageDeleted,
+  emitDelegationUpdate,
 };

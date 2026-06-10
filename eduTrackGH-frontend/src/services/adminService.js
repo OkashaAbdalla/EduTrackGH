@@ -12,6 +12,21 @@ const adminService = {
     return response.data;
   },
 
+  createAssistantHeadteacher: async (data) => {
+    const response = await apiClient.post('/admin/assistant-headteachers', data);
+    return response.data;
+  },
+
+  getAssistantHeadteachers: async () => {
+    const response = await apiClient.get('/admin/assistant-headteachers');
+    return response.data;
+  },
+
+  deleteAssistantHeadteacher: async (id) => {
+    const response = await apiClient.delete(`/admin/assistant-headteachers/${id}`);
+    return response.data;
+  },
+
   createTeacher: async (teacherData) => {
     const response = await apiClient.post('/admin/teachers', teacherData);
     return response.data;

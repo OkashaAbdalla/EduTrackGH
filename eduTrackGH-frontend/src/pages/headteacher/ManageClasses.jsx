@@ -5,6 +5,7 @@
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card, Button } from '../../components/common';
 import { useManageClasses } from '../../hooks/useManageClasses';
+import { headteacherService } from '../../services';
 import AssignTeacherModal from '../../components/headteacher/AssignTeacherModal';
 
 const AssignIcon = () => (
@@ -19,7 +20,7 @@ const UnassignIcon = () => (
   </svg>
 );
 
-const ManageClasses = () => {
+const ManageClasses = ({ apiService = headteacherService } = {}) => {
   const {
     classes,
     teachers,
@@ -35,7 +36,7 @@ const ManageClasses = () => {
     handleSaveAssignment,
     handleCancel,
     handleSeedDefaultClasses,
-  } = useManageClasses();
+  } = useManageClasses(apiService);
 
   if (loading) {
     return (

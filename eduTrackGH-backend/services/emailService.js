@@ -281,6 +281,16 @@ const emailTemplates = {
       accountType: 'teacher',
       createdByText: 'the system administrator',
     }),
+  assistantHeadteacherWelcome: (name, email, tempPassword, loginUrl, headteacherName) =>
+    emailTemplates.accountWelcome({
+      name,
+      email,
+      tempPassword,
+      loginUrl,
+      accountType: 'assistant headteacher',
+      createdByText: 'the system administrator',
+      introParagraph: `<p>Your assistant headteacher account has been created for ${escapeHtml(headteacherName || 'your headteacher')}. You will only be able to perform headteacher duties after your headteacher sends a delegation request and you activate it.</p>`,
+    }),
   chatMessageFromHeadteacher: (headteacherName, schoolName, message) =>
     renderEmailFrame({
       title: `Message from ${escapeHtml(headteacherName)}`,
@@ -289,6 +299,18 @@ const emailTemplates = {
         <p><strong>School:</strong> ${escapeHtml(schoolName || 'Your school')}</p>
         <p><strong>Message:</strong></p>
         <p>${escapeHtml(message || '')}</p>
+      `,
+    }),
+  assistantChatMessage: (senderName, schoolName, message, recipientName) =>
+    renderEmailFrame({
+      title: `Message from ${escapeHtml(senderName || 'School leadership')}`,
+      intro: `Hi ${escapeHtml(recipientName || 'there')}, you have a new headteacher-assistant message on EduTrack GH.`,
+      contentHtml: `
+        <p><strong>School:</strong> ${escapeHtml(schoolName || 'Your school')}</p>
+        <p><strong>From:</strong> ${escapeHtml(senderName || 'School leadership')}</p>
+        <p><strong>Message:</strong></p>
+        <p>${escapeHtml(message || '')}</p>
+        <p style="margin-top:16px;font-size:13px;color:#64748b;">Sign in to EduTrack GH to reply from your dashboard.</p>
       `,
     }),
 };

@@ -238,7 +238,8 @@ const getMe = async (req, res) => {
   try {
     const user = await User.findById(req.user._id)
       .populate('school', 'name')
-      .populate('schoolId', 'name');
+      .populate('schoolId', 'name')
+      .populate('linkedHeadteacher', 'fullName email avatarUrl');
     if (!user) {
       return res.status(404).json({ success: false, message: 'User not found' });
     }
@@ -254,10 +255,12 @@ const getMe = async (req, res) => {
   }
 };
 
+const PROFILE_PHOTO_ROLES = new Set(['headteacher', 'assistant_headteacher', 'teacher']);
+
 const uploadProfilePhotoHandler = async (req, res) => {
   try {
-    if (req.user.role !== 'headteacher' && req.user.role !== 'teacher') {
-      return res.status(403).json({ success: false, message: 'Only headteachers and teachers can update profile photo' });
+    if (!PROFILE_PHOTO_ROLES.has(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Your account type cannot update profile photo' });
     }
     const { image } = req.body || {};
     await removeProfilePhoto(req.user);
@@ -280,8 +283,8 @@ const uploadProfilePhotoHandler = async (req, res) => {
 
 const deleteProfilePhotoHandler = async (req, res) => {
   try {
-    if (req.user.role !== 'headteacher' && req.user.role !== 'teacher') {
-      return res.status(403).json({ success: false, message: 'Only headteachers and teachers can update profile photo' });
+    if (!PROFILE_PHOTO_ROLES.has(req.user.role)) {
+      return res.status(403).json({ success: false, message: 'Your account type cannot update profile photo' });
     }
 
     await removeProfilePhoto(req.user);

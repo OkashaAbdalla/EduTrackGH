@@ -144,17 +144,20 @@ const createAttendanceUnlockRequest = async (req, res) => {
 // Headteacher: list unlock requests for their school
 const getAttendanceUnlockRequestsForHeadteacher = async (req, res) => {
   try {
-    const headteacher = req.user;
-    if (!headteacher || headteacher.role !== 'headteacher') {
+    const user = req.user;
+    if (!user || !['headteacher', 'assistant_headteacher'].includes(user.role)) {
       return res.status(403).json({ success: false, message: 'Only headteachers can view these messages' });
     }
 
-    const schoolId = headteacher.school;
+    const schoolId = user.school;
     if (!schoolId) {
       return res.status(400).json({ success: false, message: 'Headteacher is not linked to a school' });
     }
 
-    const messages = await TeacherMessage.find({ headteacherId: headteacher._id, schoolId, status: 'pending' })
+    const { getHeadteacherIdForScope } = require('../utils/headteacherActingContext');
+    const headteacherId = getHeadteacherIdForScope(req);
+
+    const messages = await TeacherMessage.find({ headteacherId, schoolId, status: 'pending' })
       .populate('teacherId', 'fullName email')
       .populate('classroomId', 'name grade')
       .sort({ createdAt: -1 })

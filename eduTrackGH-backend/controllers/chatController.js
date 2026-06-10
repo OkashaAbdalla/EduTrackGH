@@ -6,13 +6,38 @@
 const ChatMessage = require('../models/ChatMessage');
 const User = require('../models/User');
 const School = require('../models/School');
+const AssistantDelegation = require('../models/AssistantDelegation');
 const { sendEmail, emailTemplates } = require('../utils/sendEmail');
 const { emitChatMessage, emitChatMessageDeleted } = require('../utils/socketServer');
+const { notifyChatMessage } = require('../services/staffNotificationService');
+
+function isHeadteacherSide(role) {
+  return role === 'headteacher' || role === 'assistant_headteacher';
+}
+
+async function resolveHeadteacherActor(user) {
+  if (user.role === 'headteacher') {
+    return { headteacherId: user._id, schoolId: user.school, senderUser: user, senderRole: 'headteacher' };
+  }
+  if (user.role === 'assistant_headteacher') {
+    const delegation = await AssistantDelegation.findOne({ assistantId: user._id, status: 'active' });
+    if (!delegation || !user.linkedHeadteacher) return null;
+    const headteacher = await User.findById(user.linkedHeadteacher).select('_id school fullName');
+    if (!headteacher) return null;
+    return {
+      headteacherId: headteacher._id,
+      schoolId: user.school || headteacher.school,
+      senderUser: user,
+      senderRole: 'headteacher',
+    };
+  }
+  return null;
+}
 
 function mapMessageForUser(m, user) {
   if (m.isDeleted) return null;
   const hidden =
-    (user.role === 'headteacher' && m.hiddenForHeadteacher) ||
+    (isHeadteacherSide(user.role) && m.hiddenForHeadteacher) ||
     (user.role === 'teacher' && m.hiddenForTeacher);
   if (hidden) return null;
   return {
@@ -24,7 +49,6 @@ function mapMessageForUser(m, user) {
     isDeleted: m.isDeleted,
   };
 }
-const { notifyChatMessage } = require('../services/staffNotificationService');
 
 async function sendMessage(req, res) {
   try {
@@ -35,12 +59,21 @@ async function sendMessage(req, res) {
     }
 
     let headteacherId, targetTeacherId, schoolId, senderRole;
-    if (user.role === 'headteacher') {
-      if (!teacherId) return res.status(400).json({ success: false, message: 'teacherId is required when sending as headteacher' });
-      headteacherId = user._id;
+    if (isHeadteacherSide(user.role)) {
+      const actor = await resolveHeadteacherActor(user);
+      if (!actor) {
+        return res.status(403).json({
+          success: false,
+          message: 'Assistant headteacher access is not active. Accept a delegation request first.',
+        });
+      }
+      if (!teacherId) {
+        return res.status(400).json({ success: false, message: 'teacherId is required when sending as headteacher' });
+      }
+      headteacherId = actor.headteacherId;
       targetTeacherId = teacherId;
-      schoolId = user.school;
-      senderRole = 'headteacher';
+      schoolId = actor.schoolId;
+      senderRole = actor.senderRole;
     } else if (user.role === 'teacher') {
       const teacher = await User.findById(user._id).select('schoolId');
       if (!teacher?.schoolId) return res.status(400).json({ success: false, message: 'Teacher not linked to school' });
@@ -63,8 +96,12 @@ async function sendMessage(req, res) {
     if (senderRole === 'headteacher') {
       try {
         const school = await School.findById(schoolId).select('name');
-        const html = emailTemplates.chatMessageFromHeadteacher(user.fullName, school?.name, message.trim());
-        await sendEmail({ to: otherUser.email, subject: `Message from ${user.fullName} (EduTrack GH)`, html });
+        const senderLabel =
+          user.role === 'assistant_headteacher'
+            ? `${user.fullName || 'Assistant Headteacher'} (Assistant HT)`
+            : user.fullName;
+        const html = emailTemplates.chatMessageFromHeadteacher(senderLabel, school?.name, message.trim());
+        await sendEmail({ to: otherUser.email, subject: `Message from ${senderLabel} (EduTrack GH)`, html });
       } catch (err) {
         console.warn('Chat email failed:', err.message);
       }
@@ -101,8 +138,12 @@ async function getConversation(req, res) {
     if (!otherId) return res.status(400).json({ success: false, message: 'otherId (headteacher or teacher id) required' });
 
     let headteacherId, teacherId;
-    if (user.role === 'headteacher') {
-      headteacherId = user._id;
+    if (isHeadteacherSide(user.role)) {
+      const actor = await resolveHeadteacherActor(user);
+      if (!actor) {
+        return res.status(403).json({ success: false, message: 'Assistant headteacher access is not active.' });
+      }
+      headteacherId = actor.headteacherId;
       teacherId = otherId;
     } else if (user.role === 'teacher') {
       teacherId = user._id;
@@ -123,11 +164,20 @@ async function getConversation(req, res) {
 async function getConversations(req, res) {
   try {
     const user = req.user;
-    if (user.role !== 'headteacher' && user.role !== 'teacher') {
+    if (!isHeadteacherSide(user.role) && user.role !== 'teacher') {
       return res.status(403).json({ success: false, message: 'Only headteacher or teacher can list conversations' });
     }
 
-    const matchFilter = user.role === 'headteacher' ? { headteacherId: user._id } : { teacherId: user._id };
+    let matchFilter;
+    if (isHeadteacherSide(user.role)) {
+      const actor = await resolveHeadteacherActor(user);
+      if (!actor) {
+        return res.status(403).json({ success: false, message: 'Assistant headteacher access is not active.' });
+      }
+      matchFilter = { headteacherId: actor.headteacherId };
+    } else {
+      matchFilter = { teacherId: user._id };
+    }
 
     const agg = await ChatMessage.aggregate([
       { $match: matchFilter },
@@ -137,14 +187,14 @@ async function getConversations(req, res) {
 
     const ids = new Set();
     for (const g of agg) {
-      const other = user.role === 'headteacher' ? g._id.tt : g._id.ht;
+      const other = isHeadteacherSide(user.role) ? g._id.tt : g._id.ht;
       ids.add(other);
     }
     const users = await User.find({ _id: { $in: Array.from(ids) } }).select('fullName email avatarUrl').lean();
     const userMap = new Map(users.map((u) => [u._id.toString(), u]));
 
     const list = agg.map((g) => {
-      const otherId = user.role === 'headteacher' ? g._id.tt : g._id.ht;
+      const otherId = isHeadteacherSide(user.role) ? g._id.tt : g._id.ht;
       const u = userMap.get(otherId.toString());
       return {
         otherId,
@@ -174,7 +224,9 @@ async function editMessage(req, res) {
     if (!doc) return res.status(404).json({ success: false, message: 'Message not found' });
 
     const isHeadteacherSender =
-      doc.senderRole === 'headteacher' && user.role === 'headteacher' && doc.headteacherId.toString() === user._id.toString();
+      doc.senderRole === 'headteacher' &&
+      isHeadteacherSide(user.role) &&
+      (await resolveHeadteacherActor(user))?.headteacherId?.toString() === doc.headteacherId.toString();
     const isTeacherSender =
       doc.senderRole === 'teacher' && user.role === 'teacher' && doc.teacherId.toString() === user._id.toString();
     if (!isHeadteacherSender && !isTeacherSender) {
@@ -211,8 +263,9 @@ async function deleteMessage(req, res) {
     const doc = await ChatMessage.findById(id);
     if (!doc) return res.status(404).json({ success: false, message: 'Message not found' });
 
+    const actor = isHeadteacherSide(user.role) ? await resolveHeadteacherActor(user) : null;
     const isParticipantHeadteacher =
-      user.role === 'headteacher' && doc.headteacherId.toString() === user._id.toString();
+      isHeadteacherSide(user.role) && actor && doc.headteacherId.toString() === actor.headteacherId.toString();
     const isParticipantTeacher =
       user.role === 'teacher' && doc.teacherId.toString() === user._id.toString();
     if (!isParticipantHeadteacher && !isParticipantTeacher) {
@@ -243,7 +296,7 @@ async function deleteMessage(req, res) {
       });
     }
 
-    if (user.role === 'headteacher') doc.hiddenForHeadteacher = true;
+    if (isHeadteacherSide(user.role)) doc.hiddenForHeadteacher = true;
     else doc.hiddenForTeacher = true;
     await doc.save();
 

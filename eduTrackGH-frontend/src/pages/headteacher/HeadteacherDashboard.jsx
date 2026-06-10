@@ -9,6 +9,7 @@ import { Card, Loader, ProfilePhotoEditor } from '../../components/common';
 import HeadteacherStatsCards from '../../components/headteacher/HeadteacherStatsCards';
 import HeadteacherQuickActions from '../../components/headteacher/HeadteacherQuickActions';
 import SchoolLocationSettings from '../../components/headteacher/SchoolLocationSettings';
+import HeadteacherDelegationPanel from '../../components/assistant/HeadteacherDelegationPanel';
 import { useAuthContext, useToast, useSocket, useConfirm } from '../../context';
 import authService from '../../services/authService';
 import { messageService, headteacherService } from '../../services';
@@ -234,6 +235,8 @@ const HeadteacherDashboard = () => {
             onRemove={handleRemoveAvatar}
           />
         </div>
+
+        <HeadteacherDelegationPanel />
 
         <HeadteacherStatsCards stats={stats} />
 

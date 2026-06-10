@@ -27,7 +27,7 @@ const staffNotificationSchema = new mongoose.Schema(
     },
     type: {
       type: String,
-      enum: ['chat_message', 'unlock_request', 'attendance_unlocked'],
+      enum: ['chat_message', 'unlock_request', 'attendance_unlocked', 'delegation_request'],
       required: true,
     },
     message: {
@@ -49,6 +49,11 @@ const staffNotificationSchema = new mongoose.Schema(
     otherUserId: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
+    },
+    delegationId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'AssistantDelegation',
+      sparse: true,
     },
     read: {
       type: Boolean,

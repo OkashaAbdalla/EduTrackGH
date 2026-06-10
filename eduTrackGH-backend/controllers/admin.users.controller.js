@@ -18,6 +18,10 @@ const getSchoolSlotKeyForHeadteacher = (headteacherLevel) => {
   return headteacherLevel === 'PRIMARY' ? 'primaryHeadteacher' : 'jhsHeadteacher';
 };
 
+const getSchoolSlotKeyForAssistant = (schoolLevel) => {
+  return schoolLevel === 'PRIMARY' ? 'primaryAssistantHeadteacher' : 'jhsAssistantHeadteacher';
+};
+
 // Create headteacher account and optionally link to a school
 const createHeadteacher = async (req, res) => {
   try {
@@ -198,6 +202,161 @@ const deleteHeadteacher = async (req, res) => {
     return res.json({ success: true, message: 'Headteacher deleted successfully' });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message || 'Failed to delete headteacher' });
+  }
+};
+
+const createAssistantHeadteacher = async (req, res) => {
+  try {
+    const { fullName, email, schoolId, schoolLevel, linkedHeadteacherId, tempPassword } = req.body;
+    const phone = (req.body.phone && String(req.body.phone).trim()) || '';
+
+    if (!isEmailConfigured()) {
+      return res.status(500).json({
+        success: false,
+        message:
+          'Email service is not configured on the server (missing BREVO_API_KEY/BREVO_FROM_EMAIL). Assistant headteacher was not created.',
+      });
+    }
+
+    if (!tempPassword || String(tempPassword).trim().length < 8) {
+      return res.status(400).json({ success: false, message: 'Temporary password is required (min 8 characters)' });
+    }
+    if (!schoolLevel || !['PRIMARY', 'JHS'].includes(schoolLevel)) {
+      return res.status(400).json({ success: false, message: 'School level is required (PRIMARY or JHS)' });
+    }
+    if (!schoolId || !linkedHeadteacherId) {
+      return res.status(400).json({ success: false, message: 'schoolId and linkedHeadteacherId are required' });
+    }
+
+    const userExists = await User.findOne({ email });
+    if (userExists) return res.status(400).json({ success: false, message: 'Email already registered' });
+    if (phone) {
+      const phoneExists = await User.findOne({ phone });
+      if (phoneExists) return res.status(400).json({ success: false, message: 'Phone number already registered' });
+    }
+
+    const schoolDoc = await School.findById(schoolId);
+    if (!schoolDoc) return res.status(400).json({ success: false, message: 'School not found' });
+    if (!schoolAllowsHeadteacherLevel(schoolDoc, schoolLevel)) {
+      return res.status(400).json({
+        success: false,
+        message: `Cannot assign a ${schoolLevel} assistant to a ${schoolDoc.schoolLevel} school`,
+      });
+    }
+
+    const headteacher = await User.findById(linkedHeadteacherId);
+    if (!headteacher || headteacher.role !== 'headteacher') {
+      return res.status(400).json({ success: false, message: 'Linked headteacher not found' });
+    }
+    if (String(headteacher.school || '') !== String(schoolId)) {
+      return res.status(400).json({ success: false, message: 'Headteacher does not belong to the selected school' });
+    }
+    if (headteacher.schoolLevel !== schoolLevel) {
+      return res.status(400).json({ success: false, message: 'Headteacher school level does not match' });
+    }
+
+    const htSlotKey = getSchoolSlotKeyForHeadteacher(schoolLevel);
+    if (String(schoolDoc[htSlotKey] || '') !== String(headteacher._id)) {
+      return res.status(400).json({ success: false, message: 'Headteacher is not assigned to this school slot' });
+    }
+
+    const asstSlotKey = getSchoolSlotKeyForAssistant(schoolLevel);
+    if (schoolDoc[asstSlotKey]) {
+      const existing = await User.findById(schoolDoc[asstSlotKey]).select('role schoolLevel');
+      if (existing && existing.role === 'assistant_headteacher' && existing.schoolLevel === schoolLevel) {
+        return res.status(400).json({ success: false, message: `School already has a ${schoolLevel} assistant headteacher` });
+      }
+      await School.findByIdAndUpdate(schoolId, { $unset: { [asstSlotKey]: '' } });
+    }
+
+    const existingLinked = await User.findOne({ role: 'assistant_headteacher', linkedHeadteacher: headteacher._id });
+    if (existingLinked) {
+      return res.status(400).json({ success: false, message: 'This headteacher already has an assistant headteacher' });
+    }
+
+    const assistant = await User.create({
+      fullName,
+      email,
+      phone,
+      password: tempPassword,
+      role: 'assistant_headteacher',
+      schoolLevel,
+      school: schoolId,
+      linkedHeadteacher: headteacher._id,
+      isVerified: true,
+      isActive: true,
+    });
+
+    const rollback = async () => {
+      try {
+        await User.deleteOne({ _id: assistant._id });
+        await School.findByIdAndUpdate(schoolId, { $unset: { [asstSlotKey]: '' } });
+      } catch {
+        /* best effort */
+      }
+    };
+
+    try {
+      await School.findByIdAndUpdate(schoolId, { [asstSlotKey]: assistant._id });
+      const loginUrl = process.env.FRONTEND_URL || '';
+      await sendEmail({
+        to: email,
+        subject: 'EduTrack GH — Assistant Headteacher Account',
+        html: emailTemplates.assistantHeadteacherWelcome(fullName, email, tempPassword, loginUrl, headteacher.fullName),
+      });
+    } catch (emailError) {
+      console.error('Failed to send assistant welcome email:', emailError.message);
+      await rollback();
+      return res.status(502).json({
+        success: false,
+        message: 'Failed to send credentials email. Assistant headteacher was not created.',
+      });
+    }
+
+    return res.status(201).json({
+      success: true,
+      message: 'Assistant headteacher created successfully',
+      assistant: assistant.getPublicProfile(),
+      emailSentTo: email,
+    });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to create assistant headteacher' });
+  }
+};
+
+const getAssistantHeadteachers = async (req, res) => {
+  try {
+    const assistants = await User.find({ role: 'assistant_headteacher' })
+      .select('-password')
+      .populate('school', 'name schoolLevel')
+      .populate('linkedHeadteacher', 'fullName email schoolLevel')
+      .sort({ createdAt: -1 });
+    return res.json({ success: true, count: assistants.length, assistants });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to get assistant headteachers' });
+  }
+};
+
+const deleteAssistantHeadteacher = async (req, res) => {
+  try {
+    const assistant = await User.findById(req.params.id);
+    if (!assistant || assistant.role !== 'assistant_headteacher') {
+      return res.status(404).json({ success: false, message: 'Assistant headteacher not found' });
+    }
+
+    if (assistant.school) {
+      const school = await School.findById(assistant.school);
+      if (school) {
+        const slotKey = getSchoolSlotKeyForAssistant(assistant.schoolLevel);
+        if (String(school[slotKey] || '') === String(assistant._id)) school[slotKey] = null;
+        await school.save();
+      }
+    }
+
+    await User.deleteOne({ _id: assistant._id });
+    return res.json({ success: true, message: 'Assistant headteacher deleted successfully' });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message || 'Failed to delete assistant headteacher' });
   }
 };
 
@@ -453,6 +612,9 @@ const assignHeadteacherToSchool = async (req, res) => {
 
 module.exports = {
   createHeadteacher,
+  createAssistantHeadteacher,
+  getAssistantHeadteachers,
+  deleteAssistantHeadteacher,
   createTeacher,
   getHeadteachers,
   getTeachers,

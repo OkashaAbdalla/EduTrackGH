@@ -6,6 +6,7 @@
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card, Button } from '../../components/common';
 import { useToast } from '../../context';
+import { headteacherService } from '../../services';
 import { useManageTeachers } from '../../hooks/useManageTeachers';
 import TeacherTable from '../../components/headteacher/TeacherTable';
 import CreateTeacherModal from '../../components/headteacher/CreateTeacherModal';
@@ -13,7 +14,7 @@ import TeacherViewDetailsModal from '../../components/headteacher/TeacherViewDet
 import AssignClassroomModal from '../../components/headteacher/AssignClassroomModal';
 import PasswordRevealModal from '../../components/headteacher/PasswordRevealModal';
 
-const ManageTeachers = () => {
+const ManageTeachers = ({ apiService = headteacherService, readOnly = false } = {}) => {
   const { showToast } = useToast();
   const {
     teachers,
@@ -47,7 +48,7 @@ const ManageTeachers = () => {
     handleDeleteTeacher,
     handleAssignClassroom,
     deletingId,
-  } = useManageTeachers();
+  } = useManageTeachers({ apiService, readOnly });
 
   const handleAssignOpen = (teacher) => {
     setAssignTeacher(teacher);
@@ -63,13 +64,19 @@ const ManageTeachers = () => {
       <div className="space-y-6">
         <div className="flex justify-between items-start">
           <div>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">Manage Teachers</h1>
-            <p className="text-gray-600 dark:text-gray-400">Create and view teacher accounts for your school</p>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 dark:text-white mb-2">
+              {readOnly ? 'View Teachers' : 'Manage Teachers'}
+            </h1>
+            <p className="text-gray-600 dark:text-gray-400">
+              {readOnly ? 'View teacher accounts and assign classrooms' : 'Create and view teacher accounts for your school'}
+            </p>
           </div>
+          {!readOnly && (
           <Button variant="primary" onClick={handleOpenCreateModal}>
             <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>
             Create Teacher
           </Button>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -120,15 +127,17 @@ const ManageTeachers = () => {
         <TeacherTable
           filteredTeachers={filteredTeachers}
           loading={loading}
+          readOnly={readOnly}
           onOpenCreate={handleOpenCreateModal}
-          onToggleStatus={handleToggleStatus}
+          onToggleStatus={readOnly ? undefined : handleToggleStatus}
           onViewDetails={setViewDetailsTeacher}
           onAssignClassroom={handleAssignOpen}
-          onDeleteTeacher={handleDeleteTeacher}
+          onDeleteTeacher={readOnly ? undefined : handleDeleteTeacher}
           deletingId={deletingId}
         />
       </div>
 
+      {!readOnly && (
       <CreateTeacherModal
         open={showCreateModal}
         onClose={handleCloseCreateModal}
@@ -139,6 +148,7 @@ const ManageTeachers = () => {
         onSave={handleSaveTeacher}
         showToast={showToast}
       />
+      )}
 
       <TeacherViewDetailsModal teacher={viewDetailsTeacher} getAssignedClassrooms={getAssignedClassrooms} onClose={() => setViewDetailsTeacher(null)} />
 
@@ -152,12 +162,14 @@ const ManageTeachers = () => {
         onClose={handleAssignClose}
       />
 
+      {!readOnly && (
       <PasswordRevealModal
         open={showPasswordModal}
         password={generatedPassword}
         onCopy={() => { if (generatedPassword) { navigator.clipboard.writeText(generatedPassword); showToast('Password copied to clipboard', 'success'); } }}
         onClose={() => setShowPasswordModal(false)}
       />
+      )}
     </DashboardLayout>
   );
 };

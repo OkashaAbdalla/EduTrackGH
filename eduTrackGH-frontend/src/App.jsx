@@ -13,6 +13,7 @@
 import { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider, ToastProvider, ConfirmProvider, AuthProvider, SocketProvider, CalendarProvider } from './context';
+import { DelegationProvider } from './context/DelegationProvider';
 import { Landing, Login, Register, VerifyEmail, ForgotPassword, ResetPassword } from './pages/public';
 import { AdminLogin } from './pages/admin';
 import { ProtectedRoute } from './components/common';
@@ -32,6 +33,15 @@ const ManageStudents = lazy(() => import('./pages/headteacher/ManageStudents'));
 const HeadteacherManageTeachers = lazy(() => import('./pages/headteacher/ManageTeachers'));
 const HeadteacherChat = lazy(() => import('./pages/headteacher/Chat'));
 const HeadteacherRegisters = lazy(() => import('./pages/headteacher/Registers'));
+const HeadteacherAssistantChat = lazy(() => import('./pages/headteacher/HeadteacherAssistantChat'));
+
+const AssistantDashboard = lazy(() => import('./pages/assistant/AssistantDashboard'));
+const AssistantChat = lazy(() => import('./pages/assistant/AssistantChat'));
+const AssistantCompliance = lazy(() => import('./pages/assistant/AssistantCompliance'));
+const AssistantManageClasses = lazy(() => import('./pages/assistant/AssistantManageClasses'));
+const AssistantViewTeachers = lazy(() => import('./pages/assistant/AssistantViewTeachers'));
+const AssistantRegisters = lazy(() => import('./pages/assistant/AssistantRegisters'));
+const AssistantTeacherChat = lazy(() => import('./pages/assistant/AssistantTeacherChat'));
 
 const ParentDashboard = lazy(() => import('./pages/parent/ParentDashboard'));
 const ChildrenAttendance = lazy(() => import('./pages/parent/ChildrenAttendance'));
@@ -41,6 +51,8 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'));
 const CreateHeadteacher = lazy(() => import('./pages/admin/CreateHeadteacher'));
 const ManageSchools = lazy(() => import('./pages/admin/ManageSchools'));
 const ManageHeadteachers = lazy(() => import('./pages/admin/ManageHeadteachers'));
+const CreateAssistantHeadteacher = lazy(() => import('./pages/admin/CreateAssistantHeadteacher'));
+const ManageAssistantHeadteachers = lazy(() => import('./pages/admin/ManageAssistantHeadteachers'));
 const AttendanceAudit = lazy(() => import('./pages/admin/AttendanceAudit'));
 const SystemSettings = lazy(() => import('./pages/admin/SystemSettings'));
 const GesCalendarManagement = lazy(() => import('./pages/admin/GesCalendarManagement'));
@@ -60,12 +72,13 @@ function App() {
     <ThemeProvider>
       <ToastProvider>
         <ConfirmProvider>
-        <AuthProvider>
-          <CalendarProvider>
-          <SocketProvider>
-          <Router>
-        <Suspense fallback={<div className="min-h-screen flex items-center justify-center text-gray-600">Loading...</div>}>
-        <Routes>
+          <AuthProvider>
+            <CalendarProvider>
+              <SocketProvider>
+                <DelegationProvider>
+                  <Router>
+                    <Suspense fallback={null}>
+                      <Routes>
           {/* Public Routes */}
           <Route path={ROUTES.HOME} element={<Landing />} />
           <Route path={ROUTES.LOGIN} element={<Login />} />
@@ -94,6 +107,16 @@ function App() {
           <Route path={ROUTES.HEADTEACHER_MANAGE_TEACHERS} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherManageTeachers /></ProtectedRoute>} />
           <Route path={ROUTES.HEADTEACHER_CHAT} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherChat /></ProtectedRoute>} />
           <Route path={ROUTES.HEADTEACHER_REGISTERS} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherRegisters /></ProtectedRoute>} />
+          <Route path={ROUTES.HEADTEACHER_ASSISTANT_CHAT} element={<ProtectedRoute requiredRole={ROLES.HEADTEACHER}><HeadteacherAssistantChat /></ProtectedRoute>} />
+
+          {/* Assistant Headteacher Routes */}
+          <Route path={ROUTES.ASSISTANT_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.ASSISTANT_HEADTEACHER}><AssistantDashboard /></ProtectedRoute>} />
+          <Route path={ROUTES.ASSISTANT_CHAT} element={<ProtectedRoute requiredRole={ROLES.ASSISTANT_HEADTEACHER}><AssistantChat /></ProtectedRoute>} />
+          <Route path={ROUTES.ASSISTANT_COMPLIANCE} element={<ProtectedRoute requiredRole={ROLES.ASSISTANT_HEADTEACHER}><AssistantCompliance /></ProtectedRoute>} />
+          <Route path={ROUTES.ASSISTANT_MANAGE_CLASSES} element={<ProtectedRoute requiredRole={ROLES.ASSISTANT_HEADTEACHER}><AssistantManageClasses /></ProtectedRoute>} />
+          <Route path={ROUTES.ASSISTANT_VIEW_TEACHERS} element={<ProtectedRoute requiredRole={ROLES.ASSISTANT_HEADTEACHER}><AssistantViewTeachers /></ProtectedRoute>} />
+          <Route path={ROUTES.ASSISTANT_REGISTERS} element={<ProtectedRoute requiredRole={ROLES.ASSISTANT_HEADTEACHER}><AssistantRegisters /></ProtectedRoute>} />
+          <Route path={ROUTES.ASSISTANT_TEACHER_CHAT} element={<ProtectedRoute requiredRole={ROLES.ASSISTANT_HEADTEACHER}><AssistantTeacherChat /></ProtectedRoute>} />
           
           {/* Parent Routes - Protected */}
           <Route path={ROUTES.PARENT_DASHBOARD} element={<ProtectedRoute requiredRole={ROLES.PARENT}><ParentDashboard /></ProtectedRoute>} />
@@ -106,6 +129,8 @@ function App() {
           <Route path={ROUTES.MANAGE_SCHOOLS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><ManageSchools /></ProtectedRoute>} />
           <Route path={ROUTES.CREATE_HEADTEACHER} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><CreateHeadteacher /></ProtectedRoute>} />
           <Route path={ROUTES.MANAGE_HEADTEACHERS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><ManageHeadteachers /></ProtectedRoute>} />
+          <Route path={ROUTES.CREATE_ASSISTANT_HEADTEACHER} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><CreateAssistantHeadteacher /></ProtectedRoute>} />
+          <Route path={ROUTES.MANAGE_ASSISTANT_HEADTEACHERS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><ManageAssistantHeadteachers /></ProtectedRoute>} />
           <Route path={ROUTES.ATTENDANCE_AUDIT} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><AttendanceAudit /></ProtectedRoute>} />
           <Route path={ROUTES.GES_CALENDAR} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><GesCalendarManagement /></ProtectedRoute>} />
           <Route path={ROUTES.SYSTEM_SETTINGS} element={<ProtectedRoute requiredRole={ROLES.SUPER_ADMIN}><SystemSettings /></ProtectedRoute>} />
@@ -123,12 +148,13 @@ function App() {
           
           {/* Catch all - redirect to home */}
           <Route path="*" element={<Navigate to={ROUTES.HOME} replace />} />
-        </Routes>
-        </Suspense>
-      </Router>
-      </SocketProvider>
-          </CalendarProvider>
-        </AuthProvider>
+                      </Routes>
+                    </Suspense>
+                  </Router>
+                </DelegationProvider>
+              </SocketProvider>
+            </CalendarProvider>
+          </AuthProvider>
         </ConfirmProvider>
       </ToastProvider>
     </ThemeProvider>

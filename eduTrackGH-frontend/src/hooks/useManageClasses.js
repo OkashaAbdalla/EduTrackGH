@@ -6,7 +6,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { useToast, useAuthContext } from '../context';
 import { headteacherService } from '../services';
 
-export function useManageClasses() {
+export function useManageClasses(apiService = headteacherService) {
   const { showToast } = useToast();
   const { user } = useAuthContext();
   const schoolLevel = user?.schoolLevel;
@@ -34,8 +34,8 @@ export function useManageClasses() {
     try {
       setLoading(true);
       const [teachersResult, classroomsResult] = await Promise.all([
-        headteacherService.getTeachers(),
-        headteacherService.getClassrooms(),
+        apiService.getTeachers(),
+        apiService.getClassrooms(),
       ]);
       if (teachersResult.success) setTeachers(teachersResult.teachers || []);
       else showToast(teachersResult.message || 'Failed to load teachers', 'error');
@@ -46,7 +46,7 @@ export function useManageClasses() {
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, [showToast, apiService]);
 
   useEffect(() => { fetchData(); }, [fetchData]);
 
@@ -59,7 +59,7 @@ export function useManageClasses() {
     if (!classItem.teacherId) return;
     setSaving(true);
     try {
-      const result = await headteacherService.assignClassTeacher(classItem.id, null);
+      const result = await apiService.assignClassTeacher(classItem.id, null);
       if (result.success) {
         setClasses((prev) =>
           prev.map((cls) =>
@@ -75,7 +75,7 @@ export function useManageClasses() {
     } finally {
       setSaving(false);
     }
-  }, [showToast]);
+  }, [showToast, apiService]);
 
   const handleSaveAssignment = useCallback(async () => {
     if (!selectedTeacher) {
@@ -84,7 +84,7 @@ export function useManageClasses() {
     }
     setSaving(true);
     try {
-      const result = await headteacherService.assignClassTeacher(editingClass.id, selectedTeacher);
+      const result = await apiService.assignClassTeacher(editingClass.id, selectedTeacher);
       if (result.success) {
         const updated = result.classroom;
         const teacherName = updated.teacherId?.fullName || 'Unassigned';
@@ -106,7 +106,7 @@ export function useManageClasses() {
     } finally {
       setSaving(false);
     }
-  }, [editingClass, selectedTeacher, showToast]);
+  }, [editingClass, selectedTeacher, showToast, apiService]);
 
   const handleCancel = useCallback(() => {
     setEditingClass(null);
@@ -116,7 +116,7 @@ export function useManageClasses() {
   const handleSeedDefaultClasses = useCallback(async () => {
     setSeeding(true);
     try {
-      const result = await headteacherService.seedDefaultClassrooms();
+      const result = await apiService.seedDefaultClassrooms();
       if (result.success) {
         setClasses(mapClassrooms(result.classrooms));
         const createdCount = result.createdCount || 0;
@@ -129,7 +129,7 @@ export function useManageClasses() {
     } finally {
       setSeeding(false);
     }
-  }, [schoolLevel, showToast]);
+  }, [schoolLevel, showToast, apiService]);
 
   return {
     classes,

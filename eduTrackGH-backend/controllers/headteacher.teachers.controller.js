@@ -6,9 +6,14 @@ const User = require('../models/User');
 const Classroom = require('../models/Classroom');
 const { sendEmail, emailTemplates } = require('../utils/sendEmail');
 const { getClassroomLevelFilter } = require('../services/headteacherService');
+const {
+  getSchoolIdFromReq,
+  getHeadteacherIdForScope,
+  getSchoolLevelFromReq,
+} = require('../utils/headteacherActingContext');
 
 function getSchoolId(req) {
-  return req.user?.school || null;
+  return getSchoolIdFromReq(req);
 }
 
 function buildTeacherScopeQuery({ schoolId, userSchoolLevel, headteacherId }) {
@@ -27,8 +32,8 @@ const getTeachersForSchool = async (req, res) => {
     }
     const scopeQuery = buildTeacherScopeQuery({
       schoolId,
-      userSchoolLevel: req.user.schoolLevel,
-      headteacherId: req.user._id,
+      userSchoolLevel: getSchoolLevelFromReq(req),
+      headteacherId: getHeadteacherIdForScope(req),
     });
     const teachers = await User.find(scopeQuery).select('-password').sort({ createdAt: -1 });
     res.json({ success: true, count: teachers.length, teachers });
@@ -39,6 +44,9 @@ const getTeachersForSchool = async (req, res) => {
 
 const createTeacherForSchool = async (req, res) => {
   try {
+    if (req.user.role === 'assistant_headteacher') {
+      return res.status(403).json({ success: false, message: 'Assistant headteachers cannot create teachers' });
+    }
     const schoolId = getSchoolId(req);
     if (!schoolId) {
       return res.status(400).json({ success: false, message: 'No school assigned to your account' });
@@ -93,6 +101,9 @@ const createTeacherForSchool = async (req, res) => {
 
 const toggleTeacherStatusForSchool = async (req, res) => {
   try {
+    if (req.user.role === 'assistant_headteacher') {
+      return res.status(403).json({ success: false, message: 'Assistant headteachers cannot change teacher status' });
+    }
     const schoolId = getSchoolId(req);
     if (!schoolId) {
       return res.status(400).json({ success: false, message: 'No school assigned to your account' });
@@ -100,8 +111,8 @@ const toggleTeacherStatusForSchool = async (req, res) => {
     const { id } = req.params;
     const scopeQuery = buildTeacherScopeQuery({
       schoolId,
-      userSchoolLevel: req.user.schoolLevel,
-      headteacherId: req.user._id,
+      userSchoolLevel: getSchoolLevelFromReq(req),
+      headteacherId: getHeadteacherIdForScope(req),
     });
     const teacher = await User.findOne({ ...scopeQuery, _id: id });
     if (!teacher) return res.status(404).json({ success: false, message: 'Teacher not found in your school' });
@@ -119,6 +130,9 @@ const toggleTeacherStatusForSchool = async (req, res) => {
 
 const deleteTeacherForSchool = async (req, res) => {
   try {
+    if (req.user.role === 'assistant_headteacher') {
+      return res.status(403).json({ success: false, message: 'Assistant headteachers cannot delete teachers' });
+    }
     const schoolId = getSchoolId(req);
     if (!schoolId) {
       return res.status(400).json({ success: false, message: 'No school assigned to your account' });
@@ -127,8 +141,8 @@ const deleteTeacherForSchool = async (req, res) => {
     const { id } = req.params;
     const scopeQuery = buildTeacherScopeQuery({
       schoolId,
-      userSchoolLevel: req.user.schoolLevel,
-      headteacherId: req.user._id,
+      userSchoolLevel: getSchoolLevelFromReq(req),
+      headteacherId: getHeadteacherIdForScope(req),
     });
     const teacher = await User.findOne({ ...scopeQuery, _id: id });
     if (!teacher) {

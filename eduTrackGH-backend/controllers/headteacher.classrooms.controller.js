@@ -8,9 +8,14 @@ const DailyAttendance = require('../models/DailyAttendance');
 const TeacherMessage = require('../models/TeacherMessage');
 const { getClassroomsWithBootstrap, seedDefaultClassrooms, getDefinitionsForLevel, getClassroomLevelFilter } = require('../services/headteacherService');
 const { getClassroomRegisterHistoryForHeadteacher } = require('./attendance.history.controller');
+const {
+  getSchoolIdFromReq,
+  getHeadteacherIdForScope,
+  getSchoolLevelFromReq,
+} = require('../utils/headteacherActingContext');
 
 function getSchoolId(req) {
-  return req.user?.school || null;
+  return getSchoolIdFromReq(req);
 }
 
 const getClassroomsForSchool = async (req, res) => {
@@ -19,7 +24,7 @@ const getClassroomsForSchool = async (req, res) => {
     if (!schoolId) {
       return res.status(400).json({ success: false, message: 'No school assigned to your account' });
     }
-    const classrooms = await getClassroomsWithBootstrap(schoolId, req.user.schoolLevel);
+    const classrooms = await getClassroomsWithBootstrap(schoolId, getSchoolLevelFromReq(req));
     res.json({ success: true, classrooms });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message || 'Failed to get classrooms' });
@@ -29,7 +34,7 @@ const getClassroomsForSchool = async (req, res) => {
 const seedDefaultClassroomsForSchool = async (req, res) => {
   try {
     const schoolId = getSchoolId(req);
-    const schoolLevel = req.user.schoolLevel || 'PRIMARY';
+    const schoolLevel = getSchoolLevelFromReq(req) || 'PRIMARY';
     if (!schoolId) {
       return res.status(400).json({ success: false, message: 'No school assigned to your account' });
     }
@@ -60,7 +65,7 @@ const assignClassTeacher = async (req, res) => {
     const unassign = teacherId === null || teacherId === '' || teacherId === undefined;
 
     // Ensure headteacher cannot assign across PRIMARY/JHS sections.
-    const levelFilter = getClassroomLevelFilter(req.user.schoolLevel);
+    const levelFilter = getClassroomLevelFilter(getSchoolLevelFromReq(req));
     const classroomForScope = await Classroom.findOne({ _id: id, schoolId, ...levelFilter }).select('_id');
     if (!classroomForScope) {
       return res.status(404).json({ success: false, message: 'Classroom not found for your section' });
@@ -71,8 +76,8 @@ const assignClassTeacher = async (req, res) => {
         _id: teacherId,
         role: 'teacher',
         schoolId,
-        createdByHeadteacher: req.user._id,
-        schoolLevel: req.user.schoolLevel,
+        createdByHeadteacher: getHeadteacherIdForScope(req),
+        schoolLevel: getSchoolLevelFromReq(req),
       });
       if (!teacher) return res.status(400).json({ success: false, message: 'Invalid teacher for this school' });
     }
@@ -162,7 +167,7 @@ const unlockAttendanceForHeadteacher = async (req, res) => {
     try {
       await TeacherMessage.updateMany(
         {
-          headteacherId: req.user._id,
+          headteacherId: getHeadteacherIdForScope(req),
           schoolId,
           classroomId,
           attendanceDate: dateOnly,

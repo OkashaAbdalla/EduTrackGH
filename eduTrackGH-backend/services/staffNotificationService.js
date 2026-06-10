@@ -22,6 +22,7 @@ function mapNotification(doc) {
     classroomName: doc.classroomName || '',
     attendanceDate: doc.attendanceDate ? doc.attendanceDate.toISOString().split('T')[0] : null,
     otherUserId: doc.otherUserId?.toString?.() || doc.otherUserId || null,
+    delegationId: doc.delegationId?.toString?.() || doc.delegationId || null,
     read: doc.read,
     createdAt: doc.createdAt,
   };
@@ -74,6 +75,27 @@ async function notifyUnlockRequest({
     classroomName: classLabel,
     attendanceDate,
     otherUserId: teacherId,
+  });
+}
+
+async function notifyDelegationRequest({
+  assistantId,
+  headteacherId,
+  headteacherName,
+  note,
+  delegationId,
+  schoolId,
+}) {
+  const preview = note?.trim() || 'Please take over headteacher duties while I am away.';
+  return createAndEmit({
+    recipientId: assistantId,
+    schoolId,
+    senderId: headteacherId,
+    senderName: headteacherName || 'Headteacher',
+    type: 'delegation_request',
+    message: `${headteacherName || 'Headteacher'} requests you to act as Assistant Headteacher. ${preview}`,
+    otherUserId: headteacherId,
+    delegationId: delegationId || undefined,
   });
 }
 
@@ -136,6 +158,7 @@ async function deleteNotification(userId, notificationId) {
 module.exports = {
   notifyChatMessage,
   notifyUnlockRequest,
+  notifyDelegationRequest,
   notifyAttendanceUnlocked,
   getNotificationsForUser,
   markNotificationRead,

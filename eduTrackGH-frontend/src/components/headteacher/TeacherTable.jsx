@@ -7,6 +7,7 @@ import { Card, Button, ProfileAvatar } from '../common';
 export default function TeacherTable({
   filteredTeachers,
   loading,
+  readOnly = false,
   onOpenCreate,
   onToggleStatus,
   onViewDetails,
@@ -32,8 +33,12 @@ export default function TeacherTable({
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
           </svg>
           <h3 className="text-lg font-medium text-gray-900 dark:text-white mb-1">No teachers yet</h3>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">Start by creating teacher accounts for your school.</p>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            {readOnly ? 'No teachers are registered for this school yet.' : 'Start by creating teacher accounts for your school.'}
+          </p>
+          {!readOnly && (
           <Button variant="primary" onClick={onOpenCreate}>Create First Teacher</Button>
+          )}
         </div>
       </Card>
     );
@@ -65,6 +70,7 @@ export default function TeacherTable({
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-600 dark:text-gray-300">{teacher.email}</td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
+                    {!readOnly && onToggleStatus ? (
                     <button
                       type="button"
                       onClick={() => onToggleStatus(id)}
@@ -75,6 +81,13 @@ export default function TeacherTable({
                     >
                       {status}
                     </button>
+                    ) : (
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                      teacher.isActive ? 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+                    }`}>
+                      {status}
+                    </span>
+                    )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
                     <div className="flex flex-wrap gap-2">
@@ -84,14 +97,16 @@ export default function TeacherTable({
                       <button type="button" onClick={() => onAssignClassroom(teacher)} className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800/60">
                         Assign Classroom
                       </button>
+                      {onDeleteTeacher && (
                       <button
                         type="button"
-                        onClick={() => onDeleteTeacher && onDeleteTeacher(teacher)}
-                        disabled={!onDeleteTeacher || String(deletingId || '') === String(id)}
+                        onClick={() => onDeleteTeacher(teacher)}
+                        disabled={String(deletingId || '') === String(id)}
                         className="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-semibold bg-red-600 text-white hover:bg-red-700 disabled:opacity-60"
                       >
                         {String(deletingId || '') === String(id) ? 'Deleting...' : 'Delete'}
                       </button>
+                      )}
                     </div>
                   </td>
                 </tr>

@@ -26,7 +26,7 @@ const historyQueryParams = (periodMode, selectedMonth, selectedTerm) => {
   return { month: selectedMonth };
 };
 
-export const chipForStatus = (status) => {
+const chipForStatus = (status) => {
   const chipBase =
     'inline-flex h-6 w-6 items-center justify-center rounded border font-mono text-[11px] font-bold leading-none';
   if (status === 'present') {

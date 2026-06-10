@@ -71,6 +71,7 @@ app.use("/api/attendance", require("./routes/attendanceRoutes"));
 app.use("/api/classrooms", require("./routes/classroomRoutes"));
 app.use("/api/students", require("./routes/studentRoutes"));
 app.use("/api/headteacher", require("./routes/headteacherRoutes"));
+app.use("/api/assistant-headteacher", require("./routes/assistantHeadteacherRoutes"));
 app.use("/api/teacher", require("./routes/teacherRoutes"));
 app.use("/api/admin", require("./routes/adminRoutes"));
 app.use("/api/notifications", require("./routes/notificationRoutes"));

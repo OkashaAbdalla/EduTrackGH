@@ -25,7 +25,7 @@ export function generateSecurePassword() {
 
 const initialFormData = { fullName: '', email: '', phone: '', password: '' };
 
-export function useManageTeachers() {
+export function useManageTeachers({ apiService = headteacherService, readOnly = false } = {}) {
   const { showToast } = useToast();
   const { requestConfirmation } = useConfirm();
   const [teachers, setTeachers] = useState([]);
@@ -49,8 +49,8 @@ export function useManageTeachers() {
     try {
       setLoading(true);
       const [tRes, cRes] = await Promise.all([
-        headteacherService.getTeachers(),
-        headteacherService.getClassrooms(),
+        apiService.getTeachers(),
+        apiService.getClassrooms(),
       ]);
       if (tRes.success) {
         const raw = tRes.teachers || [];
@@ -62,9 +62,11 @@ export function useManageTeachers() {
     } finally {
       setLoading(false);
     }
-  }, [showToast]);
+  }, [showToast, apiService]);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const filteredTeachers = teachers.filter((t) => {
     const status = t.isActive ? 'active' : 'inactive';
@@ -102,11 +104,12 @@ export function useManageTeachers() {
   }, [formData]);
 
   const handleSaveTeacher = useCallback(async (e) => {
+    if (readOnly) return;
     e.preventDefault();
     if (!validateForm()) { showToast('Please fix the errors in the form', 'error'); return; }
     setSaving(true);
     try {
-      const result = await headteacherService.createTeacher({
+      const result = await apiService.createTeacher({
         fullName: formData.fullName,
         email: formData.email,
         phone: formData.phone,
@@ -124,11 +127,12 @@ export function useManageTeachers() {
     } finally {
       setSaving(false);
     }
-  }, [formData, validateForm, showToast, handleCloseCreateModal]);
+  }, [formData, validateForm, showToast, handleCloseCreateModal, readOnly, apiService]);
 
   const handleToggleStatus = useCallback(async (id) => {
+    if (readOnly) return;
     try {
-      const res = await headteacherService.toggleTeacherStatus(id);
+      const res = await apiService.toggleTeacherStatus(id);
       if (res.success && res.teacher) {
         setTeachers((prev) => prev.map((t) => (t._id || t.id) === id ? { ...t, ...res.teacher, isActive: res.teacher.isActive } : t));
         showToast(res.message || 'Teacher status updated', 'success');
@@ -136,9 +140,10 @@ export function useManageTeachers() {
     } catch (error) {
       showToast(error.response?.data?.message || 'Failed to update teacher status', 'error');
     }
-  }, [showToast]);
+  }, [showToast, readOnly, apiService]);
 
   const handleDeleteTeacher = useCallback(async (teacher) => {
+    if (readOnly) return;
     const id = teacher?._id || teacher?.id;
     if (!id) return;
     const ok = await requestConfirmation({
@@ -151,7 +156,7 @@ export function useManageTeachers() {
     if (!ok) return;
     setDeletingId(id);
     try {
-      const res = await headteacherService.deleteTeacher(id);
+      const res = await apiService.deleteTeacher(id);
       if (res.success) {
         setTeachers((prev) => prev.filter((t) => String(t._id || t.id) !== String(id)));
         // Also clear any classroom assignments in local state
@@ -168,14 +173,14 @@ export function useManageTeachers() {
     } finally {
       setDeletingId(null);
     }
-  }, [requestConfirmation, showToast]);
+  }, [requestConfirmation, showToast, readOnly, apiService]);
 
   const handleAssignClassroom = useCallback(async (e) => {
     e.preventDefault();
     if (!assignTeacher || !assignClassroomId) { showToast('Please select a classroom', 'error'); return; }
     setAssigning(true);
     try {
-      const result = await headteacherService.assignClassTeacher(assignClassroomId, assignTeacher._id || assignTeacher.id);
+      const result = await apiService.assignClassTeacher(assignClassroomId, assignTeacher._id || assignTeacher.id);
       if (result.success && result.classroom) {
         setClassrooms((prev) => prev.map((c) => String(c._id) === String(assignClassroomId) ? result.classroom : c));
         showToast('Teacher assigned to classroom successfully', 'success');
@@ -187,9 +192,10 @@ export function useManageTeachers() {
     } finally {
       setAssigning(false);
     }
-  }, [assignTeacher, assignClassroomId, showToast]);
+  }, [assignTeacher, assignClassroomId, showToast, apiService]);
 
   return {
+    readOnly,
     teachers,
     classrooms,
     loading,

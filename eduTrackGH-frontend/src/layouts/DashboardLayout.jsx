@@ -6,7 +6,14 @@ import { useState, useRef, useCallback } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuthContext, useConfirm } from '../context';
 import { ROUTES, ROLES } from '../utils/constants';
-import { TEACHER_MENU_ITEMS, HEADTEACHER_MENU_ITEMS, formatSchoolLevelLabel } from '../navigation/dashboardNavConfig';
+import {
+  TEACHER_MENU_ITEMS,
+  HEADTEACHER_MENU_ITEMS,
+  ASSISTANT_STANDBY_MENU_ITEMS,
+  ASSISTANT_ACTIVE_MENU_ITEMS,
+  formatSchoolLevelLabel,
+} from '../navigation/dashboardNavConfig';
+import { useDelegationStatus } from '../hooks/useDelegationStatus';
 import ThemeSwitcher from '../components/common/ThemeSwitcher';
 import { NotificationButton, StaffNotificationBell, ProfileAvatar } from '../components/common';
 
@@ -21,6 +28,7 @@ const DashboardLayout = ({ children }) => {
 
   const userRole = user?.role || ROLES.TEACHER;
   const displayName = user?.name || user?.email || userRole.replace(/_/g, ' ');
+  const { isActing: assistantIsActing, loading: delegationLoading, status: delegationStatus } = useDelegationStatus();
 
   const handleLogout = async () => {
     const confirmed = await requestConfirmation({
@@ -53,7 +61,9 @@ const DashboardLayout = ({ children }) => {
       { name: 'Dashboard', path: ROUTES.ADMIN_DASHBOARD, icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
       { name: 'Manage Schools', path: ROUTES.MANAGE_SCHOOLS, icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
       { name: 'Create Headteacher', path: ROUTES.CREATE_HEADTEACHER, icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z' },
+      { name: 'Create Assistant HT', path: ROUTES.CREATE_ASSISTANT_HEADTEACHER, icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z' },
       { name: 'Manage Headteachers', path: ROUTES.MANAGE_HEADTEACHERS, icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+      { name: 'Assistant Headteachers', path: ROUTES.MANAGE_ASSISTANT_HEADTEACHERS, icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
       { name: 'Attendance Audit', path: ROUTES.ATTENDANCE_AUDIT, icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
       { name: 'Users', path: ROUTES.ADMIN_USERS, icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
       { name: 'Students', path: ROUTES.ADMIN_STUDENTS, icon: 'M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422A12.083 12.083 0 0112 20.055a12.083 12.083 0 01-6.16-9.477L12 14z' },
@@ -72,7 +82,9 @@ const DashboardLayout = ({ children }) => {
       { name: 'Dashboard', path: ROUTES.ADMIN_DASHBOARD, icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
       { name: 'Manage Schools', path: ROUTES.MANAGE_SCHOOLS, icon: 'M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4' },
       { name: 'Create Headteacher', path: ROUTES.CREATE_HEADTEACHER, icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z' },
+      { name: 'Create Assistant HT', path: ROUTES.CREATE_ASSISTANT_HEADTEACHER, icon: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z' },
       { name: 'Manage Headteachers', path: ROUTES.MANAGE_HEADTEACHERS, icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
+      { name: 'Assistant Headteachers', path: ROUTES.MANAGE_ASSISTANT_HEADTEACHERS, icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z' },
       { name: 'Attendance Audit', path: ROUTES.ATTENDANCE_AUDIT, icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
       { name: 'Users', path: ROUTES.ADMIN_USERS, icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M15 7a3 3 0 11-6 0 3 3 0 016 0z' },
       { name: 'Students', path: ROUTES.ADMIN_STUDENTS, icon: 'M12 14l9-5-9-5-9 5 9 5z M12 14l6.16-3.422A12.083 12.083 0 0112 20.055a12.083 12.083 0 01-6.16-9.477L12 14z' },
@@ -89,9 +101,22 @@ const DashboardLayout = ({ children }) => {
     ],
   };
 
-  const menuItems = navigationMenus[userRole] || navigationMenus[ROLES.TEACHER];
+  const assistantMenu =
+    assistantIsActing || (delegationLoading && delegationStatus?.isActing)
+      ? ASSISTANT_ACTIVE_MENU_ITEMS
+      : ASSISTANT_STANDBY_MENU_ITEMS;
+  const menuItems =
+    userRole === ROLES.ASSISTANT_HEADTEACHER
+      ? assistantMenu
+      : navigationMenus[userRole] || navigationMenus[ROLES.TEACHER];
   const sectionLabel =
-    userRole === ROLES.TEACHER ? '' : formatSchoolLevelLabel(user?.schoolLevel);
+    userRole === ROLES.TEACHER
+      ? ''
+      : userRole === ROLES.ASSISTANT_HEADTEACHER
+        ? assistantIsActing
+          ? 'Acting · Assistant HT'
+          : 'Standby · Assistant HT'
+        : formatSchoolLevelLabel(user?.schoolLevel);
 
   return (
     <div className="dashboard-shell h-screen overflow-hidden">
@@ -190,7 +215,9 @@ const DashboardLayout = ({ children }) => {
             <div className="flex-1 min-w-0" />
             <div className="flex items-center gap-2">
               {userRole === ROLES.PARENT && <NotificationButton />}
-              {(userRole === ROLES.HEADTEACHER || userRole === ROLES.TEACHER) && <StaffNotificationBell />}
+              {(userRole === ROLES.HEADTEACHER || userRole === ROLES.TEACHER || userRole === ROLES.ASSISTANT_HEADTEACHER) && (
+                <StaffNotificationBell />
+              )}
               <ThemeSwitcher />
             </div>
           </header>

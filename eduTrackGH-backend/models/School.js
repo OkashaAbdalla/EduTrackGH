@@ -73,6 +73,16 @@ const schoolSchema = new mongoose.Schema({
     ref: 'User',
     sparse: true,
   },
+  primaryAssistantHeadteacher: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    sparse: true,
+  },
+  jhsAssistantHeadteacher: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User',
+    sparse: true,
+  },
   // Legacy single headteacher reference (backward compatibility)
   headteacher: {
     type: mongoose.Schema.Types.ObjectId,

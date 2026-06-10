@@ -26,6 +26,17 @@ const {
   markAllAsRead: markAllHeadteacherNotificationsRead,
   deleteNotification: deleteHeadteacherNotification,
 } = require('../controllers/headteacherNotificationController');
+const {
+  getStatus,
+  requestDelegationHandler,
+  endDelegationHandler,
+} = require('../controllers/delegationController');
+const {
+  getConversation: getAssistantChat,
+  sendMessage: sendAssistantChat,
+  editMessage: editAssistantChat,
+  deleteMessage: deleteAssistantChat,
+} = require('../controllers/assistantChatController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
 
@@ -62,5 +73,14 @@ router.delete('/notifications/:id', deleteHeadteacherNotification);
 // School GPS boundary for attendance
 router.get('/school-location', getSchoolLocation);
 router.put('/set-location', setSchoolLocation);
+
+// Assistant headteacher delegation + chat
+router.get('/delegation/status', getStatus);
+router.post('/delegation/request', requestDelegationHandler);
+router.post('/delegation/end', endDelegationHandler);
+router.get('/assistant-chat', getAssistantChat);
+router.post('/assistant-chat', sendAssistantChat);
+router.patch('/assistant-chat/:id', editAssistantChat);
+router.delete('/assistant-chat/:id', deleteAssistantChat);
 
 module.exports = router;

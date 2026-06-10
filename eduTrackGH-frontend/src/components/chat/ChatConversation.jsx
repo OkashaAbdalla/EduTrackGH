@@ -8,6 +8,8 @@ import { ProfileAvatar } from '../common';
 import chatService from '../../services/chatService';
 import { useSocket, useToast } from '../../context';
 
+const isHeadteacherSide = (role) => role === 'headteacher' || role === 'assistant_headteacher';
+
 const ChatConversation = ({ otherId, otherName, otherAvatarUrl = '', currentRole, onBack }) => {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
@@ -34,7 +36,7 @@ const ChatConversation = ({ otherId, otherName, otherAvatarUrl = '', currentRole
   const conversationMatch = (data) => {
     const ht = data.headteacherId?.toString?.();
     const tt = data.teacherId?.toString?.();
-    return (currentRole === 'headteacher' && tt === otherId) || (currentRole === 'teacher' && ht === otherId);
+    return (isHeadteacherSide(currentRole) && tt === otherId) || (currentRole === 'teacher' && ht === otherId);
   };
 
   useEffect(() => {
@@ -70,7 +72,7 @@ const ChatConversation = ({ otherId, otherName, otherAvatarUrl = '', currentRole
         }
         setEditingMessage(null);
       } else {
-        const res = await (currentRole === 'headteacher'
+        const res = await (isHeadteacherSide(currentRole)
           ? chatService.sendMessage(otherId, text)
           : chatService.sendMessage(null, text));
 

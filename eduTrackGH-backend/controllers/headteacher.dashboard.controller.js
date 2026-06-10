@@ -11,8 +11,10 @@ const DailyAttendance = require('../models/DailyAttendance');
 const { getClassroomLevelFilter } = require('../services/headteacherService');
 const { approvedInClassroomIds } = require('../utils/studentQuery');
 
+const { getSchoolIdFromReq, getSchoolLevelFromReq } = require('../utils/headteacherActingContext');
+
 function getSchoolId(req) {
-  return req.user?.school || null;
+  return getSchoolIdFromReq(req);
 }
 
 function getMonthRangeUtc(now = new Date()) {
@@ -32,7 +34,7 @@ const getDashboardStats = async (req, res) => {
       return res.status(400).json({ success: false, message: 'No school assigned to your account' });
     }
 
-    const levelFilter = getClassroomLevelFilter(req.user.schoolLevel);
+    const levelFilter = getClassroomLevelFilter(getSchoolLevelFromReq(req));
     const classrooms = await Classroom.find({ schoolId, isActive: true, ...levelFilter }).select('_id teacherId');
     const classroomIds = classrooms.map((c) => c._id);
 

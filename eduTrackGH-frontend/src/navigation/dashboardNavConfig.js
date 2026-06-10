@@ -60,6 +60,11 @@ export const HEADTEACHER_MENU_ITEMS = [
     icon: 'M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.8L3 20l1.2-3.6A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
   },
   {
+    name: 'Assistant',
+    path: ROUTES.HEADTEACHER_ASSISTANT_CHAT,
+    icon: 'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z',
+  },
+  {
     name: 'Teacher Compliance',
     path: ROUTES.TEACHER_COMPLIANCE,
     icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
@@ -72,6 +77,48 @@ export const HEADTEACHER_MENU_ITEMS = [
   {
     name: 'Registers',
     path: ROUTES.HEADTEACHER_REGISTERS,
+    icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
+  },
+];
+
+export const ASSISTANT_STANDBY_MENU_ITEMS = [
+  {
+    name: 'Dashboard',
+    path: ROUTES.ASSISTANT_DASHBOARD,
+    icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6',
+  },
+  {
+    name: 'Headteacher Messages',
+    path: ROUTES.ASSISTANT_CHAT,
+    icon: 'M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.8L3 20l1.2-3.6A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+  },
+];
+
+export const ASSISTANT_ACTIVE_MENU_ITEMS = [
+  ...ASSISTANT_STANDBY_MENU_ITEMS,
+  {
+    name: 'Messages',
+    path: ROUTES.ASSISTANT_TEACHER_CHAT,
+    icon: 'M8 10h.01M12 10h.01M16 10h.01M21 12c0 4.418-4.03 8-9 8a9.77 9.77 0 01-4-.8L3 20l1.2-3.6A7.96 7.96 0 013 12c0-4.418 4.03-8 9-8s9 3.582 9 8z',
+  },
+  {
+    name: 'Teacher Compliance',
+    path: ROUTES.ASSISTANT_COMPLIANCE,
+    icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2',
+  },
+  {
+    name: 'View Teachers',
+    path: ROUTES.ASSISTANT_VIEW_TEACHERS,
+    icon: 'M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z',
+  },
+  {
+    name: 'Manage Classes',
+    path: ROUTES.ASSISTANT_MANAGE_CLASSES,
+    icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z',
+  },
+  {
+    name: 'Registers',
+    path: ROUTES.ASSISTANT_REGISTERS,
     icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z',
   },
 ];

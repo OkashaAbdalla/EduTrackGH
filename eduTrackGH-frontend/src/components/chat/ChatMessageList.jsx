@@ -6,7 +6,25 @@ import { useState } from 'react';
 import ContextMenu from '../common/ContextMenu';
 import { useConfirm } from '../../context';
 
-const ChatMessageList = ({ messages, currentRole, onEdit, onDelete }) => {
+const isHeadteacherSide = (role) => role === 'headteacher' || role === 'assistant_headteacher';
+
+const isOwnMessage = (message, currentRole, strictRoleMatch = false) => {
+  if (message.senderRole === currentRole) return true;
+  if (strictRoleMatch) return false;
+  if (isHeadteacherSide(currentRole) && message.senderRole === 'headteacher') return true;
+  return false;
+};
+
+const canEditMessage = (message) => message.messageType !== 'delegation_request';
+
+const ChatMessageList = ({
+  messages,
+  currentRole,
+  onEdit,
+  onDelete,
+  strictRoleMatch = false,
+  renderMessageExtra,
+}) => {
   const { requestConfirmation } = useConfirm();
   const [menu, setMenu] = useState(null);
 
@@ -14,9 +32,9 @@ const ChatMessageList = ({ messages, currentRole, onEdit, onDelete }) => {
 
   const canUseMenu = (message) => {
     if (message.isDeleted) return false;
-    const isOwn = message.senderRole === currentRole;
+    const isOwn = isOwnMessage(message, currentRole, strictRoleMatch);
     if (onDelete) return true;
-    return isOwn && Boolean(onEdit);
+    return isOwn && Boolean(onEdit) && canEditMessage(message);
   };
 
   const handleContextMenu = (e, message) => {
@@ -36,7 +54,7 @@ const ChatMessageList = ({ messages, currentRole, onEdit, onDelete }) => {
   };
 
   const handleDelete = async (message) => {
-    const isOwn = message.senderRole === currentRole;
+    const isOwn = isOwnMessage(message, currentRole, strictRoleMatch);
     const ok = await requestConfirmation({
       title: 'Delete Message',
       message: isOwn
@@ -51,7 +69,7 @@ const ChatMessageList = ({ messages, currentRole, onEdit, onDelete }) => {
 
   const menuItems = menu
     ? [
-        ...(onEdit && menu.message.senderRole === currentRole
+        ...(onEdit && isOwnMessage(menu.message, currentRole, strictRoleMatch) && canEditMessage(menu.message)
           ? [{ id: 'edit', label: 'Edit', onClick: () => handleEdit(menu.message) }]
           : []),
         ...(onDelete
@@ -64,8 +82,9 @@ const ChatMessageList = ({ messages, currentRole, onEdit, onDelete }) => {
     <>
       <div className="flex flex-col gap-3 overflow-y-auto flex-1 p-4">
         {messages.filter((m) => !m.isDeleted).map((m) => {
-          const isOwn = m.senderRole === currentRole;
+          const isOwn = isOwnMessage(m, currentRole, strictRoleMatch);
           const hasActions = canUseMenu(m);
+          const extra = renderMessageExtra?.(m);
           return (
             <div
               key={m.id}
@@ -80,6 +99,7 @@ const ChatMessageList = ({ messages, currentRole, onEdit, onDelete }) => {
                 } ${hasActions ? 'cursor-context-menu' : ''}`}
               >
                 <p className="text-sm whitespace-pre-wrap break-words">{m.message}</p>
+                {extra}
                 <p className={`text-xs mt-1 ${isOwn ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'}`}>
                   {m.createdAt &&
                     new Date(m.createdAt).toLocaleTimeString('en-GB', {

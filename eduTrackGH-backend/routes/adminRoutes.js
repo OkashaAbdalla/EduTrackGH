@@ -7,6 +7,9 @@ const express = require('express');
 const router = express.Router();
 const {
   createHeadteacher,
+  createAssistantHeadteacher,
+  getAssistantHeadteachers,
+  deleteAssistantHeadteacher,
   createTeacher,
   getHeadteachers,
   getTeachers,
@@ -65,6 +68,11 @@ router.post('/headteachers', validateCreateHeadteacher, createHeadteacher);
 router.get('/headteachers', getHeadteachers);
 router.patch('/headteachers/:id/assign-school', require('../controllers/admin.users.controller').assignHeadteacherToSchool);
 router.delete('/headteachers/:id', require('../controllers/admin.users.controller').deleteHeadteacher);
+
+// Assistant headteacher management
+router.post('/assistant-headteachers', validateCreateHeadteacher, createAssistantHeadteacher);
+router.get('/assistant-headteachers', getAssistantHeadteachers);
+router.delete('/assistant-headteachers/:id', deleteAssistantHeadteacher);
 
 // Teacher management
 router.post('/teachers', validateCreateTeacher, createTeacher);
