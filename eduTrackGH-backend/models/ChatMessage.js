@@ -15,6 +15,8 @@ const chatMessageSchema = new mongoose.Schema(
     createdAt: { type: Date, default: Date.now },
     edited: { type: Boolean, default: false },
     isDeleted: { type: Boolean, default: false },
+    hiddenForHeadteacher: { type: Boolean, default: false },
+    hiddenForTeacher: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

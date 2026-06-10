@@ -36,9 +36,12 @@ const ChatMessageList = ({ messages, currentRole, onEdit, onDelete }) => {
   };
 
   const handleDelete = async (message) => {
+    const isOwn = message.senderRole === currentRole;
     const ok = await requestConfirmation({
       title: 'Delete Message',
-      message: 'Delete this message for both sides?',
+      message: isOwn
+        ? 'Delete this message for everyone? It will be cleared from both chats.'
+        : 'Remove this message from your chat only? The sender will still see it.',
       confirmText: 'Delete',
       cancelText: 'Cancel',
       tone: 'danger',
@@ -60,7 +63,7 @@ const ChatMessageList = ({ messages, currentRole, onEdit, onDelete }) => {
   return (
     <>
       <div className="flex flex-col gap-3 overflow-y-auto flex-1 p-4">
-        {messages.map((m) => {
+        {messages.filter((m) => !m.isDeleted).map((m) => {
           const isOwn = m.senderRole === currentRole;
           const hasActions = canUseMenu(m);
           return (
@@ -76,16 +79,14 @@ const ChatMessageList = ({ messages, currentRole, onEdit, onDelete }) => {
                     : 'bg-gray-200 dark:bg-gray-700 text-gray-900 dark:text-gray-100 rounded-bl-md'
                 } ${hasActions ? 'cursor-context-menu' : ''}`}
               >
-                <p className="text-sm whitespace-pre-wrap break-words">
-                  {m.isDeleted ? 'Message deleted' : m.message}
-                </p>
+                <p className="text-sm whitespace-pre-wrap break-words">{m.message}</p>
                 <p className={`text-xs mt-1 ${isOwn ? 'text-green-100' : 'text-gray-500 dark:text-gray-400'}`}>
                   {m.createdAt &&
                     new Date(m.createdAt).toLocaleTimeString('en-GB', {
                       hour: '2-digit',
                       minute: '2-digit',
                     })}
-                  {m.edited && !m.isDeleted && ' · edited'}
+                  {m.edited && ' · edited'}
                 </p>
               </div>
             </div>

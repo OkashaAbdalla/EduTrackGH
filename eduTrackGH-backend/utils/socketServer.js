@@ -73,6 +73,14 @@ function emitChatMessage(data) {
   }
 }
 
+function emitChatMessageDeleted(data) {
+  const { headteacherId, teacherId } = data;
+  if (io) {
+    io.to(`user:${headteacherId}`).emit('chat_message_deleted', data);
+    io.to(`user:${teacherId}`).emit('chat_message_deleted', data);
+  }
+}
+
 function emitHeadteacherNotification(data) {
   if (io && data?.headteacherId) {
     io.to(`user:${data.headteacherId}`).emit('headteacher_notification', data);
@@ -93,6 +101,7 @@ module.exports = {
   emitAttendanceUnlocked,
   emitComplianceUpdated,
   emitChatMessage,
+  emitChatMessageDeleted,
   emitHeadteacherNotification,
   emitStaffNotification,
 };

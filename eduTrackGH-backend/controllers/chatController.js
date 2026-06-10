@@ -7,7 +7,23 @@ const ChatMessage = require('../models/ChatMessage');
 const User = require('../models/User');
 const School = require('../models/School');
 const { sendEmail, emailTemplates } = require('../utils/sendEmail');
-const { emitChatMessage } = require('../utils/socketServer');
+const { emitChatMessage, emitChatMessageDeleted } = require('../utils/socketServer');
+
+function mapMessageForUser(m, user) {
+  if (m.isDeleted) return null;
+  const hidden =
+    (user.role === 'headteacher' && m.hiddenForHeadteacher) ||
+    (user.role === 'teacher' && m.hiddenForTeacher);
+  if (hidden) return null;
+  return {
+    id: m._id,
+    message: m.message,
+    senderRole: m.senderRole,
+    createdAt: m.createdAt,
+    edited: m.edited,
+    isDeleted: m.isDeleted,
+  };
+}
 const { notifyChatMessage } = require('../services/staffNotificationService');
 
 async function sendMessage(req, res) {
@@ -96,14 +112,7 @@ async function getConversation(req, res) {
     }
 
     const messages = await ChatMessage.find({ headteacherId, teacherId }).sort({ createdAt: 1 }).lean();
-    const list = messages.map((m) => ({
-      id: m._id,
-      message: m.message,
-      senderRole: m.senderRole,
-      createdAt: m.createdAt,
-      edited: m.edited,
-      isDeleted: m.isDeleted,
-    }));
+    const list = messages.map((m) => mapMessageForUser(m, user)).filter(Boolean);
     return res.json({ success: true, messages: list });
   } catch (error) {
     console.error('getConversation error:', error);
@@ -210,8 +219,35 @@ async function deleteMessage(req, res) {
       return res.status(403).json({ success: false, message: 'You cannot delete this message' });
     }
 
-    await ChatMessage.deleteOne({ _id: id });
-    return res.json({ success: true });
+    const isSender =
+      (doc.senderRole === 'headteacher' && isParticipantHeadteacher) ||
+      (doc.senderRole === 'teacher' && isParticipantTeacher);
+
+    if (isSender) {
+      doc.isDeleted = true;
+      await doc.save();
+
+      const payload = {
+        id: doc._id,
+        headteacherId: doc.headteacherId.toString(),
+        teacherId: doc.teacherId.toString(),
+        isDeleted: true,
+        scope: 'everyone',
+      };
+      emitChatMessageDeleted(payload);
+
+      return res.json({
+        success: true,
+        scope: 'everyone',
+        message: mapMessageForUser(doc.toObject(), user),
+      });
+    }
+
+    if (user.role === 'headteacher') doc.hiddenForHeadteacher = true;
+    else doc.hiddenForTeacher = true;
+    await doc.save();
+
+    return res.json({ success: true, scope: 'self' });
   } catch (error) {
     console.error('deleteMessage error:', error);
     return res.status(500).json({ success: false, message: 'Failed to delete message' });

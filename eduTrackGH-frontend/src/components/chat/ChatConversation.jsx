@@ -31,21 +31,31 @@ const ChatConversation = ({ otherId, otherName, otherAvatarUrl = '', currentRole
     loadMessages();
   }, [otherId]);
 
+  const conversationMatch = (data) => {
+    const ht = data.headteacherId?.toString?.();
+    const tt = data.teacherId?.toString?.();
+    return (currentRole === 'headteacher' && tt === otherId) || (currentRole === 'teacher' && ht === otherId);
+  };
+
   useEffect(() => {
     if (!socket || !otherId) return;
-    const handler = (data) => {
-      const ht = data.headteacherId?.toString?.();
-      const tt = data.teacherId?.toString?.();
-      const match = (currentRole === 'headteacher' && tt === otherId) || (currentRole === 'teacher' && ht === otherId);
-      if (match) {
-        setMessages((prev) => {
-          const exists = prev.some((m) => m.id === data.id);
-          return exists ? prev : [...prev, data];
-        });
-      }
+    const onNewMessage = (data) => {
+      if (!conversationMatch(data)) return;
+      setMessages((prev) => {
+        const exists = prev.some((m) => m.id === data.id);
+        return exists ? prev : [...prev, data];
+      });
     };
-    socket.on('chat_message', handler);
-    return () => socket.off('chat_message', handler);
+    const onMessageDeleted = (data) => {
+      if (!conversationMatch(data)) return;
+      setMessages((prev) => prev.filter((m) => String(m.id) !== String(data.id)));
+    };
+    socket.on('chat_message', onNewMessage);
+    socket.on('chat_message_deleted', onMessageDeleted);
+    return () => {
+      socket.off('chat_message', onNewMessage);
+      socket.off('chat_message_deleted', onMessageDeleted);
+    };
   }, [socket, otherId, currentRole]);
 
   const handleSend = async () => {
@@ -102,8 +112,8 @@ const ChatConversation = ({ otherId, otherName, otherAvatarUrl = '', currentRole
         }}
         onDelete={async (m) => {
           try {
-            await chatService.deleteMessage(m.id);
-            setMessages((prev) => prev.filter((x) => x.id !== m.id));
+            const res = await chatService.deleteMessage(m.id);
+            setMessages((prev) => prev.filter((x) => String(x.id) !== String(m.id)));
           } catch {
             showToast('Failed to delete message', 'error');
           }
