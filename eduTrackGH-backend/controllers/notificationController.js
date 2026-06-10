@@ -69,4 +69,18 @@ const markAllAsRead = async (req, res) => {
   }
 };
 
-module.exports = { getMyNotifications, markAsRead, markAllAsRead };
+const deleteNotification = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const parentId = req.user._id;
+    const result = await Notification.deleteOne({ _id: id, parentId });
+    if (!result.deletedCount) {
+      return res.status(404).json({ success: false, message: "Notification not found" });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    res.status(500).json({ success: false, message: "Failed to delete notification" });
+  }
+};
+
+module.exports = { getMyNotifications, markAsRead, markAllAsRead, deleteNotification };

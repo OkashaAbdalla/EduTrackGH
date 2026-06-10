@@ -32,6 +32,15 @@ const teacherNotificationService = {
       return { success: false, message: error.response?.data?.message || error.message };
     }
   },
+
+  deleteNotification: async (id) => {
+    try {
+      const response = await apiClient.delete(`/teacher/notifications/${id}`);
+      return response.data;
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || error.message };
+    }
+  },
 };
 
 export default teacherNotificationService;

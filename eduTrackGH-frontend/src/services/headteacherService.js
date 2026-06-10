@@ -118,6 +118,16 @@ const headteacherService = {
       return { success: false, message: error.response?.data?.message || error.message };
     }
   },
+
+  deleteNotification: async (id, source) => {
+    try {
+      const params = source ? { source } : {};
+      const response = await apiClient.delete(`/headteacher/notifications/${id}`, { params });
+      return response.data;
+    } catch (error) {
+      return { success: false, message: error.response?.data?.message || error.message };
+    }
+  },
 };
 
 export default headteacherService;

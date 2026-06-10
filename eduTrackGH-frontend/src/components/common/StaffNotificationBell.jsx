@@ -6,7 +6,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ROUTES, ROLES } from '../../utils/constants';
-import { useAuthContext, useSocket } from '../../context';
+import { useAuthContext, useSocket, useConfirm } from '../../context';
+import ContextMenu from './ContextMenu';
 import headteacherService from '../../services/headteacherService';
 import teacherNotificationService from '../../services/teacherNotificationService';
 import {
@@ -67,6 +68,8 @@ const StaffNotificationBell = () => {
   const dropdownRef = useRef(null);
   const previousUnreadRef = useRef(0);
   const fetchingRef = useRef(false);
+  const [contextMenu, setContextMenu] = useState(null);
+  const { requestConfirmation } = useConfirm();
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -217,6 +220,38 @@ const StaffNotificationBell = () => {
     }
   };
 
+  const handleDeleteNotif = async (notif) => {
+    const ok = await requestConfirmation({
+      title: 'Delete Notification',
+      message: 'Remove this notification permanently?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      tone: 'danger',
+    });
+    if (!ok) return;
+
+    const source = notif.source === 'staff' ? 'staff' : 'compliance';
+    try {
+      const res = isHeadteacher
+        ? await headteacherService.deleteNotification(notif.id, source)
+        : await teacherNotificationService.deleteNotification(notif.id);
+      if (res?.success === false) return;
+      setNotifications((prev) => prev.filter((n) => String(n.id) !== String(notif.id)));
+      if (!notif.read) {
+        setUnreadCount((c) => Math.max(0, c - 1));
+        previousUnreadRef.current = Math.max(0, previousUnreadRef.current - 1);
+      }
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleNotifContextMenu = (e, notif) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY, notif });
+  };
+
   const quickLink = isHeadteacher ? ROUTES.HEADTEACHER_DASHBOARD : ROUTES.TEACHER_CHAT;
   const quickLinkLabel = isHeadteacher ? 'Dashboard' : 'Messages';
 
@@ -307,7 +342,8 @@ const StaffNotificationBell = () => {
                     key={`${notif.source || 'staff'}-${notif.id}`}
                     type="button"
                     onClick={() => handleOpenNotif(notif)}
-                    className="w-full text-left px-4 py-3 hover:bg-[color:var(--glass)] transition-colors"
+                    onContextMenu={(e) => handleNotifContextMenu(e, notif)}
+                    className="w-full text-left px-4 py-3 hover:bg-[color:var(--glass)] transition-colors cursor-context-menu"
                   >
                     <div className="flex items-start gap-3">
                       <div className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${notifDotClass(notif.type)}`} />
@@ -338,6 +374,22 @@ const StaffNotificationBell = () => {
             )}
           </div>
         </div>
+      )}
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={[
+            {
+              id: 'delete',
+              label: 'Delete',
+              danger: true,
+              onClick: () => handleDeleteNotif(contextMenu.notif),
+            },
+          ]}
+          onClose={() => setContextMenu(null)}
+        />
       )}
     </div>
   );

@@ -128,6 +128,11 @@ async function markAllNotificationsRead(userId) {
   await StaffNotification.updateMany({ recipientId: userId, read: false }, { $set: { read: true } });
 }
 
+async function deleteNotification(userId, notificationId) {
+  const result = await StaffNotification.deleteOne({ _id: notificationId, recipientId: userId });
+  return result.deletedCount > 0;
+}
+
 module.exports = {
   notifyChatMessage,
   notifyUnlockRequest,
@@ -135,5 +140,6 @@ module.exports = {
   getNotificationsForUser,
   markNotificationRead,
   markAllNotificationsRead,
+  deleteNotification,
   mapNotification,
 };

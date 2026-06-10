@@ -35,6 +35,16 @@ const notificationService = {
       return { success: false, message: error.response?.data?.message || error.message };
     }
   },
+
+  deleteNotification: async (id) => {
+    try {
+      const response = await apiClient.delete(`/notifications/${id}`);
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      return { success: false, message: error.response?.data?.message || error.message };
+    }
+  },
 };
 
 export default notificationService;

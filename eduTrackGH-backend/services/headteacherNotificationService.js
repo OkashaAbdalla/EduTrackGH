@@ -9,7 +9,11 @@ const HeadteacherNotification = require('../models/HeadteacherNotification');
 const { getClassroomLevelFilter } = require('./headteacherService');
 const { getEngine } = require('./calendarRuntime');
 const { emitHeadteacherNotification } = require('../utils/socketServer');
-const { getNotificationsForUser: getStaffNotificationsForUser, markAllNotificationsRead: markAllStaffRead } = require('./staffNotificationService');
+const {
+  getNotificationsForUser: getStaffNotificationsForUser,
+  markAllNotificationsRead: markAllStaffRead,
+  deleteNotification: deleteStaffNotification,
+} = require('./staffNotificationService');
 
 function getDateOnlyUtc(dateStr) {
   const [y, m, d] = dateStr.split('-').map((v) => parseInt(v, 10));
@@ -206,6 +210,11 @@ async function markAllNotificationsRead(headteacherId) {
   await markAllStaffRead(headteacherId);
 }
 
+async function deleteComplianceNotification(headteacherId, notificationId) {
+  const result = await HeadteacherNotification.deleteOne({ _id: notificationId, headteacherId });
+  return result.deletedCount > 0;
+}
+
 async function clearUnmarkedOnTeacherMark({ schoolId, teacherId, dateStr }) {
   if (!schoolId || !teacherId || !dateStr) return;
   const dateOnly = getDateOnlyUtc(dateStr);
@@ -222,5 +231,7 @@ module.exports = {
   getNotificationsForHeadteacher,
   markNotificationRead,
   markAllNotificationsRead,
+  deleteComplianceNotification,
+  deleteStaffNotification,
   clearUnmarkedOnTeacherMark,
 };

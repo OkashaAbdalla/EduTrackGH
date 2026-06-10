@@ -6,6 +6,8 @@ const {
   getNotificationsForHeadteacher,
   markNotificationRead,
   markAllNotificationsRead,
+  deleteComplianceNotification,
+  deleteStaffNotification,
 } = require('../services/headteacherNotificationService');
 const {
   markNotificationRead: markStaffNotificationRead,
@@ -54,4 +56,25 @@ const markAllAsRead = async (req, res) => {
   }
 };
 
-module.exports = { getMyNotifications, markAsRead, markAllAsRead };
+const deleteNotification = async (req, res) => {
+  try {
+    const source = req.query.source;
+    let deleted = false;
+    if (source === 'staff') {
+      deleted = await deleteStaffNotification(req.user._id, req.params.id);
+    } else if (source === 'compliance') {
+      deleted = await deleteComplianceNotification(req.user._id, req.params.id);
+    } else {
+      deleted = await deleteComplianceNotification(req.user._id, req.params.id);
+      if (!deleted) deleted = await deleteStaffNotification(req.user._id, req.params.id);
+    }
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Notification not found' });
+    }
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to delete notification' });
+  }
+};
+
+module.exports = { getMyNotifications, markAsRead, markAllAsRead, deleteNotification };

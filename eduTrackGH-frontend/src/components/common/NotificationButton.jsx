@@ -6,7 +6,9 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ROUTES } from '../../utils/constants';
+import { useConfirm } from '../../context';
 import notificationService from '../../services/notificationService';
+import ContextMenu from './ContextMenu';
 import {
   isNotificationSoundEnabled,
   setNotificationSoundEnabled,
@@ -22,6 +24,8 @@ const NotificationButton = () => {
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef(null);
   const previousUnreadRef = useRef(0);
+  const [contextMenu, setContextMenu] = useState(null);
+  const { requestConfirmation } = useConfirm();
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -94,6 +98,30 @@ const NotificationButton = () => {
     if (!isOpen) {
       fetchNotifications(false);
     }
+  };
+
+  const handleDeleteNotif = async (notif) => {
+    const ok = await requestConfirmation({
+      title: 'Delete Notification',
+      message: 'Remove this notification permanently?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      tone: 'danger',
+    });
+    if (!ok) return;
+
+    const res = await notificationService.deleteNotification(notif.id);
+    if (res?.success) {
+      setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
+      setUnreadCount((c) => Math.max(0, c - 1));
+      previousUnreadRef.current = Math.max(0, previousUnreadRef.current - 1);
+    }
+  };
+
+  const handleNotifContextMenu = (e, notif) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY, notif });
   };
 
   return (
@@ -198,7 +226,8 @@ const NotificationButton = () => {
                 {notifications.map((notif) => (
                   <div
                     key={notif.id}
-                    className="px-4 py-3 hover:bg-[color:var(--glass)] transition-colors cursor-pointer bg-[color:var(--accent-muted)]"
+                    onContextMenu={(e) => handleNotifContextMenu(e, notif)}
+                    className="px-4 py-3 hover:bg-[color:var(--glass)] transition-colors cursor-context-menu bg-[color:var(--accent-muted)]"
                   >
                     <div className="flex items-start gap-3">
                       <div className="w-2 h-2 rounded-full mt-1.5 shrink-0 bg-[color:var(--accent)]" />
@@ -257,6 +286,22 @@ const NotificationButton = () => {
             </div>
           )}
         </div>
+      )}
+
+      {contextMenu && (
+        <ContextMenu
+          x={contextMenu.x}
+          y={contextMenu.y}
+          items={[
+            {
+              id: 'delete',
+              label: 'Delete',
+              danger: true,
+              onClick: () => handleDeleteNotif(contextMenu.notif),
+            },
+          ]}
+          onClose={() => setContextMenu(null)}
+        />
       )}
     </div>
   );

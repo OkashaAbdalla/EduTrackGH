@@ -6,6 +6,7 @@ const {
   getNotificationsForUser,
   markNotificationRead,
   markAllNotificationsRead,
+  deleteNotification,
 } = require('../services/staffNotificationService');
 
 const getMyNotifications = async (req, res) => {
@@ -39,4 +40,16 @@ const markAllAsRead = async (req, res) => {
   }
 };
 
-module.exports = { getMyNotifications, markAsRead, markAllAsRead };
+const deleteMyNotification = async (req, res) => {
+  try {
+    const deleted = await deleteNotification(req.user._id, req.params.id);
+    if (!deleted) {
+      return res.status(404).json({ success: false, message: 'Notification not found' });
+    }
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: 'Failed to delete notification' });
+  }
+};
+
+module.exports = { getMyNotifications, markAsRead, markAllAsRead, deleteMyNotification };

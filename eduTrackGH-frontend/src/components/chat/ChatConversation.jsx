@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import ChatMessageList from './ChatMessageList';
 import { ProfileAvatar } from '../common';
 import chatService from '../../services/chatService';
-import { useSocket, useToast, useConfirm } from '../../context';
+import { useSocket, useToast } from '../../context';
 
 const ChatConversation = ({ otherId, otherName, otherAvatarUrl = '', currentRole, onBack }) => {
   const [messages, setMessages] = useState([]);
@@ -15,7 +15,6 @@ const ChatConversation = ({ otherId, otherName, otherAvatarUrl = '', currentRole
   const [editingMessage, setEditingMessage] = useState(null);
   const { socket } = useSocket();
   const { showToast } = useToast();
-  const { requestConfirmation } = useConfirm();
 
   const loadMessages = async () => {
     if (!otherId) return;
@@ -102,14 +101,6 @@ const ChatConversation = ({ otherId, otherName, otherAvatarUrl = '', currentRole
           setInput(m.message || '');
         }}
         onDelete={async (m) => {
-          const ok = await requestConfirmation({
-            title: 'Delete Message',
-            message: 'Delete this message for both sides?',
-            confirmText: 'Delete',
-            cancelText: 'Cancel',
-            tone: 'danger',
-          });
-          if (!ok) return;
           try {
             await chatService.deleteMessage(m.id);
             setMessages((prev) => prev.filter((x) => x.id !== m.id));

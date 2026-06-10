@@ -24,6 +24,7 @@ const {
   getMyNotifications: getHeadteacherNotifications,
   markAsRead: markHeadteacherNotificationRead,
   markAllAsRead: markAllHeadteacherNotificationsRead,
+  deleteNotification: deleteHeadteacherNotification,
 } = require('../controllers/headteacherNotificationController');
 const { protect } = require('../middleware/authMiddleware');
 const { authorize } = require('../middleware/roleMiddleware');
@@ -56,6 +57,7 @@ router.get('/dashboard-stats', getDashboardStats);
 router.get('/notifications', getHeadteacherNotifications);
 router.patch('/notifications/read-all', markAllHeadteacherNotificationsRead);
 router.patch('/notifications/:id/read', markHeadteacherNotificationRead);
+router.delete('/notifications/:id', deleteHeadteacherNotification);
 
 // School GPS boundary for attendance
 router.get('/school-location', getSchoolLocation);

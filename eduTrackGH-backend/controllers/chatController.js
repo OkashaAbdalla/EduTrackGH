@@ -202,12 +202,12 @@ async function deleteMessage(req, res) {
     const doc = await ChatMessage.findById(id);
     if (!doc) return res.status(404).json({ success: false, message: 'Message not found' });
 
-    const isHeadteacherSender =
-      doc.senderRole === 'headteacher' && user.role === 'headteacher' && doc.headteacherId.toString() === user._id.toString();
-    const isTeacherSender =
-      doc.senderRole === 'teacher' && user.role === 'teacher' && doc.teacherId.toString() === user._id.toString();
-    if (!isHeadteacherSender && !isTeacherSender) {
-      return res.status(403).json({ success: false, message: 'You can only delete your own messages' });
+    const isParticipantHeadteacher =
+      user.role === 'headteacher' && doc.headteacherId.toString() === user._id.toString();
+    const isParticipantTeacher =
+      user.role === 'teacher' && doc.teacherId.toString() === user._id.toString();
+    if (!isParticipantHeadteacher && !isParticipantTeacher) {
+      return res.status(403).json({ success: false, message: 'You cannot delete this message' });
     }
 
     await ChatMessage.deleteOne({ _id: id });

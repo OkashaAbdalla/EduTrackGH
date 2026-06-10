@@ -6,6 +6,8 @@
 import { useState, useEffect, useRef } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import { Card } from '../../components/common';
+import ContextMenu from '../../components/common/ContextMenu';
+import { useConfirm } from '../../context';
 import notificationService from '../../services/notificationService';
 import {
   isNotificationSoundEnabled,
@@ -21,6 +23,8 @@ const Notifications = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const previousUnreadRef = useRef(0);
   const [soundEnabled, setSoundEnabled] = useState(() => isNotificationSoundEnabled());
+  const [contextMenu, setContextMenu] = useState(null);
+  const { requestConfirmation } = useConfirm();
 
   const handleEnableSound = async () => {
     const unlocked = await unlockNotificationSound();
@@ -77,6 +81,31 @@ const Notifications = () => {
   const handleMarkAllRead = async () => {
     const response = await notificationService.markAllAsRead();
     if (response.success) fetchNotifications();
+  };
+
+  const handleDeleteNotif = async (notif) => {
+    const ok = await requestConfirmation({
+      title: 'Delete Notification',
+      message: 'Remove this notification permanently?',
+      confirmText: 'Delete',
+      cancelText: 'Cancel',
+      tone: 'danger',
+    });
+    if (!ok) return;
+
+    const response = await notificationService.deleteNotification(notif.id);
+    if (response.success) {
+      setNotifications((prev) => prev.filter((n) => n.id !== notif.id));
+      if (!notif.read) {
+        setUnreadCount((c) => Math.max(0, c - 1));
+        previousUnreadRef.current = Math.max(0, previousUnreadRef.current - 1);
+      }
+    }
+  };
+
+  const handleNotifContextMenu = (e, notif) => {
+    e.preventDefault();
+    setContextMenu({ x: e.clientX, y: e.clientY, notif });
   };
 
   const getTypeIcon = (type) => {
@@ -157,7 +186,12 @@ const Notifications = () => {
         ) : notifications.length > 0 ? (
           <div className="space-y-3">
             {notifications.map((notif) => (
-              <Card key={notif.id} className={`p-5 ${!notif.read ? 'border-l-4 border-green-600' : ''}`}>
+              <div
+                key={notif.id}
+                onContextMenu={(e) => handleNotifContextMenu(e, notif)}
+                className="cursor-context-menu"
+              >
+              <Card className={`p-5 ${!notif.read ? 'border-l-4 border-green-600' : ''}`}>
                 <div className="flex items-start space-x-4">
                   {getTypeIcon(notif.type)}
                   <div className="flex-1">
@@ -180,6 +214,7 @@ const Notifications = () => {
                   </div>
                 </div>
               </Card>
+              </div>
             ))}
           </div>
         ) : (
@@ -191,6 +226,22 @@ const Notifications = () => {
               <p className="text-lg font-medium">No notifications yet</p>
             </div>
           </Card>
+        )}
+
+        {contextMenu && (
+          <ContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            items={[
+              {
+                id: 'delete',
+                label: 'Delete',
+                danger: true,
+                onClick: () => handleDeleteNotif(contextMenu.notif),
+              },
+            ]}
+            onClose={() => setContextMenu(null)}
+          />
         )}
       </div>
     </DashboardLayout>
